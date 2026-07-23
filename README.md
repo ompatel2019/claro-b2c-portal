@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Project Template
 
-## Getting Started
+A deliberately small, production-oriented foundation for Next.js applications.
+The template includes Supabase authentication, Drizzle ORM, shadcn/ui, Tailwind
+CSS, unit and browser testing, formatting, linting, type checking, and CI.
 
-First, run the development server:
+## Requirements
+
+- Node.js 22 (see `.nvmrc`)
+- npm 10.9.8
+- A Supabase project
+
+## Setup
+
+```bash
+nvm use
+npm install
+cp .env.example .env.local
+```
+
+Fill in every value in `.env.local`, then start the application:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Environment variables are validated with Zod at startup. Public variables live
+in `src/env/client.ts`; server-only variables live in `src/env/server.ts`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Why development uses Webpack
 
-## Learn More
+Next.js 16 defaults to Turbopack. This template temporarily uses
+`next dev --webpack` because current Turbopack builds can emit severe allocator
+noise and consume excessive memory on Apple Silicon with macOS 26. Re-test
+Turbopack when upgrading Next.js and remove the flag once the upstream issue is
+resolved.
 
-To learn more about Next.js, take a look at the following resources:
+## Database workflow
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Define application tables in `drizzle/schema.ts`, then create and apply a
+reviewable SQL migration:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run db:generate
+npm run db:check
+npm run db:migrate
+```
 
-## Deploy on Vercel
+Use `npm run db:studio` to inspect data. The template intentionally does not
+provide a `db:push` script: shared and production databases should be changed
+through committed migrations.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+For Supabase deployments, use the transaction-mode pooler connection string.
+The database client disables prepared statements for compatibility with that
+pooler.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Quality commands
+
+```bash
+npm run check       # formatting, linting, types, and unit tests
+npm run test:watch  # unit tests in watch mode
+npm run test:e2e    # Playwright browser tests
+npm run build       # production build
+```
+
+GitHub Actions runs `check`, `build`, and the Playwright suite for pull requests
+and pushes to `main`.
+
+## Structure
+
+- `src/app` — App Router routes and layouts
+- `src/components` — reusable UI components
+- `src/env` — validated environment boundaries
+- `src/utils/supabase` — browser/server Supabase clients and session refresh
+- `src/db` — server-only database client
+- `drizzle` — schema and committed migration history
+- `e2e` — Playwright tests
+
+Add architecture only when a real product requirement justifies it. Prefer
+small, explicit modules and review every generated migration before applying it.
