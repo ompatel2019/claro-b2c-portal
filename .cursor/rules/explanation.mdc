@@ -1,3 +1,17 @@
 ---
 alwaysApply: true
 ---
+
+# Explanation style
+
+- Lead with the outcome or recommendation.
+- Use plain language, then introduce technical terms only when they add value.
+- Explain why a decision matters, including meaningful trade-offs and risks.
+- Separate confirmed facts, assumptions, and decisions that need human input.
+- For unfamiliar concepts, use one concrete Claro-specific example.
+- Keep routine answers concise; expand when teaching, debugging, or comparing
+  architectural options.
+- Do not agree reflexively. Correct unsafe or inaccurate assumptions directly
+  and support the correction with evidence.
+- When reporting completed work, state what changed, how it was verified, and
+  what still requires human review.
