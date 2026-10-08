@@ -171,3 +171,47 @@ export async function saveFlashcardTime(sessionId: string, elapsed: number) {
     .is("finished_at", null)
     .throwOnError();
 }
+
+/** Used by FlashcardPersistDrain. Returns missing when the session is gone. */
+export async function drainPersistRating(item: {
+  sessionId: string;
+  cardId: string;
+  mark: 0 | 0.5 | 1;
+}): Promise<"ok" | "missing" | "error"> {
+  const parsed = z
+    .object({
+      sessionId: z.uuid(),
+      cardId: z.string().min(1).max(200),
+      mark: z.union([z.literal(0), z.literal(0.5), z.literal(1)]),
+    })
+    .safeParse(item);
+  if (!parsed.success) return "error";
+  const profile = await requireProfile();
+  if (profile.role !== "student") return "error";
+  const db = await createClient();
+  const { data: session } = await db
+    .from("sessions")
+    .select("id,finished_at")
+    .eq("id", parsed.data.sessionId)
+    .eq("user_id", profile.id)
+    .in("kind", ["flashcards", "homework"])
+    .maybeSingle();
+  if (!session || session.finished_at) return "missing";
+  try {
+    await rateFlashcard(
+      parsed.data.sessionId,
+      parsed.data.cardId,
+      parsed.data.mark,
+    );
+    return "ok";
+  } catch {
+    // Re-check — session may have been deleted mid-flight.
+    const { data: again } = await db
+      .from("sessions")
+      .select("id")
+      .eq("id", parsed.data.sessionId)
+      .eq("user_id", profile.id)
+      .maybeSingle();
+    return again ? "error" : "missing";
+  }
+}
