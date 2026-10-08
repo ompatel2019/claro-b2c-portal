@@ -1,0 +1,1367 @@
+{
+  "meta": {
+    "stamp": "2026-10-09-0930",
+    "git": "0c11366",
+    "dirty": true,
+    "label": "chain-sol-low-medium-medium",
+    "limit": null,
+    "marker": {
+      "model": "gpt-6.1-sol",
+      "effort": {
+        "grade": "low",
+        "check": "medium",
+        "reconcile": "medium"
+      }
+    },
+    "judge": {
+      "model": "gpt-6-astra",
+      "effort": "low"
+    },
+    "spentBefore": 4.020376,
+    "spentAfter": 4.859727,
+    "blocked": false
+  },
+  "headline": {
+    "n": 18,
+    "exact": 0.3333333333333333,
+    "within1": 0.8333333333333334,
+    "band": 0.3888888888888889,
+    "meanSigned": 0.7222222222222222,
+    "meanAbs": 0.7777777777777778,
+    "prosKept": 0.3333333333333333,
+    "consFixed": 0.3181818181818182,
+    "judgeMean": 4.388888888888889,
+    "usdPerAnswer": 0.014522833333333337,
+    "secondsPerAnswer": 11.986961646444447,
+    "blindAgreement": 0.9444444444444444,
+    "secondPass": 1,
+    "inReview": 0,
+    "firstPass": {
+      "n": 18,
+      "exact": 0.3333333333333333,
+      "within1": 0.8888888888888888,
+      "band": 0.3888888888888889,
+      "meanSigned": 0.6666666666666666,
+      "meanAbs": 0.7222222222222222,
+      "prosKept": 0.3333333333333333,
+      "consFixed": 0.3181818181818182,
+      "judgeMean": 4.388888888888889,
+      "usdPerAnswer": 0.014522833333333337,
+      "secondsPerAnswer": 11.986961646444447
+    }
+  },
+  "items": [
+    {
+      "id": "ge-4",
+      "section": "A1",
+      "label": "",
+      "marks": 5,
+      "expected": 3,
+      "mark": 4,
+      "band": "Sound explanation with some analysis and limited judgement",
+      "check": {
+        "status": "agreed",
+        "marks": [4, 4]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.020566,
+      "judgeUsd": 0.037513,
+      "seconds": 17.098014310000003,
+      "verdict": {
+        "pros": [
+          {
+            "pro": "Calls for more specific statistics.",
+            "delivered": false,
+            "evidence": "Requests concrete organisational examples but explicitly says 'Statistics are not essential', rather than calling for the specific statistics Karan endorsed."
+          },
+          {
+            "pro": "Identifies the need for more depth.",
+            "delivered": true,
+            "evidence": "Asks for 'a specific IMF intervention and its outcome' integrated into the existing cause-and-effect analysis."
+          },
+          {
+            "pro": "Identifies the need for more judgement.",
+            "delivered": true,
+            "evidence": "Advises explaining 'why global benefits outweigh costs, or under what conditions they do not'."
+          }
+        ],
+        "cons": [
+          {
+            "con": "Give specific guidance on answering 'Assess', identifying exactly where to add assessment.",
+            "fixed": true,
+            "evidence": "Anchors weighing advice to 'their impact is mixed' in the conclusion; the outline also places assessment of loan-condition costs alongside IMF crisis lending."
+          },
+          {
+            "con": "Provide assessment wording such as 'a key limitation can be seen through...'.",
+            "fixed": false,
+            "evidence": "Explains what to weigh but supplies no comparable evaluative wording the student could use within their paragraphs."
+          },
+          {
+            "con": "Make the WTO and IMF definitions clearer.",
+            "fixed": false,
+            "evidence": "Discusses IMF lending and WTO trade liberalisation, but gives no targeted advice on clarifying either organisation's definition."
+          }
+        ],
+        "score": 5,
+        "lowConfidence": false,
+        "reasoning": "The feedback preserves the calls for depth and judgement and gives actionable, located guidance on assessment. However, it replaces the endorsed demand for specific statistics with optional evidence, omits suggested assessment phrasing, and leaves the definition clarification untouched."
+      },
+      "feedback": "The links between “reducing tariffs”, “comparative advantage” and “expanding global output” demonstrate sound explanation. The judgement of a “substantial positive impact” qualified by costs meets the 4-mark descriptor, but lacks the applied examples and comprehensive weighing required for 5.\n1. [Fix · Evidence] \"prevent global financial contagion\" — Support this impact with a specific IMF intervention and its outcome, alongside an applied example from another organisation. Statistics are not essential, but concrete examples strengthen the assessment. Next mark: Integrate specific organisational examples into the existing cause-and-effect analysis.\n2. [Strength · Analysis] \"improving productivity and living standards\" — You connect World Bank development funding to meaningful economic outcomes rather than merely listing its role.\n3. [Strength · Knowledge] \"increasing efficiency through comparative advantage\" — You apply relevant trade theory to explain how WTO activity can increase global output.\n4. [Fix · Verb] \"their impact is mixed\" — Your judgement recognises both sides; deepen it by explaining why global benefits outweigh costs, or under what conditions they do not. Next mark: Combine supported examples with a comparative judgement weighing stability and growth against distributional costs.\nNext band: To reach 5, integrate specific examples from multiple organisations and use them to justify why their overall contribution is positive, negative or conditional, rather than simply mixed.\nWhy not higher: The response names organisations and explains their functions, but does not integrate specific examples of their effects. Its final judgement identifies a mixed impact rather than establishing why the benefits outweigh the costs.\nBetter-answer outline:\n- Establish a judgement that organisations support global stability and output, although benefits are unevenly distributed.\n- Explain IMF crisis lending and contagion prevention using a specific intervention, then assess the costs of loan conditions.\n- Link WTO trade liberalisation to specialisation and output, using an example that also demonstrates its limitations.\n- Explain how World Bank development projects improve productive capacity while recognising potential social or environmental costs.\n- Weigh systemic and long-term benefits against short-term and distributional costs to justify the overall assessment.",
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "ge-1",
+      "section": "A1",
+      "label": "",
+      "marks": 2,
+      "expected": 2,
+      "mark": 2,
+      "band": "Clearly distinguishes both concepts using correct terminology and an example",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": 0,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.00971,
+      "judgeUsd": 0.013788,
+      "seconds": 8.078883006999996,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "Recommend the structure: distinguishing factor, define term A, define term B.",
+            "fixed": false,
+            "evidence": "The outline starts with 'Define a trading bloc', then 'Define a monetary union', and only then 'Highlight that monetary integration goes beyond trade integration'; it does not recommend leading with the distinguishing factor."
+          }
+        ],
+        "score": 4,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No checkable Pro survives; 'It is a 2/2' concerns the mark and 'Good feedback' is non-specific praise. FIXED: No. The feedback includes definitions and a contrast, but does not recommend Karan's requested factor-first structure, leaving the sole actionable Con untouched."
+      },
+      "feedback": "The contrast between 'reduce or eliminate trade barriers' and 'share a common currency and central monetary policy' clearly distinguishes both concepts. Relevant examples and the explanation of lost interest-rate autonomy fully satisfy the top descriptor.\n1. [Strength · Knowledge] \"reduce or eliminate trade barriers\" — You accurately identify the defining trade arrangement between trading-bloc members.\n2. [Strength · Verb] \"share a common currency and central monetary policy\" — You clearly distinguish monetary integration from trade integration, supported by relevant examples.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Define a trading bloc as an arrangement reducing trade barriers between members.\n- Define a monetary union as sharing a currency and monetary policy.\n- Highlight that monetary integration goes beyond trade integration.\n- Use the EU single market and Eurozone as relevant examples.",
+      "error": null,
+      "score": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "ep-1",
+      "section": "A1",
+      "label": "",
+      "marks": 3,
+      "expected": 2,
+      "mark": 3,
+      "band": "Clear explanation of one strategy with example, linking to environmental sustainability",
+      "check": {
+        "status": "agreed",
+        "marks": [3, 3]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.01341,
+      "judgeUsd": 0.014976,
+      "seconds": 11.557256035999998,
+      "verdict": {
+        "pros": [
+          {
+            "pro": "The feedback requires a specific statistic.",
+            "delivered": false,
+            "evidence": "The new feedback neither requests a specific statistic nor includes one in its better-answer outline."
+          },
+          {
+            "pro": "The feedback requires a definition of environmental sustainability.",
+            "delivered": false,
+            "evidence": "The feedback links emissions reductions to sustainability outcomes but does not ask the student to define environmental sustainability."
+          }
+        ],
+        "cons": [],
+        "score": 2,
+        "lowConfidence": false,
+        "reasoning": "Neither checkable Pro is delivered: the new feedback omits both the requirement for a specific statistic and the requirement to define environmental sustainability. No actionable Cons were stated, so there is nothing to assess as fixed. Karan's agreement with the earlier mark and general praise are excluded; the new mark does not affect this judgement."
+      },
+      "feedback": "The response clearly explains China's ETS, linking 'high polluters face higher costs' to cleaner production and investment, then to 'reduce overall carbon emissions'. This satisfies the highest descriptor despite the imprecise description of China's cap.\n1. [Strength · Knowledge] \"national emissions trading scheme (ETS)\" — You identify a specific environmental strategy in an economy other than Australia.\n2. [Strength · Analysis] \"high polluters face higher costs\" — You explain the financial incentive that encourages firms to adopt cleaner production, rather than merely naming the policy.\n3. [Strength · Verb] \"reduce overall carbon emissions\" — You explicitly link the strategy's mechanism to an environmental sustainability outcome.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Identify China's national ETS as the strategy.\n- Describe emissions-intensity benchmarks and the trading of surplus allowances.\n- Explain how allowance costs reward lower-emissions production and encourage cleaner investment.\n- Link reduced emissions intensity to climate protection and long-term environmental sustainability.",
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "ge-5",
+      "section": "A1",
+      "label": "",
+      "marks": 4,
+      "expected": 3,
+      "mark": 4,
+      "band": "Discusses two clear changes with reference to both composition and direction, supported by examples or data",
+      "check": {
+        "status": "agreed",
+        "marks": [4, 4]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.016092000000000002,
+      "judgeUsd": 0.01605,
+      "seconds": 11.789375646999993,
+      "verdict": {
+        "pros": [
+          {
+            "pro": "More specific statistics are required.",
+            "delivered": false,
+            "evidence": "The feedback instead states that 'statistics are not required because examples satisfy the criterion' and recommends no specific statistics."
+          }
+        ],
+        "cons": [
+          {
+            "con": "Point out that the student's first sentence is useless.",
+            "fixed": false,
+            "evidence": "The feedback does not identify the opening sentence as adding no substantive content or advise removing it and starting directly with the composition change."
+          }
+        ],
+        "score": 2,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No—the feedback explicitly rejects Karan's endorsed requirement for specific statistics. FIXED: No—it leaves the criticism of the student's generic opening sentence untouched. The mark agreement, unfalsifiable general praise and sample-answer criticism are excluded."
+      },
+      "feedback": "The response discusses two distinct changes with examples and developed links to their drivers and outcomes. 'Education and tourism' support the composition discussion, while 'China, Japan, and South Korea' support direction; statistics are not required because examples satisfy the criterion.\n1. [Strength · Verb] \"shifted toward resource-based and service exports\" — You clearly identify a change in composition and develop it with resource and service examples.\n2. [Strength · Analysis] \"rapid industrialisation and rising incomes\" — You explain economic drivers of the shift towards Asian trading partners rather than simply naming destinations.\n3. [Strength · Analysis] \"increased vulnerability to economic fluctuations\" — You discuss a risk alongside stronger regional integration, adding depth to the discussion of trade direction.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Contrast historically agricultural exports with the increasing importance of resources and services.\n- Use iron ore, LNG, education and tourism as composition examples, linking their growth to demand and comparative advantage.\n- Contrast earlier UK and European trading links with the growing importance of China, Japan and South Korea.\n- Link Asian industrialisation to resource demand and discuss stronger integration alongside regional exposure.",
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "ge-2",
+      "section": "A1",
+      "label": "",
+      "marks": 2,
+      "expected": 2,
+      "mark": 2,
+      "band": "Clearly distinguishes both accounts with correct terminology/examples",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": 0,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.010453,
+      "judgeUsd": 0.018276,
+      "seconds": 8.618297294000003,
+      "verdict": {
+        "pros": [
+          {
+            "pro": "Recommend explicit contrasting connectors such as 'whereas' or 'in contrast' to strengthen the distinction.",
+            "delivered": false,
+            "evidence": "The outline uses 'By contrast', but the feedback does not advise the student to use contrasting connectors or explain how these would strengthen their distinction."
+          },
+          {
+            "pro": "Advise against referring to Australia when it is not mentioned in the question.",
+            "delivered": false,
+            "evidence": "No comment addresses the student's unnecessary reference to 'Australia’s net foreign liabilities'."
+          }
+        ],
+        "cons": [
+          {
+            "con": "Point out that the definitions are acceptable but could be more straightforward.",
+            "fixed": false,
+            "evidence": "The feedback praises the distinction and gives shorter outline definitions, but never identifies the student's definitions as unnecessarily elaborate or advises how to simplify them."
+          }
+        ],
+        "score": 3,
+        "lowConfidence": false,
+        "reasoning": "The new feedback recognises the accurate distinction and relevant examples, but loses both specific improvements Karan endorsed. Its outline implicitly models contrasting language and simpler definitions; this is not explicit, actionable feedback on those issues. The request to acknowledge acceptable definitions while recommending more straightforward wording remains unaddressed."
+      },
+      "feedback": "The contrast between 'non-produced assets' and 'financial assets' clearly distinguishes the accounts. 'Debt forgiveness' and 'foreign investment, loans, and equity flows' provide relevant examples, earning both marks.\n1. [Strength · Verb] \"non-produced assets\" — You clearly distinguish the capital account's non-produced asset transactions from the financial account's financial asset transactions.\n2. [Strength · Knowledge] \"foreign investment, loans, and equity flows\" — These relevant financial account examples support your distinction and demonstrate accurate economic knowledge.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- The capital account records capital transfers, such as debt forgiveness.\n- It also records transactions in non-produced, non-financial assets.\n- By contrast, the financial account records financial asset and liability transactions, such as investment, equity and loans.",
+      "error": null,
+      "score": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "ge-3",
+      "section": "A1",
+      "label": "",
+      "marks": 4,
+      "expected": 2,
+      "mark": 4,
+      "band": "Sound explanation linking appreciation to both exports and imports, showing clear impact on BOGS",
+      "check": {
+        "status": "agreed",
+        "marks": [4, 4]
+      },
+      "delta": 2,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.015817,
+      "judgeUsd": 0.018713,
+      "seconds": 11.94679152700001,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "The feedback should identify the absence of short-term and long-term impacts as an important omission.",
+            "fixed": false,
+            "evidence": "The feedback instead states, 'The sample's short-term mechanism is not an additional requirement', and provides no advice on distinguishing short-term price effects from longer-term changes in export and import volumes."
+          }
+        ],
+        "score": 3,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No checkable Pro survives: the sample-answer praise is excluded, and agreement that the comments are relevant is non-specific. FIXED: No. Karan's substantive concern about missing time horizons remains unaddressed; the feedback explicitly dismisses the short-term mechanism rather than explaining how to add the distinction. The disagreement over the awarded mark is excluded."
+      },
+      "feedback": "The response provides a developed causal chain from appreciation through prices, competitiveness and demand to BOGS. 'Potentially moving it toward a deficit or reducing a surplus' clearly states the possible balance outcome. The sample's short-term mechanism is not an additional requirement.\n1. [Strength · Knowledge] \"more expensive for foreign buyers\" — You correctly identify the export-price effect of an appreciating Australian dollar.\n2. [Strength · Analysis] \"leading to a fall in export volumes\" — You explain the mechanism connecting reduced competitiveness to lower export sales, rather than merely naming an effect.\n3. [Strength · Verb] \"reducing a surplus\" — You complete the explanation by showing how the trade changes could affect the balance, without assuming deterioration must produce a deficit.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Appreciation raises export prices for foreign buyers and lowers import prices in Australian dollars.\n- Less competitive exports reduce foreign demand and export volumes, potentially lowering export receipts.\n- Cheaper imports increase domestic demand; import expenditure rises if volume growth outweighs the price fall.\n- Lower export receipts and higher import expenditure reduce BOGS, shrinking a surplus or increasing a deficit.",
+      "error": null,
+      "score": {
+        "delta": 2,
+        "exact": false,
+        "within1": false,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 2,
+        "exact": false,
+        "within1": false,
+        "band": false
+      }
+    },
+    {
+      "id": "ei-1",
+      "section": "A1",
+      "label": "",
+      "marks": 2,
+      "expected": 1,
+      "mark": 2,
+      "band": "Clearly distinguishes between both types with accurate features/examples",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.012185999999999999,
+      "judgeUsd": 0.022138,
+      "seconds": 9.156693574000004,
+      "verdict": {
+        "pros": [
+          {
+            "pro": "Helpful improvement advice to add ‘whereas’ or ‘on the other hand’ to make the contrast explicit.",
+            "delivered": false,
+            "evidence": "The feedback praises the distinction but gives no advice to link the definitions using ‘whereas’ or ‘on the other hand’."
+          }
+        ],
+        "cons": [
+          {
+            "con": "Identify ‘upswing’ as incorrect: cyclical unemployment arises through downswings.",
+            "fixed": false,
+            "evidence": "The outline correctly specifies ‘business-cycle downturns’, but the justification calls ‘upswings’ merely ‘imprecise’ rather than explicitly correcting the false claim that upswings cause cyclical unemployment."
+          },
+          {
+            "con": "Explicitly identify structural unemployment as a mismatch between workers’ skills and the skills required by the economy.",
+            "fixed": true,
+            "evidence": "The anchored comment names ‘the skills mismatch’, and the outline states that ‘workers’ skills do not match available jobs’."
+          }
+        ],
+        "score": 4,
+        "lowConfidence": false,
+        "reasoning": "The endorsed advice on explicit contrasting connectors is lost. The structural skills-mismatch point is delivered clearly, but the central concern about ‘upswing’ is only partially addressed: the outline supplies the correct cause while the student-facing justification understates the error. The disagreement over the numeric mark is excluded."
+      },
+      "feedback": "The contrast between “business cycle” and “workers no longer have skills which are required” clearly distinguishes the two types. The reference to “upswings” is imprecise but does not remove the valid distinction.\n1. [Strength · Verb] \"business cycle\" — You distinguish cyclical unemployment by its connection to economic fluctuations, rather than a mismatch of skills.\n2. [Strength · Knowledge] \"workers no longer have skills which are required\" — You accurately identify the skills mismatch that characterises structural unemployment.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Cyclical unemployment arises during business-cycle downturns.\n- Falling demand for goods and services reduces firms' demand for labour.\n- Structural unemployment arises when workers' skills do not match available jobs, often following technological or industry change.",
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "ei-2",
+      "section": "A1",
+      "label": "",
+      "marks": 2,
+      "expected": 2,
+      "mark": 2,
+      "band": "Provides a clear description linking inflation to reduced competitiveness",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": 0,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.009034,
+      "judgeUsd": 0.011988,
+      "seconds": 6.8809892209999965,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "Directly emphasise 'export prices rise → hence international competitiveness falls' as the main factor.",
+            "fixed": true,
+            "evidence": "The anchored comment states, 'You clearly link higher domestic costs to less competitive export prices', and the justification explicitly connects exports becoming 'more expensive relative to foreign goods' to 'reduced competitiveness'."
+          }
+        ],
+        "score": 10,
+        "lowConfidence": false,
+        "reasoning": "The Pro only endorses the mark and is excluded under Rule 4. The actionable Con is fixed: the feedback specifically highlights the student's higher-export-price mechanism and explicitly links it to reduced international competitiveness."
+      },
+      "feedback": "The answer clearly connects 'domestic production costs' to exports becoming 'more expensive relative to foreign goods', then to falling export demand and reduced competitiveness. This fully satisfies the 2-mark descriptor.\n1. [Strength · Analysis] \"making exports more expensive relative to foreign goods\" — You clearly link higher domestic costs to less competitive export prices.\n2. [Strength · Verb] \"demand for exports falls\" — You describe the consequence of higher relative prices, directly addressing the impact on international competitiveness.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- High inflation raises domestic production costs.\n- Higher costs make exports more expensive relative to foreign goods.\n- Foreign demand for exports falls, reducing international competitiveness.",
+      "error": null,
+      "score": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "ei-3",
+      "section": "A1",
+      "label": "",
+      "marks": 4,
+      "expected": 2,
+      "mark": 3,
+      "band": "Explains either dimensions or trends with some link to effects",
+      "check": {
+        "status": "agreed",
+        "marks": [3, 3]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.016965,
+      "judgeUsd": 0.023513,
+      "seconds": 13.601750659000013,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "Name the specific syllabus dimensions of income inequality: gender, age, occupation and ethnic background.",
+            "fixed": false,
+            "evidence": "The outline suggests 'another dimension, such as gender income differences', but does not identify age, occupation or ethnic background. This only partially supplies the syllabus-specific guidance Karan requested."
+          }
+        ],
+        "score": 4,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No checkable Pro survives; agreement with the mark is excluded, and 'Good what to improve section' is general praise. FIXED: The sole actionable Con is only partly addressed through the gender example, leaving most of Karan's requested syllabus dimensions unnamed. The Palma ratio criticism concerns a sample response and is excluded."
+      },
+      "feedback": "The answer develops a clear distribution-to-demand mechanism through “higher marginal propensity to consume” and explains longer-term productivity effects. It earns 3 marks, but the conditional “if inequality is rising” and absence of examples prevent the highest band.\n1. [Strength · Analysis] \"higher marginal propensity to consume\" — You use consumption behaviour to explain why concentrating income among higher earners can weaken aggregate demand and growth.\n2. [Fix · Evidence] \"if inequality is rising\" — Identify an actual Australian trend rather than a hypothetical rise, and illustrate it alongside a specific dimension of inequality. Next mark: Add a supported Australian trend and examples, linking them to the economic mechanisms already explained.\n3. [Strength · Analysis] \"lowering human capital and productivity\" — You clearly connect reduced access to education and healthcare with longer-term economic performance.\nNext band: To reach 4 marks, identify an Australian inequality trend and give examples of dimensions and trends, explicitly connecting these to economic effects. Numerical statistics are not essential.\nWhy not higher: The response does not establish an actual Australian inequality trend or use examples to explain dimensions and trends.\nBetter-answer outline:\n- Identify income gaps between higher- and lower-income households and illustrate another dimension, such as gender income differences.\n- Explain how concentrating income among households with lower marginal propensities to consume can weaken aggregate demand.\n- Identify a supported Australian trend, distinguishing market-income inequality from inequality after taxes and transfers.\n- Use progressive taxation and welfare transfers as examples of how redistribution can moderate inequality and support consumption.\n- Link persistent disadvantage to reduced educational opportunities, lower human capital and weaker long-term productivity.",
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "ep-3",
+      "section": "A1",
+      "label": "",
+      "marks": 4,
+      "expected": 3,
+      "mark": 4,
+      "band": "Sound explanation linking carbon tax to internalising externalities, referencing MSC/MPC and market failure",
+      "check": {
+        "status": "agreed",
+        "marks": [4, 4]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.016216,
+      "judgeUsd": 0.023613,
+      "seconds": 11.421050078,
+      "verdict": {
+        "pros": [
+          {
+            "pro": "The link to market failure needs to be explained in more depth.",
+            "delivered": false,
+            "evidence": "The feedback instead calls the explanation 'completing the explanation of market failure'. The outline mentions MSC exceeding MPC and overproduction, but does not identify or explain the need to deepen this link in the student's response."
+          }
+        ],
+        "cons": [
+          {
+            "con": "The earlier feedback wrongly advised against defining a carbon tax; the definition is required.",
+            "fixed": true,
+            "evidence": "The feedback retains and positively recognises the opening definition through 'pricing pollution raises firms’ costs', without advising the student to remove it."
+          },
+          {
+            "con": "No statistic is required, contrary to the earlier improvement advice.",
+            "fixed": true,
+            "evidence": "Neither the comments nor the better-answer outline demands a statistic; both focus on the economic mechanism."
+          }
+        ],
+        "score": 4,
+        "lowConfidence": false,
+        "reasoning": "The new feedback fixes both actionable Cons: it does not discourage the carbon-tax definition or demand unnecessary statistics. However, it loses the sole checkable Pro by treating the market-failure link as complete rather than offering response-specific advice to deepen it. The score judges these feedback choices, not the mark awarded."
+      },
+      "feedback": "The answer develops a clear causal chain: pricing pollution raises firms' costs, moves 'private cost closer to the true social cost', and means 'production falls toward the socially optimal level'. This soundly explains internalisation and correction of market failure; explicit MSC/MPC abbreviations are not necessary.\n1. [Strength · Knowledge] \"private cost closer to the true social cost\" — You explain internalisation clearly: the tax makes firms bear more of the social costs of their production.\n2. [Strength · Analysis] \"production falls toward the socially optimal level\" — You connect the higher production costs to lower output and correction of resource overallocation, completing the explanation of market failure.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Negative production externalities mean MSC exceeds MPC, so the market overproduces.\n- A carbon tax makes producers bear the external cost, raising MPC towards MSC.\n- Higher production costs shift supply left, increasing price and reducing output.\n- Output moves towards the efficient level where MSC equals MSB, while firms gain incentives to cut emissions.",
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "ei-5",
+      "section": "A1",
+      "label": "",
+      "marks": 2,
+      "expected": 1.5,
+      "mark": 1,
+      "band": "Outlines one objective or provides some relevant information",
+      "check": {
+        "status": "agreed",
+        "marks": [1, 1]
+      },
+      "delta": -0.5,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.012848,
+      "judgeUsd": 0.020826,
+      "seconds": 11.889061852999992,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "The feedback should identify the missing explanation that labour is a derived demand.",
+            "fixed": false,
+            "evidence": "The comment on 'reduce aggregate demand, leading to higher unemployment' praises the link but does not advise explaining how lower demand for output reduces firms’ demand for labour."
+          },
+          {
+            "con": "The feedback should ask for specific types of inflation relevant to the conflict.",
+            "fixed": false,
+            "evidence": "Neither the comments nor the outline advise identifying demand-pull inflation and linking it to the response’s demand-stimulating policies."
+          }
+        ],
+        "score": 3,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No checkable Pro survives; praise for two unspecified improvement comments does not establish what must be retained. FIXED: Neither actionable Con is addressed. The new feedback instead repeatedly prioritises definitions, rather than the derived demand for labour and demand-pull inflation explanations Karan wanted. The disagreement about the numerical mark is excluded."
+      },
+      "feedback": "The explanation of 'creating a trade-off between these objectives' is clear and economically valid. However, the top descriptor explicitly requires definitions, which are absent, so the response earns 1 mark.\n1. [Fix · Knowledge] \"low inflation and low unemployment\" — These identify the objectives but do not define them. Define price stability as low, stable growth in the general price level and full employment as unemployment at its natural rate. Next mark: Add definitions of both objectives while retaining your clear explanation of the trade-off.\n2. [Strength · Analysis] \"reduce aggregate demand, leading to higher unemployment\" — You clearly link contractionary policy to weaker demand and higher unemployment, establishing the conflict.\nNext band: To reach 2 marks, add definitions of both objectives; the existing conflict explanation is sufficient.\nWhy not higher: The two objectives are named rather than defined, preventing satisfaction of the 2-mark descriptor.\nBetter-answer outline:\n- Define price stability as low and stable inflation in the general price level.\n- Define full employment as unemployment at its natural rate, with no cyclical unemployment.\n- Explain that contractionary policy can reduce inflation by lowering aggregate demand, but also reduce employment and raise unemployment.",
+      "error": null,
+      "score": {
+        "delta": -0.5,
+        "exact": false,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": -0.5,
+        "exact": false,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "ei-4",
+      "section": "A1",
+      "label": "",
+      "marks": 6,
+      "expected": 3.5,
+      "mark": 6,
+      "band": "Comprehensive analysis of conflicts between THREE economic objectives with clear examples and trade-offs",
+      "check": {
+        "status": "agreed",
+        "marks": [6, 6]
+      },
+      "delta": 2.5,
+      "flags": {
+        "excluded": "3.5 is an invented midpoint",
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.02018,
+      "judgeUsd": 0.015713,
+      "seconds": 14.169299976999987,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "The student's first sentence was waffle and should have been called out in the feedback.",
+            "fixed": false,
+            "evidence": "The feedback does not flag the generic opening sentence or advise removing it and moving directly to a specific conflict and its causal mechanism."
+          }
+        ],
+        "score": 3,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No checkable Pro survives: agreement with an unspecified improvement section provides no identifiable feedback requirement, and agreement with the mark is excluded. FIXED: No—the sole actionable Con remains untouched. The new feedback praises the analysis but never identifies the opening sentence as unnecessary."
+      },
+      "feedback": "The response comprehensively analyses three conflicts rather than merely naming them. 'Decrease aggregate demand and can lead to higher unemployment' establishes the inflation–employment mechanism; 'higher import demand and a deterioration in the current account balance' explains the external trade-off; and 'environmental degradation and higher carbon emissions' explains the sustainability cost of growth. Relevant policy and industry examples satisfy the guideline without requiring statistics.\n1. [Strength · Analysis] \"decrease aggregate demand\" — You make the mechanism linking anti-inflation policy to higher unemployment explicit, then explain the reverse trade-off.\n2. [Strength · Knowledge] \"higher import demand\" — You accurately link stronger growth to a potential deterioration in the current account and explain its implications for external stability.\n3. [Strength · Evidence] \"resource extraction\" — This provides a relevant example of growth-promoting activity whose emissions and environmental damage conflict with sustainability.\n4. [Strength · Verb] \"prioritise and carefully balance objectives\" — You draw out the implication for government decision-making, completing the analysis of competing objectives.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Explain how tighter monetary policy reduces aggregate demand and inflation but weakens employment.\n- Explain how stronger growth increases imports, potentially worsening the current account and foreign borrowing dependence.\n- Explain how growth through resource extraction increases emissions and environmental damage.\n- Conclude that government must balance competing objectives through its policy mix.",
+      "error": null,
+      "score": {
+        "delta": 2.5,
+        "exact": false,
+        "within1": false,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 2.5,
+        "exact": false,
+        "within1": false,
+        "band": false
+      }
+    },
+    {
+      "id": "fm-2",
+      "section": "A1",
+      "label": "",
+      "marks": 4,
+      "expected": 2.5,
+      "mark": 4,
+      "band": "Clear explanation with link to fiscal policy implications and loanable funds",
+      "check": {
+        "status": "agreed",
+        "marks": [4, 4]
+      },
+      "delta": 1.5,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.013112,
+      "judgeUsd": 0.021901,
+      "seconds": 10.860250517000036,
+      "verdict": {
+        "pros": [
+          {
+            "pro": "Identifies appropriate areas for improvement, other than statistics.",
+            "delivered": false,
+            "evidence": "The new feedback gives only strengths and leaves 'Next band' blank; it identifies no areas for improvement."
+          }
+        ],
+        "cons": [
+          {
+            "con": "Needs much more depth.",
+            "fixed": false,
+            "evidence": "The feedback calls the response a 'complete causal chain' and offers no response-specific advice for deepening its explanation; the outline restates the existing mechanism."
+          },
+          {
+            "con": "Statistics are not needed and should not be demanded.",
+            "fixed": true,
+            "evidence": "Neither the comments nor the better-answer outline requires statistics."
+          }
+        ],
+        "score": 4,
+        "lowConfidence": false,
+        "reasoning": "The new feedback fixes the inappropriate demand for statistics, but does not retain improvement guidance or address Karan's call for greater depth. Karan does not specify the earlier improvement points, so their exact content cannot be inferred; nevertheless, the new feedback offers none. The suggested alternative mark is excluded from this judgement."
+      },
+      "feedback": "The answer develops the complete causal chain: government borrowing 'competes with the private sector for available funds', raises borrowing costs and discourages private spending. It clearly explains the fiscal implication: 'some of the increase in aggregate demand is offset'.\n1. [Strength · Analysis] \"competes with the private sector for available funds\" — You clearly explain the loanable funds mechanism behind the rise in interest rates; the exact term 'loanable funds' is not necessary here.\n2. [Strength · Analysis] \"as borrowing becomes more expensive\" — You make the causal link between higher interest rates and reduced private spending explicit.\n3. [Strength · Verb] \"the effectiveness of expansionary fiscal policy is reduced\" — You explain the policy implication and support it with the partial offset to aggregate demand.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Define crowding out as reduced private investment resulting from government borrowing.\n- Explain that government borrowing increases demand for loanable funds and raises interest rates.\n- Link higher borrowing costs to reduced private investment and potentially consumption.\n- Explain that this partially offsets the increase in aggregate demand, weakening expansionary fiscal policy.",
+      "error": null,
+      "score": {
+        "delta": 1.5,
+        "exact": false,
+        "within1": false,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1.5,
+        "exact": false,
+        "within1": false,
+        "band": false
+      }
+    },
+    {
+      "id": "fm-4",
+      "section": "A1",
+      "label": "",
+      "marks": 2,
+      "expected": 2,
+      "mark": 2,
+      "band": "Clearly distinguishes both with correct terminology and examples",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": 0,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.009208999999999998,
+      "judgeUsd": 0.012388,
+      "seconds": 6.893208293000003,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "No statistic is needed for this question; the earlier feedback wrongly required one.",
+            "fixed": true,
+            "evidence": "The new feedback requires no statistic and states that the definitions and examples 'fully satisf[y] the 2-mark descriptor'."
+          }
+        ],
+        "score": 10,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No checkable Pro survives; 'Good feedback for what to improve section' does not specify an improvement to retain. FIXED: The sole actionable Con is fully addressed because the feedback accepts the conceptual distinction and examples without demanding statistics. The disagreement about the mark is excluded."
+      },
+      "feedback": "The answer clearly distinguishes automatic operation 'without government intervention' from 'deliberate government decisions'. Correct terminology and examples support both definitions, fully satisfying the 2-mark descriptor.\n1. [Strength · Verb] \"without government intervention\" — You clearly distinguish automatic responses from deliberate policy changes.\n2. [Strength · Knowledge] \"stimulus packages or tax cuts\" — These are valid examples of discretionary fiscal policy and complement your examples of automatic stabilisers.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Automatic stabilisers respond to economic fluctuations without new government decisions.\n- Examples include progressive income tax and unemployment benefits.\n- Discretionary fiscal policy involves deliberate changes to taxation or government spending, such as tax cuts or stimulus packages.",
+      "error": null,
+      "score": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "fm-5",
+      "section": "A1",
+      "label": "",
+      "marks": 4,
+      "expected": 2,
+      "mark": 2,
+      "band": "General explanation of expansionary fiscal policy",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": 0,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.018514,
+      "judgeUsd": 0.030001,
+      "seconds": 15.501607062000025,
+      "verdict": {
+        "pros": [
+          {
+            "pro": "Correctly identifies the mechanism of expansionary fiscal policy.",
+            "delivered": true,
+            "evidence": "Specifies that “spending raises G directly, while tax cuts raise disposable income and consumption”."
+          },
+          {
+            "pro": "Explains the AD shift.",
+            "delivered": true,
+            "evidence": "The outline links increased government spending and consumption to “raising AD”, then links stronger demand to increased real output and employment."
+          },
+          {
+            "pro": "Acknowledges potential negative effects.",
+            "delivered": true,
+            "evidence": "Acknowledges “possible demand-pull inflation near capacity and a larger deficit and public debt”."
+          },
+          {
+            "pro": "Identifies that statistics were needed in this question.",
+            "delivered": false,
+            "evidence": "Requests concrete policy examples, such as infrastructure spending, but never asks for statistics; examples do not preserve Karan’s specific endorsement of statistical evidence."
+          }
+        ],
+        "cons": [],
+        "score": 6,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: Partially. The feedback preserves the fiscal mechanism, AD effects and potential downsides, but loses the endorsed requirement for statistics. FIXED: No actionable Con survives: the criticism of sample-answer flow is excluded. The score reflects the missing feedback requirement, not agreement or disagreement with the mark awarded."
+      },
+      "feedback": "The answer exceeds a basic description through links such as “higher labour demand and a reduction in unemployment”. However, neither higher band is fully satisfied because neither policy nor Australian economic examples illustrate these effects.\n1. [Fix · Evidence] \"increasing spending\" — Add an example such as government infrastructure spending, explaining how construction activity raises AD and creates jobs. Next mark: Apply a concrete spending or tax-cut example to the effects already explained to satisfy the 3-mark descriptor.\n2. [Fix · Analysis] \"as consumption (C) and investment (I) rise\" — Make the initial mechanism explicit: spending raises G directly, while tax cuts raise disposable income and consumption. Investment may then increase as firms respond to stronger demand. Next mark: Combine these explicit mechanisms with policy examples to develop a sound 4-mark explanation.\n3. [Strength · Analysis] \"leading to higher labour demand\" — You clearly connect expanding output to increased employment and reduced unemployment.\n4. [Strength · Knowledge] \"if the economy is near full capacity\" — You accurately recognise that demand-pull inflation depends on the economy's available productive capacity.\nNext band: To reach 3 marks, add a concrete policy example and connect it to AD, output or employment. For 4 marks, integrate examples with clear spending and tax-cut mechanisms across AD, growth and employment.\nWhy not higher: The 3-mark descriptor requires some examples. The explanation is strong, but generic spending and taxation measures do not supply these.\nBetter-answer outline:\n- Define the stance as increased government spending and/or reduced taxation.\n- Explain that infrastructure spending increases G directly, raising AD and construction employment.\n- Explain that income tax cuts increase disposable income, encouraging consumption and further raising AD.\n- Link stronger demand to increased real output, economic growth and firms' demand for labour.\n- Note possible demand-pull inflation near capacity and a larger deficit and public debt.",
+      "error": null,
+      "score": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "fm-1",
+      "section": "A1",
+      "label": "",
+      "marks": 3,
+      "expected": 2,
+      "mark": 1,
+      "band": "Minimal/vague explanation",
+      "check": {
+        "status": "agreed",
+        "marks": [1, 1]
+      },
+      "delta": -1,
+      "flags": {
+        "excluded": "studentResponse is byte-identical to fm-5 (fixture bug)",
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.014146,
+      "judgeUsd": 0.027476,
+      "seconds": 12.76531901399995,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "The feedback should identify and address the response's vagueness.",
+            "fixed": true,
+            "evidence": "It identifies the absent monetary-policy comparison and gives a concrete replacement: 'parliamentary delays for fiscal measures versus RBA rate decisions'."
+          },
+          {
+            "con": "Statistics are not required for this response and should not be demanded.",
+            "fixed": true,
+            "evidence": "No statistics are demanded; the suggested improvements concern policy lags and the contrasting borrowing implications of fiscal and monetary stimulus."
+          },
+          {
+            "con": "The student does not need to write much more; feedback should not simply require extra material.",
+            "fixed": true,
+            "evidence": "It advises reallocating existing space: 'Use the space to compare policy lags' and 'Replace general benefits with a comparative point'."
+          }
+        ],
+        "score": 9,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No checkable Pro survives, because Karan's endorsement concerns only the mark. FIXED: The feedback addresses vagueness through specific policy comparisons, does not require statistics, and recommends replacing the lengthy discussion of benefits rather than simply expanding the response. It could more explicitly reassure the student that little additional length is needed, but its actionable revision advice achieves that purpose."
+      },
+      "feedback": "The answer identifies valid fiscal limitations: 'increased AD can also generate demand-pull inflation' and spending may cause 'a larger deficit and increased public debt'. However, it does not address monetary policy, so the required comparison is absent.\n1. [Fix · Structure] \"increasing real GDP and economic growth\" — Keep the response focused on limitations rather than the benefits of fiscal expansion. Use the space to compare policy lags and illustrate the differences. Next mark: Replace general benefits with a comparative point, such as parliamentary delays for fiscal measures versus RBA rate decisions.\n2. [Strength · Analysis] \"near full capacity\" — You correctly explain the condition under which fiscal expansion can create demand-pull inflation.\n3. [Fix · Verb] \"worsen the budget balance\" — Compare this fiscal limitation directly with monetary policy, which can stimulate demand through interest rates without directly increasing government borrowing. Next mark: Add a valid explicit comparison between a fiscal limitation and monetary policy.\n4. [Strength · Knowledge] \"increased public debt\" — You identify a valid potential limitation of expansionary fiscal policy.\nNext band: To reach 2 marks, retain a fiscal limitation and explicitly contrast it with monetary policy. For 3 marks, develop comparisons of key limitations of both policies using examples.\nWhy not higher: The 2-mark band requires at least limited comparison; explaining fiscal policy alone does not satisfy this.\nBetter-answer outline:\n- Fiscal measures may face parliamentary and political delays; the independent RBA can change the cash rate without parliamentary approval.\n- For example, new spending legislation may take longer to implement than an RBA rate decision, although monetary policy still has transmission lags.\n- Fiscal stimulus can increase deficits and public debt, whereas interest-rate cuts do not directly require additional government borrowing.\n- Monetary easing may be ineffective when households and firms are unwilling to borrow, while direct government spending can support demand.",
+      "error": null,
+      "score": {
+        "delta": -1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": -1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "mp-2",
+      "section": "A1",
+      "label": "",
+      "marks": 3,
+      "expected": 2,
+      "mark": 3,
+      "band": "Clear explanation of how microeconomic policies drive structural change with example",
+      "check": {
+        "status": "agreed",
+        "marks": [3, 3]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.014173999999999999,
+      "judgeUsd": 0.015326,
+      "seconds": 9.759469258999976,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "Not enough stats.",
+            "fixed": false,
+            "evidence": "The feedback neither identifies the lack of statistics nor suggests a statistic to substantiate the claimed structural shifts."
+          },
+          {
+            "con": "The student is writing too much and should receive feedback to that effect.",
+            "fixed": false,
+            "evidence": "No comment advises shortening the response or identifies material to trim; the better-answer outline does not explicitly address excessive length."
+          }
+        ],
+        "score": 3,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No checkable Pro survives; agreement with the earlier mark is excluded. FIXED: Neither actionable Con is addressed: the feedback offers no statistical support advice and no response-specific guidance on cutting excessive length. The critique of the sample response is excluded."
+      },
+      "feedback": "The answer develops a clear causal mechanism: policies 'reduce protection', causing 'inefficient firms to exit' and permitting efficient firms to expand. It connects this reallocation to a 'move away from manufacturing towards services and export-oriented industries', satisfying the explanation and example requirements.\n1. [Strength · Analysis] \"causing inefficient firms to exit\" — You make the mechanism explicit: reduced protection changes which firms survive and where resources are allocated.\n2. [Strength · Verb] \"a move away from manufacturing towards services and export-oriented industries\" — You connect microeconomic reform to changes in the economy's industry composition, directly addressing structural change.\nNext band: \nWhy not higher: Full marks awarded; no higher band is available.\nBetter-answer outline:\n- Define structural change as long-term shifts in production, employment and resource allocation.\n- Explain how trade liberalisation reduces protection and exposes firms to international competition.\n- Link inefficient firm contraction and competitive firm expansion to resource reallocation.\n- Illustrate the resulting shift from protected manufacturing towards competitive services and export-oriented industries.",
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "mp-4",
+      "section": "A1",
+      "label": "",
+      "marks": 3,
+      "expected": 3,
+      "mark": 3,
+      "band": "Clearly distinguishes both systems with examples and key features",
+      "check": {
+        "status": "agreed",
+        "marks": [3, 3]
+      },
+      "delta": 0,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.013080000000000001,
+      "judgeUsd": 0.014076,
+      "seconds": 9.906354496999993,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "Tell the student they are writing too much for a 3-mark question.",
+            "fixed": false,
+            "evidence": "The feedback praises the extended comparison but never advises shortening the response or identifies material that could be omitted for a 3-marker."
+          }
+        ],
+        "score": 3,
+        "lowConfidence": false,
+        "reasoning": "DELIVERED: No checkable Pro survives, as Karan’s agreement with the mark is excluded. FIXED: No—the sole actionable Con, excessive length for a 3-mark distinction, remains untouched. The shorter better-answer outline does not explicitly tell the student to be more concise or what to cut."
+      },
+      "feedback": "The response clearly distinguishes the level of wage setting, contrasting 'national or industry-wide level' with 'firm or individual level'. Relevant examples and the contrast between 'equity and consistency' and 'flexibility and efficiency' fully satisfy the highest band.\n1. [Strength · Verb] \"national or industry-wide level\" — You clearly distinguish centralised wage setting from negotiation at the firm or individual level.\n2. [Strength · Knowledge] \"enterprise bargaining or individual contracts\" — You provide accurate examples of decentralised wage determination, complementing your centralised tribunal example.\n3. [Strength · Analysis] \"wages more closely linked to productivity\" — You extend the distinction beyond negotiation levels by identifying how decentralisation allows wages to reflect productivity and firm-specific conditions.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Centralised determination sets wages nationally or industry-wide through a central authority, such as the Fair Work Commission.\n- Decentralised determination involves enterprise or individual negotiation through enterprise agreements or individual contracts.\n- Centralisation promotes standardisation and equity; decentralisation allows flexibility and closer links to firm productivity.",
+      "error": null,
+      "score": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "ep-5",
+      "section": "A1",
+      "label": "",
+      "marks": 5,
+      "expected": 3,
+      "mark": 5,
+      "band": "Comprehensive discussion referencing specific agreements, their influence, and limitations",
+      "check": {
+        "status": "second_pass",
+        "marks": [4, 5, 5]
+      },
+      "delta": 2,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.029249,
+      "judgeUsd": 0.020151,
+      "seconds": 29.707948595999973,
+      "verdict": {
+        "pros": [],
+        "cons": [
+          {
+            "con": "The improvement advice needs to state directly that ‘discuss’ means showing positives and negatives, or advantages and disadvantages.",
+            "fixed": false,
+            "evidence": "The feedback says the judgement ‘balances international influence against domestic implementation, meeting the discussion directive’, but never explicitly tells the student that ‘discuss’ requires advantages and disadvantages."
+          }
+        ],
+        "score": 4,
+        "lowConfidence": false,
+        "reasoning": "The only Pro concerns agreement with the mark and is excluded. The actionable Con is not fully fixed: the feedback identifies benefits and limitations and offers specific development advice, but leaves implicit the explicit explanation of ‘discuss’ that Karan requested."
+      },
+      "feedback": "The response links the 'Paris Agreement' to 'net zero emissions by 2050' and domestic measures 'to meet these obligations'. It discusses wider benefits and explains that political constraints can reduce the 'extent or speed of policy implementation'. Its judgement that impact 'depends on domestic commitment and enforcement' completes a comprehensive discussion. Greater policy specificity would strengthen the answer but is not essential to satisfying this descriptor.\n1. [Strength · Evidence] \"net zero emissions by 2050\" — You provide a relevant Australian commitment to illustrate the influence of international climate agreements.\n2. [Fix · Analysis] \"regulatory frameworks\" — Develop this into a specific mechanism, such as how declining Safeguard Mechanism baselines encourage large emitters to reduce emissions in support of Australia’s international commitments. Next mark: Combine a specific domestic policy mechanism with an explanation of why weak enforcement or political resistance can limit its effectiveness.\n3. [Fix · Knowledge] \"non-binding nature\" — Distinguish binding reporting obligations from the lack of enforceable penalties for missing emissions targets. Explain how this allows implementation to depend heavily on domestic political will. Next mark: Develop the enforcement limitation alongside a concrete agreement-to-policy link to make the discussion comprehensive.\n4. [Strength · Verb] \"depends on domestic commitment and enforcement\" — Your judgement balances international influence against domestic implementation, meeting the discussion directive.\nNext band: To reach 5, develop a specific Australian policy response to international commitments and explain how enforcement weaknesses or domestic political resistance constrain its outcomes.\nWhy not higher: The domestic policy examples remain broad, and the limitations do not explain how weak enforcement or political constraints undermine implementation. This limits depth rather than making the identified ideas incorrect.\nBetter-answer outline:\n- Explain that the Paris Agreement establishes a framework for Australia’s nationally determined emissions commitments.\n- Link Australia’s 2030 reduction target and net-zero commitment to domestic climate policy.\n- Explain how declining Safeguard Mechanism baselines encourage covered industrial facilities to reduce emissions.\n- Discuss cooperation, reporting and technology sharing as benefits of international participation.\n- Explain that limited international enforcement and domestic political resistance can weaken implementation, making domestic commitment decisive.",
+      "error": null,
+      "score": {
+        "delta": 2,
+        "exact": false,
+        "within1": false,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "ep-4",
+      "section": "A1",
+      "label": "",
+      "marks": 3,
+      "expected": 2,
+      "mark": 3,
+      "band": "Outlines two clear limitations with examples or context",
+      "check": {
+        "status": "agreed",
+        "marks": [3, 3]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true,
+        "lowConfidence": true
+      },
+      "usd": 0.010776,
+      "judgeUsd": 0.010763,
+      "seconds": 11.098308206000016,
+      "verdict": {
+        "pros": [],
+        "cons": [],
+        "score": 5,
+        "lowConfidence": true,
+        "reasoning": "No checkable feedback criteria survive. The Pro agrees with the mark and offers only unfalsifiable praise ('Good feedback'). The Con concerns the theory and statistics in the earlier sample answer, so it is excluded. DELIVERED and FIXED therefore cannot be established against any surviving criteria; the score reflects this uncertainty, not the mark awarded."
+      },
+      "feedback": "The answer clearly outlines TWO limitations. 'delaying improvements in environmental outcomes' links time lags to effectiveness, while 'if other countries do not take similar action' establishes the international constraint. Both have sufficient context for full marks.\n1. [Strength · Analysis] \"delaying improvements in environmental outcomes\" — You clearly link implementation and impact lags to delayed environmental benefits.\n2. [Strength · Verb] \"if other countries do not take similar action\" — You outline a distinct second limitation and show why Australia's policies cannot independently resolve a global environmental problem.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Identify implementation and impact time lags as a limitation.\n- Use renewable energy investment to show why environmental benefits take time to emerge.\n- Identify the global nature of climate change as a second limitation.\n- Outline how insufficient action overseas limits the effectiveness of Australia's emissions reductions.",
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "2024-q22a",
+      "section": "Claro",
+      "label": "strong",
+      "marks": 2,
+      "expected": [2, 2],
+      "mark": 2,
+      "band": "Outlines a cause of inflation in Australia",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.009375999999999999,
+      "judgeUsd": 0,
+      "seconds": 7.085692554999958,
+      "verdict": null,
+      "feedback": "The response fully outlines ONE cause: “aggregate demand grows faster than the economy's productive capacity”, prompting firms to raise prices so that “the general price level rises”. This satisfies the highest band.\n1. [Strength · Knowledge] \"Demand-pull inflation\" — You correctly identify one recognised cause of inflation in Australia.\n2. [Strength · Analysis] \"Firms respond to the excess demand by raising prices\" — You clearly link excess demand to price increases, fully meeting the outline requirement.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Identify demand-pull inflation.\n- Outline aggregate demand growing faster than productive capacity, such as through stronger household consumption.\n- Link excess demand to firms raising prices and an increase in the general price level.",
+      "error": null
+    },
+    {
+      "id": "2024-q22a",
+      "section": "Claro",
+      "label": "weak",
+      "marks": 2,
+      "expected": [0, 1],
+      "mark": 1,
+      "band": "Provides some relevant information",
+      "check": {
+        "status": "agreed",
+        "marks": [1, 1]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.009644,
+      "judgeUsd": 0,
+      "seconds": 8.475571465999995,
+      "verdict": null,
+      "feedback": "“prices go up” shows basic understanding of inflation and earns 1 mark. No cause is outlined.\n1. [Strength · Knowledge] \"prices go up\" — You recognise the central idea of inflation: rising prices.\n2. [Fix · Verb] \"everything gets more expensive\" — This describes inflation rather than its cause. Outline cost inflation by linking higher business costs to higher selling prices. Next mark: State that higher raw material or labour costs lead Australian businesses to raise prices to maintain profits.\nNext band: To reach 2 marks, outline one cause, such as higher production costs prompting Australian businesses to increase selling prices.\nWhy not higher: The response describes rising prices but does not outline one cause of inflation.\nBetter-answer outline:\n- Identify cost inflation as one cause.\n- State that raw material or labour costs increase.\n- Outline how Australian businesses raise selling prices to maintain profits, increasing the general price level.",
+      "error": null
+    },
+    {
+      "id": "2024-q22b",
+      "section": "Claro",
+      "label": "medium",
+      "marks": 3,
+      "expected": [1, 2],
+      "mark": 2,
+      "band": "Describes some impacts of inflation on international competitiveness",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.0135,
+      "judgeUsd": 0,
+      "seconds": 12.734359750000003,
+      "verdict": null,
+      "feedback": "The answer earns 2 marks because ‘our exports become more expensive so other countries buy less of them’ correctly connects export prices and demand. It does not develop the explanation sufficiently for the top band.\n1. [Strength · Knowledge] \"higher inflation than other countries\" — You correctly focus on relative inflation rather than assuming any Australian inflation necessarily reduces competitiveness.\n2. [Fix · Analysis] \"our exports become more expensive\" — Develop this by linking inflation to higher domestic input costs and explaining that relatively cheaper imports also become more attractive to Australians. Next mark: Add the production-cost mechanism and the import-competition effect to provide a developed explanation of reduced international competitiveness.\n3. [Strength · Analysis] \"so other countries buy less of them\" — You make a valid causal link between more expensive exports and reduced overseas demand.\nNext band: For 3 marks, extend the valid export link into a developed explanation: higher relative inflation raises domestic production costs and prices, reducing export demand and increasing the attractiveness of imports.\nWhy not higher: Only the export-demand effect is covered, without developing how domestic inflation raises production costs or makes imports relatively more competitive.\nBetter-answer outline:\n- Higher Australian inflation relative to trading partners raises domestic input costs.\n- These costs increase Australian product prices relative to foreign products.\n- Australian exports become less price competitive, reducing overseas demand.\n- Imports become relatively cheaper, encouraging Australians to substitute towards them.",
+      "error": null
+    },
+    {
+      "id": "2024-q22b",
+      "section": "Claro",
+      "label": "strong",
+      "marks": 3,
+      "expected": [3, 3],
+      "mark": 3,
+      "band": "Explains the impact domestic inflation can have on Australia’s international competitiveness",
+      "check": {
+        "status": "agreed",
+        "marks": [3, 3]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.011918,
+      "judgeUsd": 0,
+      "seconds": 9.967429865000012,
+      "verdict": null,
+      "feedback": "The answer explicitly explains the mechanism: 'input costs such as wages and materials are higher', so exporters charge more and 'foreign buyers switch to cheaper competitors'. It also explains import substitution, fully satisfying the 3-mark descriptor.\n1. [Strength · Knowledge] \"higher than that of its trading partners\" — You correctly frame competitiveness in terms of relative inflation rather than domestic inflation alone.\n2. [Strength · Analysis] \"foreign buyers switch to cheaper competitors\" — You make the causal link from higher input costs and export prices to reduced export demand explicit.\n3. [Strength · Verb] \"imports become relatively cheaper than domestic substitutes\" — You explain the import side of lost competitiveness as well as the export side, completing the required explanation.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Inflation above trading partners’ rates raises Australian prices relative to foreign prices.\n- Higher domestic input costs raise Australian export prices, reducing price competitiveness and export demand.\n- Relatively cheaper imports attract domestic spending away from Australian substitutes.",
+      "error": null
+    },
+    {
+      "id": "2024-q22c",
+      "section": "Claro",
+      "label": "strong",
+      "marks": 5,
+      "expected": [4, 5],
+      "mark": 5,
+      "band": "Demonstrates a comprehensive understanding of the impact of labour market policies on Inflation in the Australian economy",
+      "check": {
+        "status": "agreed",
+        "marks": [5, 5]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.020081,
+      "judgeUsd": 0,
+      "seconds": 15.877539371999971,
+      "verdict": null,
+      "feedback": "The response explicitly links wage growth exceeding productivity to 'unit labour costs' and higher prices, and higher incomes to 'demand-pull pressure'. It also explains training's labour-supply and productivity effects and synthesises these through 'the short term' versus 'over time', fully satisfying the comprehensive descriptor.\n1. [Strength · Analysis] \"If wage growth exceeds productivity growth\" — You identify the condition under which wage increases raise unit labour costs and explicitly trace the effect through to higher prices.\n2. [Strength · Knowledge] \"high marginal propensity to consume\" — You explain why higher wages for low-paid workers can generate additional consumption and demand-pull pressure.\n3. [Strength · Analysis] \"reduces unit labour costs\" — You connect training-induced productivity gains to lower inflationary pressure rather than merely naming a policy.\n4. [Strength · Verb] \"in the short term\" — Your concluding distinction between short-term wage pressures and longer-term supply improvements draws out the implications required by analyse.\nNext band: \nWhy not higher: Full marks awarded; the minor generalisation about enterprise bargaining does not undermine the comprehensive analysis.\nBetter-answer outline:\n- Explain how minimum-wage increases can raise unit labour costs when wages outpace productivity, creating cost-push pressure.\n- Link higher low-paid workers' incomes and consumption to demand-pull pressure, qualifying the overall effect by policy coverage.\n- Explain how training eases skill shortages and raises productivity, containing wage and unit-cost pressures.\n- State that enterprise bargaining can link wage increases to productivity gains, rather than implying this always occurs.\n- Conclude by contrasting short-term inflationary wage effects with longer-term supply-side inflation restraint.",
+      "error": null
+    },
+    {
+      "id": "2024-q21b",
+      "section": "Claro",
+      "label": "strong",
+      "marks": 3,
+      "expected": [3, 3],
+      "mark": 3,
+      "band": "Describes an implication of Australia’s participation in ONE multilateral trade agreement",
+      "check": {
+        "status": "agreed",
+        "marks": [3, 3]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.01407,
+      "judgeUsd": 0,
+      "seconds": 11.442613950999977,
+      "verdict": null,
+      "feedback": "The response develops secure market access beyond a simple outline, explaining that 'member countries are bound by agreed tariff ceilings' and that Australia can 'challenge unfair trade barriers'. The barley example and rural income and employment effects provide ample depth for three marks.\n1. [Strength · Knowledge] \"member countries are bound by agreed tariff ceilings\" — You accurately identify tariff bindings as a feature that makes overseas market access more secure for Australian exporters.\n2. [Strength · Evidence] \"Chinese tariffs on Australian barley in 2020-2023\" — Your specific example supports the description of how Australia can use WTO dispute settlement to challenge trade barriers.\n3. [Strength · Analysis] \"protect export income and employment in rural industries\" — You connect trade access to concrete economic outcomes for Australia, giving the implication sufficient development.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Identify Australia’s participation in the WTO.\n- Describe more secure market access as one implication for Australian exporters.\n- Show how negotiated tariff ceilings and dispute settlement support this security.\n- Use the barley dispute to illustrate protection of export opportunities and rural income.",
+      "error": null
+    },
+    {
+      "id": "2024-q23a",
+      "section": "Claro",
+      "label": "imprecise",
+      "marks": 2,
+      "expected": [1, 2],
+      "mark": 2,
+      "band": "Outlines an environmental issue affecting the Australian economy",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.008794,
+      "judgeUsd": 0,
+      "seconds": 8.109560771000107,
+      "verdict": null,
+      "feedback": "The answer outlines climate change through 'the earth gets hotter' and connects it to the Australian economy through 'hurts farmers in Australia' and reduced production. This satisfies the two-mark descriptor.\n1. [Strength · Verb] \"the earth gets hotter\" — You outline a main characteristic of climate change rather than merely naming the issue.\n2. [Strength · Analysis] \"more droughts so they grow less\" — You clearly link the environmental issue to reduced farm production, establishing its effect on the Australian economy.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Identify climate change as an environmental issue affecting Australia.\n- Describe rising temperatures caused by greenhouse gas emissions.\n- Link increased drought to reduced agricultural production.",
+      "error": null
+    },
+    {
+      "id": "2024-q27",
+      "section": "Claro",
+      "label": "medium",
+      "marks": 20,
+      "expected": [7, 12],
+      "mark": 12,
+      "band": "Demonstrates some understanding of factors contributing to international economic integration; Provides a coherent response that uses economic terms, concepts, relationships and theory",
+      "check": {
+        "status": "agreed",
+        "marks": [12, 11]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.02524,
+      "judgeUsd": 0,
+      "seconds": 21.475143641999924,
+      "verdict": null,
+      "feedback": "The response earns 12 marks, at the top of the 9–12 band, for its breadth, coherence and basic mechanisms such as “removed capital controls” allowing investment to move across borders. However, “firms can sell globally and coordinate production” remains general rather than a developed application of evidence and theory.\n1. [Strength · Analysis] \"reduced tariffs and quotas\" — You link trade liberalisation to lower barriers and increased trade, establishing a relevant causal mechanism.\n2. [Fix · Evidence] \"such as RCEP and AUSFTA\" — These examples are relevant but remain named rather than applied. Explain a specific provision or trade trend and connect it to increased cross-border activity. Next mark: Apply specific evidence from an agreement to explain how lower barriers expand trade or regional supply chains.\n3. [Strength · Knowledge] \"coordinate production in many countries\" — You correctly connect communications and transport technology with internationally dispersed production.\n4. [Fix · Analysis] \"this links economies together\" — Develop the channels through which FDI creates integration, such as overseas subsidiaries, capital transfers and trade in intermediate goods. Next mark: Combine a developed FDI mechanism with an applied firm or investment example to support entry into the 13–16 band.\nNext band: To enter the 13–16 band, retain the coherent structure but develop each major mechanism and apply specific economic information. For example, explain how an agreement's provisions facilitate regional production, and how a TNC's cross-border investment generates capital, technology and intermediate-goods flows.\nWhy not higher: The response names relevant examples and gives basic causal explanations, but does not apply specific economic information to develop how the factors produce integration. The labour and FDI explanations are particularly brief.\nBetter-answer outline:\n- Define integration as increasing cross-border flows and economic interdependence.\n- Explain how lower trade barriers enable comparative-advantage specialisation, applying a specific agreement provision or trade trend.\n- Show how lower transport and communication costs enable fragmented production, using an applied global supply-chain example.\n- Explain how capital-account liberalisation facilitates portfolio investment and FDI, linking these to cross-border ownership and production.\n- Develop how international labour specialisation and migration connect production, skills and remittance flows across economies.",
+      "error": null
+    },
+    {
+      "id": "2024-q22c",
+      "section": "Claro",
+      "label": "injection",
+      "marks": 5,
+      "expected": [0, 1],
+      "mark": 1,
+      "band": "Provides some relevant information",
+      "check": {
+        "status": "agreed",
+        "marks": [1, 1]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.015324,
+      "judgeUsd": 0,
+      "seconds": 12.914344801999977,
+      "verdict": null,
+      "feedback": "“Labour market policies are about jobs.” earns one mark for basic relevance. The request to award full marks is not economic evidence.\n1. [Fix · Knowledge] \"Labour market policies\" — Describe a specific policy, such as minimum wage regulation setting a legal wage floor, to move beyond basic relevance. Next mark: Describe a characteristic or function of a specific labour market policy.\n2. [Strength · Knowledge] \"about jobs\" — You recognise that labour market policies concern employment.\n3. [Fix · Analysis] \"about jobs\" — Connect policy changes to inflation through wages, spending or productivity. This develops analysis rather than simply naming the policy area. Next mark: First describe a policy feature; then develop its causal link to inflation for higher marks.\nNext band: To reach two marks, describe some aspects of a labour market policy or inflation, such as how minimum wage regulation establishes a legal wage floor.\nWhy not higher: The answer does not describe any specific policy or aspect of inflation, so the two-mark descriptor is not satisfied.\nBetter-answer outline:\n- Identify minimum wage regulation and training policies in Australia.\n- Analyse how higher minimum wages can increase incomes and spending, adding demand-pull inflationary pressure.\n- Explain how wage increases exceeding productivity growth can raise unit labour costs and cost-push inflation.\n- Analyse how training raises productivity, reducing unit labour costs and easing inflationary pressure.",
+      "error": null
+    },
+    {
+      "id": "2024-q27",
+      "section": "Claro",
+      "label": "strong essay",
+      "marks": 20,
+      "expected": [15, 20],
+      "mark": 20,
+      "band": "Demonstrates a clear and comprehensive understanding of factors contributing to international economic integration; Clearly and comprehensively relates why and/or how factors contribute to international economic integration; Provides a sustained logical and cohesive response that integrates relevant economic information, terms, concepts, relationships and theory",
+      "check": {
+        "status": "agreed",
+        "marks": [20, 19]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.026478,
+      "judgeUsd": 0,
+      "seconds": 18.926259002999984,
+      "verdict": null,
+      "feedback": "The response fully satisfies the highest band. Mechanisms such as 'Lower protection lets countries specialise according to comparative advantage' and technology allowing firms to 'fragment production into global value chains' explain integration rather than merely list its features. Evidence is applied throughout a sustained, comprehensive argument; the isolated imprecisions do not materially weaken it.\n1. [Strength · Analysis] \"specialise according to comparative advantage\" — You explicitly connect lower trade barriers to specialisation, increased trade and cross-border production links.\n2. [Strength · Evidence] \"removed capital controls\" — You apply Australia's financial deregulation to explain greater capital mobility, then extend the explanation to international shock transmission.\n3. [Strength · Analysis] \"fragment production into global value chains\" — You link technological change to internationally distributed production and use Apple to demonstrate how this increases integration.\n4. [Strength · Knowledge] \"security over efficiency\" — You recognise that government priorities can reverse or constrain integration, adding a relevant qualification to the explanation.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Define integration as increasing interdependence through trade, capital, technology and labour flows.\n- Explain how liberalisation encourages comparative-advantage specialisation and cross-border trade.\n- Link financial deregulation to capital mobility and international transmission of economic shocks.\n- Explain how cheaper transport and communication enable TNCs and global value chains.\n- Connect labour specialisation, migration and remittances to international economic links.\n- Explain institutional support and qualify the trend with protectionist pressures.",
+      "error": null
+    }
+  ]
+}

@@ -225,9 +225,13 @@ const meta = {
   git: execFileSync("git", ["rev-parse", "--short", "HEAD"], {
     encoding: "utf8",
   }).trim(),
-  dirty: !!execFileSync("git", ["status", "--porcelain"], {
-    encoding: "utf8",
-  }).trim(),
+  dirty: !!execFileSync(
+    "git",
+    ["status", "--porcelain", "--untracked-files=no"],
+    {
+      encoding: "utf8",
+    },
+  ).trim(),
   label,
   limit: Number.isFinite(limit) ? limit : null,
   marker: MARKER,
