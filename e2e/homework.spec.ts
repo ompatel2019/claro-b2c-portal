@@ -192,7 +192,7 @@ test.describe("Student homework", () => {
       timeout: 90000,
     });
     expect(aiChecks).toBe(0);
-    await expect(page.getByText(title, { exact: true })).toBeVisible();
+    await expect(page.getByText(title, { exact: true }).first()).toBeVisible();
     await expect(
       page.getByText("Flashcards: 2 cards · 1 retries"),
     ).toBeVisible();

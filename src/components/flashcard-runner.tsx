@@ -137,7 +137,10 @@ export function FlashcardRunner({
     if (!card) return;
     const cardId = card.id;
     const sessionId = session.id;
+    const prevQueue = queue;
+    const prevMarks = marks;
     // Optimistic: advance immediately. Persist in the background (ratings are not AI).
+    // On failure, roll back so the student can retry the same card.
     const next = nextQueue(queue, cardId, mark);
     setMarks((prev) => new Map(prev).set(cardId, mark));
     setQueue(next);
@@ -148,18 +151,26 @@ export function FlashcardRunner({
       await rateFlashcard(sessionId, cardId, mark);
       await saveTime();
     };
-    if (!next.length) {
-      await persist();
-      await finish();
-      return;
-    }
-    void persist().catch((e) =>
+    const rollback = (e: unknown) => {
+      setQueue(prevQueue);
+      setMarks(prevMarks);
       setError(
         e instanceof Error
           ? e.message
           : "Could not save your rating. Please try again.",
-      ),
-    );
+      );
+    };
+    if (!next.length) {
+      try {
+        await persist();
+        await finish();
+      } catch (e) {
+        rollback(e);
+        throw e;
+      }
+      return;
+    }
+    void persist().catch(rollback);
   }
   async function check() {
     if (!card) return;

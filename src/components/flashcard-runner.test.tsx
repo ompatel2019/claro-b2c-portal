@@ -178,9 +178,11 @@ it("keeps a failed study rating on the current card for retry", async () => {
   );
   fireEvent.click(screen.getByRole("button", { name: "Flip card" }));
   fireEvent.click(screen.getByRole("button", { name: "Missed" }));
-  await waitFor(() =>
-    expect(screen.getByRole("alert")).toHaveTextContent("Could not save"),
-  );
+  // Persist fails after optimistic advance; component must roll back.
+  expect(await screen.findByRole("alert")).toHaveTextContent("Could not save");
+  expect(
+    await screen.findByRole("heading", { name: "Inflation" }),
+  ).toBeVisible();
   expect(screen.getByText("Card 1 of 2 · Study")).toBeVisible();
   expect(fetchMock).not.toHaveBeenCalled();
 });
