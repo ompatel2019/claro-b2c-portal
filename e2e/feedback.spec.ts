@@ -37,8 +37,15 @@ test.describe("annotated written feedback", () => {
   );
   test.describe.configure({ mode: "serial" });
   const ids: string[] = [];
+  const reports: { id: string; screenshots: string[] }[] = [];
   let results = "";
   test.afterAll(async () => {
+    const db = adminClient()!;
+    for (const r of reports) {
+      if (r.screenshots.length)
+        await db.storage.from("reports").remove(r.screenshots);
+      await db.from("feedback").delete().eq("id", r.id);
+    }
     await cleanupSessions(ids);
   });
 
@@ -136,5 +143,58 @@ test.describe("annotated written feedback", () => {
     ).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
+  test("report a problem with this question sends linked feedback", async ({
+    page,
+  }) => {
+    await signIn(page);
+    await page.goto(results);
+    await page.locator("summary").first().click();
+    await page
+      .getByRole("button", { name: "Report a problem with this question" })
+      .click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/^Linked: /)).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: "Content error" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    const message = `E2E report ${Date.now()}`;
+    await dialog.getByRole("textbox", { name: "Message" }).fill(message);
+    await dialog
+      .getByLabel("Add screenshots")
+      .setInputFiles("e2e/fixtures/answer.jpg");
+    await expect(dialog.getByRole("img", { name: "answer.jpg" })).toBeVisible();
+    await dialog.getByRole("button", { name: "Send" }).click();
+    await expect(
+      page.getByText("Thanks. We read every message."),
+    ).toBeVisible();
+    await expect(dialog).toHaveCount(0);
+    const { data } = await adminClient()!
+      .from("feedback")
+      .select("id,kind,question_id,session_id,screenshots,page_path")
+      .eq("message", message)
+      .single();
+    reports.push(data!);
+    expect(data).toMatchObject({
+      kind: "content",
+      session_id: ids[0],
+      page_path: results,
+    });
+    expect(data!.question_id).toBeTruthy();
+    expect(data!.screenshots).toHaveLength(1);
+  });
+
+  test("the floating button opens general feedback on any student page", async ({
+    page,
+  }) => {
+    await signIn(page);
+    await page.getByRole("button", { name: "Feedback", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(
+      dialog.getByRole("button", { name: "General" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog).toHaveCount(0);
   });
 });

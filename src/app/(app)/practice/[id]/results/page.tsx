@@ -12,6 +12,7 @@ import {
 import { markingState, type ReviewRow } from "@/lib/feedback";
 import { RichText } from "@/components/rich-text";
 import { AnnotatedFeedback } from "@/components/annotated-feedback";
+import { ReportProblem } from "@/components/feedback-widget";
 import { McReview } from "@/components/mc-review";
 import { PageHeader } from "@/components/page-header";
 import { RefreshWhile } from "@/components/refresh-while";
@@ -42,6 +43,14 @@ export default async function Results({
     ? (await db.storage.from("answers").createSignedUrls(paths, 3600)).data
     : null;
   const url = new Map(signed?.map((x) => [x.path, x.signedUrl]));
+  const report = (r: ReviewRow) =>
+    r.question_id && (
+      <ReportProblem
+        questionId={r.question_id}
+        sessionId={id}
+        label={`Linked: ${r.source}`}
+      />
+    );
   const marking = rows.filter((r) => markingState(r) === "marking").length;
   return (
     <div className="space-y-4">
@@ -123,13 +132,17 @@ export default async function Results({
                   />
                 )}
                 {r.type === "mcq" ? (
-                  <McReview row={r} />
+                  <>
+                    <McReview row={r} />
+                    {report(r)}
+                  </>
                 ) : (
                   <AnnotatedFeedback
                     row={r}
                     photos={(r.image_paths ?? []).flatMap(
                       (p) => url.get(p) ?? [],
                     )}
+                    actions={report(r)}
                   />
                 )}
               </div>

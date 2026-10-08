@@ -4,6 +4,8 @@ import { requireProfile } from "@/lib/auth";
 import { sydneyToday } from "@/lib/flashcards";
 import { createClient } from "@/utils/supabase/server";
 import { AppShell } from "@/components/app-shell";
+import { Toaster } from "sonner";
+import { FeedbackWidget } from "@/components/feedback-widget";
 import { FlashcardPersistDrain } from "@/components/flashcard-persist-drain";
 export default async function Layout({
   children,
@@ -29,7 +31,8 @@ export default async function Layout({
       defaultOpen={jar.get("sidebar_state")?.value !== "false"}
     >
       <FlashcardPersistDrain />
-      {children}
+      <FeedbackWidget userId={profile.id}>{children}</FeedbackWidget>
+      <Toaster position="bottom-center" />
     </AppShell>
   );
 }
