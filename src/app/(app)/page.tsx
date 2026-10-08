@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Target } from "lucide-react";
 import { sydneyToday } from "@/lib/flashcards";
+import { addDays, type ActivityDay } from "@/lib/activity";
+import { ActivityHeatmap } from "@/components/activity-heatmap";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { QuickStarts } from "@/components/practice-setup";
@@ -28,6 +30,8 @@ export default async function Dashboard() {
     topicResult,
     questionResult,
     dueResult,
+    activity,
+    streaks,
   ] = await Promise.all([
     db.rpc("dashboard_stats"),
     db
@@ -53,6 +57,8 @@ export default async function Dashboard() {
       .select("flashcard_id", { count: "exact", head: true })
       .eq("user_id", profile.id)
       .lte("due_on", sydneyToday()),
+    db.rpc("activity_days", { p_from: addDays(sydneyToday(), -371) }),
+    db.rpc("activity_streaks").single(),
   ]);
   for (const result of [
     statsResult,
@@ -113,6 +119,19 @@ export default async function Dashboard() {
           caption="Flashcards for review"
         />
       </div>
+      <ActivityHeatmap
+        days={(activity.data ?? []) as ActivityDay[]}
+        today={sydneyToday()}
+        current={
+          (streaks.data as { current_streak: number } | null)?.current_streak ??
+          0
+        }
+        longest={
+          (streaks.data as { longest_streak: number } | null)?.longest_streak ??
+          0
+        }
+        error={!!(activity.error || streaks.error)}
+      />
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0 space-y-4">
           {card("Quick start", <QuickStarts />)}

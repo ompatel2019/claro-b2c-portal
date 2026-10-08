@@ -143,6 +143,24 @@ test.describe("Schema and RLS", () => {
     expect(paper.error?.message).toMatch(/paper not found/);
   });
 
+  test("activity days and streaks: students read only their own", async () => {
+    const admin = await as(process.env.ADMIN_EMAIL, process.env.ADMIN_PASSWORD);
+    const own = await student.db.rpc("activity_days");
+    expect(own.error).toBeNull();
+    const other = await student.db.rpc("activity_days", { p_user: admin.uid });
+    expect(other.data).toEqual([]);
+    const seen = await admin.db.rpc("activity_days", { p_user: student.uid });
+    expect(seen.data).toEqual(own.data);
+    const streaks = await student.db.rpc("activity_streaks").single();
+    expect(streaks.error).toBeNull();
+    const { current_streak, longest_streak } = streaks.data as {
+      current_streak: number;
+      longest_streak: number;
+    };
+    expect(current_streak).toBeLessThanOrEqual(longest_streak);
+    const stats = await student.db.rpc("dashboard_stats");
+    expect(stats.data.streak_days).toBe(current_streak);
+  });
   test("admins see drafts and marking examples", async () => {
     const { db } = await as(
       process.env.ADMIN_EMAIL,
