@@ -60,15 +60,17 @@ const grade = {
   comments: [
     {
       quote: "prices rise",
-      line: 1,
-      type: "strength" as const,
-      comment: "Clear",
+      kind: "strength" as const,
+      body: "Clear",
+      tag: "Analysis" as const,
+      next_mark: null,
     },
     {
       quote: "invented",
-      line: null,
-      type: "improvement" as const,
-      comment: "More detail",
+      kind: "fix" as const,
+      body: "More detail",
+      tag: "Analysis" as const,
+      next_mark: "Explain the mechanism",
     },
   ],
   earned: ["Effect"],
@@ -125,6 +127,71 @@ it("retries once with the invalid assistant reply and correction", async () => {
   });
   expect(messages[3].content).toContain("Your band/mark was invalid");
   expect(messages[3].content).toContain(q.criteria[0].descriptor);
+});
+
+it.each(["missing fix", "missing strength", "empty next mark"])(
+  "retries once for %s",
+  async (problem) => {
+    const strength = grade.comments[0];
+    const fix = grade.comments[1];
+    const invalid = {
+      ...grade,
+      mark: 3,
+      comments:
+        problem === "missing fix"
+          ? [strength, strength]
+          : problem === "missing strength"
+            ? [fix, fix]
+            : [strength, { ...fix, next_mark: "  " }],
+    };
+    mockedCall.mockResolvedValueOnce(invalid).mockResolvedValueOnce(grade);
+    expect(
+      (await markWritten(q, "The prices rise rapidly", "user")).feedback
+        .validated,
+    ).toBe(true);
+    expect(mockedCall).toHaveBeenCalledTimes(2);
+    expect(mockedCall.mock.calls[1][0].messages[3].content).toContain(
+      "comment",
+    );
+  },
+);
+
+it("returns original quote slices and cleaned prose from a canned reply", async () => {
+  mockedCall.mockResolvedValue({
+    ...grade,
+    mark: 3,
+    comments: [
+      {
+        ...grade.comments[0],
+        quote: "PRICES rise",
+        body: " Clear. ",
+        next_mark: "Ignored",
+      },
+      {
+        ...grade.comments[1],
+        body: " Add detail. ",
+        next_mark: " Explain demand. ",
+      },
+    ],
+  });
+  expect(
+    (await markWritten(q, "The prices\n  rise rapidly", "user")).feedback
+      .comments,
+  ).toEqual([
+    {
+      ...grade.comments[0],
+      quote: "prices\n  rise",
+      start: 4,
+      body: "Clear.",
+      next_mark: null,
+    },
+    {
+      ...grade.comments[1],
+      start: null,
+      body: "Add detail.",
+      next_mark: "Explain demand.",
+    },
+  ]);
 });
 
 it("falls back after two invalid replies, clamping and matching the resulting band", async () => {

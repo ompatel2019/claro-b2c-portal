@@ -33,15 +33,17 @@ it("parses a full grade and rejects missing fields, fractional marks and invalid
     comments: [
       {
         quote: "prices rise",
-        line: 1,
-        type: "strength",
-        comment: "Clear effect",
+        kind: "strength",
+        body: "Clear effect",
+        tag: "Analysis" as const,
+        next_mark: null,
       },
       {
         quote: "demand",
-        line: null,
-        type: "improvement",
-        comment: "Specify mechanism",
+        kind: "fix",
+        body: "Specify mechanism",
+        tag: "Analysis" as const,
+        next_mark: null,
       },
     ],
     earned: ["Effect"],
@@ -49,6 +51,19 @@ it("parses a full grade and rejects missing fields, fractional marks and invalid
     next_band: "",
     better_answer_outline: ["Cause", "Mechanism", "Effect"],
   };
+  for (const invalid of [
+    { quote: "prices rise", line: 1, type: "strength", comment: "Clear" },
+    { ...grade.comments[0], tag: "Unknown" },
+    { ...grade.comments[0], kind: "improvement" },
+    { ...grade.comments[0], start: 0 },
+  ]) {
+    expect(
+      GradeSchema.safeParse({
+        ...grade,
+        comments: [invalid, grade.comments[1]],
+      }).success,
+    ).toBe(false);
+  }
   expect(GradeSchema.parse(grade)).toEqual(grade);
   expect(GradeSchema.safeParse({ ...grade, mark: 1.5 }).success).toBe(false);
   expect(GradeSchema.safeParse({ ...grade, comments: [] }).success).toBe(false);

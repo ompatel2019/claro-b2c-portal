@@ -24,9 +24,17 @@ export const GradeSchema = z.strictObject({
     .array(
       z.strictObject({
         quote: z.string(),
-        line: z.number().int().nullable(),
-        type: z.enum(["strength", "improvement"]),
-        comment: z.string(),
+        kind: z.enum(["strength", "fix"]),
+        tag: z.enum([
+          "Verb",
+          "Knowledge",
+          "Evidence",
+          "Analysis",
+          "Terminology",
+          "Structure",
+        ]),
+        body: z.string(),
+        next_mark: z.string().nullable(),
       }),
     )
     .min(2)

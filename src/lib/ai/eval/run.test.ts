@@ -32,7 +32,15 @@ const exitCode = process.exitCode;
 const run = () => import("./run.mts" as string);
 const feedback = {
   justification: "Clear mechanism",
-  comments: [{ type: "strength", quote: "trade", comment: "Clear" }],
+  comments: [
+    {
+      kind: "strength",
+      quote: "trade",
+      body: "Clear",
+      tag: "Analysis" as const,
+      next_mark: null,
+    },
+  ],
   next_band: "Add a judgement",
   why_not_higher: "Limited judgement",
   better_answer_outline: ["Define", "Explain", "Assess"],
@@ -133,6 +141,9 @@ it("runs sequentially with eval labels, separate costs and a clamped judge score
     mocks.mark.mock.invocationCallOrder[1],
   );
   const [, rows] = mocks.report.mock.calls[0];
+  expect(rows[0].feedback).toContain(
+    '1. [Strength · Analysis] "trade" — Clear',
+  );
   expect(rows[0]).toMatchObject({
     usd: 0.02,
     judgeUsd: 0.02,

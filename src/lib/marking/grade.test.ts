@@ -4,7 +4,6 @@ import {
   anchorComments,
   clampMark,
   findBand,
-  numberLines,
   scoreMcq,
   topicSummary,
   validateGrade,
@@ -24,15 +23,6 @@ describe("scoreMcq", () => {
   ] as const)("scores %s against %s", (correct, choice, expected) =>
     expect(scoreMcq(correct, choice)).toBe(expected),
   );
-});
-
-describe("numberLines", () => {
-  it("numbers internal blanks and removes trailing blank lines", () =>
-    expect(numberLines("First\n\nThird\n\n")).toBe("1: First\n2: \n3: Third"));
-  it("handles empty text and Windows newlines", () => {
-    expect(numberLines("")).toBe("");
-    expect(numberLines("A\r\nB\r\n")).toBe("1: A\n2: B");
-  });
 });
 
 describe("findBand", () => {
@@ -96,6 +86,90 @@ describe("validateGrade", () => {
     ).toBe(false));
 });
 
+describe("validateGrade comments", () => {
+  it.each([
+    [
+      [comment("x", "strength")],
+      "A mark below full marks requires a fix comment.",
+    ],
+    [[comment("x")], "A positive mark requires a strength comment."],
+    [
+      [comment("x", "strength"), comment("y", "fix", null)],
+      "Every fix comment requires a non-empty next_mark.",
+    ],
+    [
+      [comment("x", "strength"), comment("y", "fix", "  ")],
+      "Every fix comment requires a non-empty next_mark.",
+    ],
+  ])("rejects invalid comments %#", (comments, problem) => {
+    expect(
+      validateGrade(criteria, 4, {
+        band_selected: criteria[0].descriptor,
+        mark: 3,
+        comments,
+      }),
+    ).toEqual({ ok: false, problem });
+  });
+  it("accepts strengths only at full marks and fixes only at zero marks", () => {
+    expect(
+      validateGrade(criteria, 4, {
+        band_selected: criteria[0].descriptor,
+        mark: 4,
+        comments: [comment("x", "strength")],
+      }),
+    ).toEqual({ ok: true });
+    expect(
+      validateGrade(criteria, 4, {
+        band_selected: "NO BAND SATISFIED",
+        mark: 0,
+        comments: [comment("x")],
+      }),
+    ).toEqual({ ok: true });
+    expect(
+      validateGrade(criteria, 4, {
+        band_selected: criteria[0].descriptor,
+        mark: 3,
+        comments: [comment("x", "strength"), comment("y")],
+      }),
+    ).toEqual({ ok: true });
+  });
+  it("still checks fixes at zero marks and strengths at full marks", () => {
+    expect(
+      validateGrade(criteria, 4, {
+        band_selected: "NO BAND SATISFIED",
+        mark: 0,
+        comments: [],
+      }).ok,
+    ).toBe(false);
+    expect(
+      validateGrade(criteria, 4, {
+        band_selected: "NO BAND SATISFIED",
+        mark: 0,
+        comments: [comment("x", "fix", null)],
+      }).ok,
+    ).toBe(false);
+    expect(
+      validateGrade(criteria, 4, {
+        band_selected: criteria[0].descriptor,
+        mark: 4,
+        comments: [],
+      }).ok,
+    ).toBe(false);
+  });
+  it("checks band and mark rules before comment rules", () => {
+    expect(
+      validateGrade(criteria, 4, {
+        band_selected: "Invented",
+        mark: 3,
+        comments: [],
+      }),
+    ).toEqual({
+      ok: false,
+      problem: "Selected band is not in the marking guideline.",
+    });
+  });
+});
+
 describe("clampMark", () => {
   it.each([
     [2.6, 4, 3],
@@ -107,21 +181,103 @@ describe("clampMark", () => {
   );
 });
 
+const comment = (
+  quote: string,
+  kind: "strength" | "fix" = "fix",
+  next_mark: string | null = " Add the mechanism. ",
+) => ({
+  quote,
+  kind,
+  tag: "Analysis" as const,
+  body: " Clear link. ",
+  next_mark,
+});
+
 describe("anchorComments", () => {
-  it("keeps exact offsets, matches case and whitespace, and preserves unmatched quotes", () => {
-    expect(
-      anchorComments("First. Inflation   raises\nprices (2%).", [
-        { quote: "Inflation" },
-        { quote: "inflation raises prices (2%)." },
-        { quote: "invented" },
-        { quote: "" },
-      ]),
-    ).toEqual([
-      { quote: "Inflation", start: 7 },
-      { quote: "inflation raises prices (2%).", start: 7 },
-      { quote: "invented", start: null },
-      { quote: "", start: null },
+  it.each([
+    ["Prices rise.", " Prices rise ", "Prices rise", 0],
+    [
+      "First. Inflation   raises\n\tprices (2%).",
+      "Inflation raises prices (2%).",
+      "Inflation   raises\n\tprices (2%).",
+      7,
+    ],
+    ["A ‘rise’ in “prices”", "'rise' in \"prices\"", "‘rise’ in “prices”", 2],
+    ["A ‚rise‛ in „prices”", "'rise' in \"prices\"", "‚rise‛ in „prices”", 2],
+    ["INFLATION raises prices", "inflation", "INFLATION", 0],
+    ["İ prices", "i̇ prices", "İ prices", 0],
+  ])(
+    "anchors %s using %s and returns the original slice",
+    (answer, quote, original, start) => {
+      const [anchored] = anchorComments(answer, [comment(quote)]);
+      expect(anchored).toEqual({
+        ...comment(original),
+        start,
+        body: "Clear link.",
+        next_mark: "Add the mechanism.",
+      });
+      expect(
+        answer.slice(anchored.start!, anchored.start! + anchored.quote.length),
+      ).toBe(original);
+    },
+  );
+  it.each(["rise", "RISE"])(
+    "chooses repeated %s at or after the previous anchor and falls back to the first",
+    (quote) => {
+      expect(
+        anchorComments("rise middle rise end", [
+          comment("middle"),
+          comment(quote),
+          comment("end"),
+          comment(quote),
+        ]).map((c) => [c.quote, c.start]),
+      ).toEqual([
+        ["rise", 0],
+        ["middle", 5],
+        ["rise", 12],
+        ["end", 17],
+      ]);
+      expect(
+        anchorComments("rise rise", [comment(quote), comment(quote)]).map(
+          (c) => c.start,
+        ),
+      ).toEqual([0, 0]);
+    },
+  );
+  it("keeps misses unchanged, sorts them last stably, and does not reset the previous anchor", () => {
+    const result = anchorComments("rise middle rise", [
+      comment("middle"),
+      comment("invented"),
+      comment("RISE"),
+      comment("  "),
+      comment("rises"),
     ]);
+    expect(result.map((c) => [c.quote, c.start])).toEqual([
+      ["middle", 5],
+      ["rise", 12],
+      ["invented", null],
+      ["  ", null],
+      ["rises", null],
+    ]);
+  });
+  it("prefers exact matches before normalised matches", () => {
+    expect(anchorComments("RISE middle rise", [comment("rise")])[0].start).toBe(
+      12,
+    );
+  });
+  it("trims prose, clears strength next marks, and preserves stable ties without mutating inputs", () => {
+    const comments = [
+      comment("later", "strength"),
+      comment("first", "fix", "  "),
+      comment("first", "strength"),
+    ];
+    expect(anchorComments("first later", comments)).toEqual([
+      { ...comments[1], start: 0, body: "Clear link.", next_mark: null },
+      { ...comments[2], start: 0, body: "Clear link.", next_mark: null },
+      { ...comments[0], start: 6, body: "Clear link.", next_mark: null },
+    ]);
+    expect(comments[0].next_mark).toBe(" Add the mechanism. ");
+    expect(anchorComments("", [comment("first")])[0].start).toBeNull();
   });
 });
 

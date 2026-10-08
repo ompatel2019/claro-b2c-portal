@@ -122,7 +122,7 @@ export function renderFeedback(
     feedback.justification,
     ...feedback.comments.map(
       (c, i) =>
-        `${i + 1}. [${c.type === "strength" ? "Strength" : "Improvement"}] "${c.quote}" — ${c.comment}`,
+        `${i + 1}. [${c.kind === "strength" ? "Strength" : "Fix"} · ${c.tag}] "${c.quote}" — ${c.body}${c.kind === "fix" ? ` Next mark: ${c.next_mark}` : ""}`,
     ),
     `Next band: ${feedback.next_band}`,
     `Why not higher: ${feedback.why_not_higher}`,
