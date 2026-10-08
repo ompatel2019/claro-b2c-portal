@@ -20,8 +20,7 @@ export async function startSprint(
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const db = await createClient();
   const { data, error } = await db.rpc("start_sprint", {
-    p_mode: parsed.data.mode,
-    p_topics: parsed.data.topics,
+    p_config: parsed.data,
   });
   if (error) return { error: error.message };
   redirect(`/practice/${data}`);

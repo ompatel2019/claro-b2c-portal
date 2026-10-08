@@ -90,8 +90,8 @@ export function WrittenAnswer({
         .upload(path, file, { contentType: file.type });
       if (error) throw new Error(error.message);
     });
-    await save({ image_path: path });
-    local({ image_path: path });
+    await save({ image_paths: [path] });
+    local({ image_paths: [path] });
     const response = await fetch(`/api/attempts/${a.id}/transcribe`, {
       method: "POST",
     });
@@ -224,7 +224,7 @@ export function WrittenAnswer({
               }}
             />
           </label>
-          {a.image_path && !photo && (
+          {!!a.image_paths?.length && !photo && (
             <Button
               variant="outline"
               disabled={busy || disabled}

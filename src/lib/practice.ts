@@ -48,7 +48,7 @@ export type Attempt = {
   choice_index: number | null;
   answer_text: string | null;
   transcript: string | null;
-  image_path: string | null;
+  image_paths: string[] | null;
   flagged: boolean;
   status: string;
   mark: number | null;

@@ -20,7 +20,7 @@ export async function POST(
   const { id } = await params;
   const { data: attempt } = await supabase
     .from("attempts")
-    .select("image_path, question_id, status")
+    .select("image_paths, question_id, status")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -31,7 +31,8 @@ export async function POST(
       { error: "Attempt is already being marked or marked" },
       { status: 409 },
     );
-  if (!attempt.image_path || !attempt.image_path.startsWith(`${user.id}/`))
+  const pages: string[] = attempt.image_paths ?? [];
+  if (!pages.length || !pages.every((p) => p.startsWith(`${user.id}/`)))
     return Response.json({ error: "No answer image" }, { status: 400 });
   const limited = await assertStudentAiRateLimit({ userId: user.id });
   if (!limited.ok) return rateLimitedResponse(limited);
@@ -44,7 +45,7 @@ export async function POST(
       .throwOnError();
     const { data: image, error } = await admin()
       .storage.from("answers")
-      .download(attempt.image_path);
+      .download(pages[0]);
     if (error || !image) throw new Error("Image not found");
     const result = await transcribeImage(
       await image.arrayBuffer(),

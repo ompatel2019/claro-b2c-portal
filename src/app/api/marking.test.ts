@@ -237,20 +237,35 @@ it("stores an AI review against the caller and returns the card back", async () 
 });
 
 it("rejects an image path outside the caller's storage folder", async () => {
-  client([{ image_path: "another-user/image.jpg", status: "pending" }]);
+  client([{ image_paths: ["another-user/image.jpg"], status: "pending" }]);
+  expect((await transcribe(request(), ctx)).status).toBe(400);
+  expect(admin().storage.from).not.toHaveBeenCalled();
+});
+
+it("rejects photo pages when any page is outside the caller's folder", async () => {
+  client([
+    {
+      image_paths: [`${userId}/page-1.jpg`, "another-user/page-2.jpg"],
+      status: "pending",
+    },
+  ]);
   expect((await transcribe(request(), ctx)).status).toBe(400);
   expect(admin().storage.from).not.toHaveBeenCalled();
 });
 
 it("does not reopen a marked attempt for transcription", async () => {
-  client([{ image_path: `${userId}/image.jpg`, status: "marked" }]);
+  client([{ image_paths: [`${userId}/image.jpg`], status: "marked" }]);
   expect((await transcribe(request(), ctx)).status).toBe(409);
   expect(admin().storage.from).not.toHaveBeenCalled();
 });
 
 it("downloads handwriting and saves the transcript for confirmation", async () => {
   client([
-    { image_path: `${userId}/image.png`, status: "pending", question_id: "q" },
+    {
+      image_paths: [`${userId}/image.png`],
+      status: "pending",
+      question_id: "q",
+    },
     { stem: "Explain" },
   ]);
   const download = vi.fn().mockResolvedValue({
