@@ -9,8 +9,10 @@ import {
 const comment = (start: number | null, quote: string): Comment => ({
   start,
   quote,
-  type: "strength",
-  comment: "Clear",
+  kind: "strength",
+  body: "Clear",
+  tag: "Analysis" as const,
+  next_mark: null,
 });
 describe("highlightSegments", () => {
   it("preserves text and tracks overlapping quotes", () => {
@@ -67,23 +69,26 @@ it("orders comment numbers by appearance in the answer", () => {
     {
       quote: "later",
       start: 20,
-      line: null,
-      type: "improvement" as const,
-      comment: "b",
+      kind: "fix" as const,
+      body: "b",
+      tag: "Analysis" as const,
+      next_mark: null,
     },
     {
       quote: "first",
       start: 0,
-      line: null,
-      type: "strength" as const,
-      comment: "a",
+      kind: "strength" as const,
+      body: "a",
+      tag: "Analysis" as const,
+      next_mark: null,
     },
     {
       quote: "middle",
       start: 10,
-      line: null,
-      type: "improvement" as const,
-      comment: "c",
+      kind: "fix" as const,
+      body: "c",
+      tag: "Analysis" as const,
+      next_mark: null,
     },
   ];
   expect(orderedComments(comments).map((x) => x.index)).toEqual([1, 2, 0]);

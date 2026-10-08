@@ -37,9 +37,16 @@ export type Session = {
 export type Comment = {
   quote: string;
   start: number | null;
-  type: string;
-  comment: string;
-  line?: number | null;
+  kind: "strength" | "fix";
+  tag:
+    | "Verb"
+    | "Knowledge"
+    | "Evidence"
+    | "Analysis"
+    | "Terminology"
+    | "Structure";
+  body: string;
+  next_mark: string | null;
 };
 export type Attempt = {
   id: string;
@@ -114,7 +121,9 @@ export function topicNames(ids: string[] | undefined, topics: Topic[]) {
     : "All topics";
 }
 /** Display order: comments sorted by where they appear in the answer text. */
-export function orderedComments(comments: Comment[]) {
+export function orderedComments<T extends Pick<Comment, "start">>(
+  comments: T[],
+) {
   return comments
     .map((c, index) => ({ c, index }))
     .sort((a, b) => {
@@ -127,7 +136,10 @@ export function orderedComments(comments: Comment[]) {
     });
 }
 
-export function highlightSegments(text: string, comments: Comment[]) {
+export function highlightSegments(
+  text: string,
+  comments: Pick<Comment, "start" | "quote">[],
+) {
   const valid = comments
     .map((c, index) => ({
       start: c.start,
