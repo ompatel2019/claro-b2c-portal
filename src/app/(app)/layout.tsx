@@ -9,7 +9,7 @@ export default async function Layout({
   const profile = await requireProfile();
   if (profile.role === "admin") redirect("/admin");
   return (
-    <>
+    <div className="min-h-screen lg:bg-[linear-gradient(to_right,#fff_calc(16rem-1px),var(--color-line)_calc(16rem-1px),var(--color-line)_16rem,transparent_16rem)]">
       <a className="sr-only focus:not-sr-only" href="#main">
         Skip to content
       </a>
@@ -20,6 +20,6 @@ export default async function Layout({
       >
         {children}
       </main>
-    </>
+    </div>
   );
 }

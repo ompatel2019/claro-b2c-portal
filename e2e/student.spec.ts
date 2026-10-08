@@ -26,7 +26,7 @@ test.describe("Student practice", () => {
       page.getByRole("button", { name: "Multiple choice", exact: true }),
     ).toBeVisible();
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
-    await expect(page).toHaveURL(/\/sign-in$/);
+    await expect(page).toHaveURL(/\/sign-in(\?|$)/);
   });
   test("multiple choice sprint, flag and results", async ({ page }) => {
     finishedId = await start(page, "Multiple choice", ids);
@@ -112,7 +112,7 @@ test.describe("AI backed written practice", () => {
     await expect(page.getByText(/^Band:/)).toBeVisible();
     await expect(page.locator("mark").first()).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "What earned marks" }),
+      page.getByRole("heading", { name: "Better-answer outline" }),
     ).toBeVisible();
   });
   test("photo transcription can be edited and confirmed without grading", async ({

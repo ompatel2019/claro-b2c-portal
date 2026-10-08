@@ -268,6 +268,7 @@ it("returns only the score and summary for an owned session", async () => {
     score: 3,
     max_score: 4,
     summary: null,
+    finished: true,
   });
   expect(chains[0].eq).toHaveBeenCalledWith("user_id", userId);
 });

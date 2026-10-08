@@ -9,6 +9,7 @@ import {
   topicNames,
   type Topic,
 } from "@/lib/practice";
+import { RichText } from "@/components/rich-text";
 import { AnswerFeedback } from "@/components/answer-feedback";
 export default async function Results({
   params,
@@ -85,16 +86,15 @@ export default async function Results({
                     ? "Couldn’t mark this answer"
                     : "Still marking"}
               </span>
-              <span className="block whitespace-pre-wrap">
-                {a.question.stem}
-              </span>
+              <RichText className="mt-2 block" text={a.question.stem} />
             </summary>
             <div className="mt-6 space-y-5">
               <p className="chip">Status: {a.status}</p>
               {a.question.stimulus && (
-                <p className="bg-paper rounded-2xl p-4 whitespace-pre-wrap">
-                  {a.question.stimulus}
-                </p>
+                <RichText
+                  className="bg-paper space-y-3 rounded-2xl p-4"
+                  text={a.question.stimulus}
+                />
               )}
               <AnswerFeedback attempt={a} />
             </div>

@@ -15,19 +15,29 @@ export async function POST(
   const { id } = await params;
   const { data: session } = await supabase
     .from("sessions")
-    .select("id")
+    .select("id, finished_at")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
   if (!session)
     return Response.json({ error: "Session not found" }, { status: 404 });
   try {
-    const { score, max_score, summary } = await finishSession(id);
-    return Response.json({ score, max_score, summary });
+    const finished = await finishSession(id);
+    return Response.json({
+      score: finished.score,
+      max_score: finished.max_score,
+      summary: finished.summary,
+      finished: true,
+    });
   } catch (error) {
     console.error(error);
     return Response.json(
-      { error: "Could not finish session" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Could not finish session. Your answers are still saved — try again.",
+      },
       { status: 500 },
     );
   }

@@ -108,6 +108,20 @@ export function topicNames(ids: string[] | undefined, topics: Topic[]) {
     ? ids.map((id) => topics.find((t) => t.id === id)?.name ?? id).join(", ")
     : "All topics";
 }
+/** Display order: comments sorted by where they appear in the answer text. */
+export function orderedComments(comments: Comment[]) {
+  return comments
+    .map((c, index) => ({ c, index }))
+    .sort((a, b) => {
+      const as = a.c.start;
+      const bs = b.c.start;
+      if (as == null && bs == null) return a.index - b.index;
+      if (as == null) return 1;
+      if (bs == null) return -1;
+      return as - bs || a.index - b.index;
+    });
+}
+
 export function highlightSegments(text: string, comments: Comment[]) {
   const valid = comments
     .map((c, index) => ({

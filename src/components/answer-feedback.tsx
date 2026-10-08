@@ -1,4 +1,8 @@
-import { highlightSegments, type Attempt } from "@/lib/practice";
+import {
+  highlightSegments,
+  orderedComments,
+  type Attempt,
+} from "@/lib/practice";
 import { RetryAnswer } from "./retry-answer";
 function Points({
   title,
@@ -22,6 +26,9 @@ export function AnswerFeedback({ attempt: a }: { attempt: Attempt }) {
   const f = a.feedback;
   const text = a.transcript ?? a.answer_text ?? "";
   const comments = f?.comments ?? [];
+  const order = orderedComments(comments);
+  // Comment numbers follow the order the quotes appear in the answer.
+  const number = new Map(order.map(({ index }, n) => [index, n + 1]));
   if (a.status === "failed" || a.status === "marking")
     return <RetryAnswer id={a.id} marking={a.status === "marking"} />;
   if (a.question.type === "mcq")
@@ -76,11 +83,11 @@ export function AnswerFeedback({ attempt: a }: { attempt: Attempt }) {
                 .map((i) => (
                   <sup key={i}>
                     <a
-                      aria-label={`Comment ${i + 1}`}
+                      aria-label={`Comment ${number.get(i)}`}
                       className="text-brand mx-1 underline"
                       href={`#comment-${a.id}-${i}`}
                     >
-                      {i + 1}
+                      {number.get(i)}
                     </a>
                   </sup>
                 ))}
@@ -92,7 +99,7 @@ export function AnswerFeedback({ attempt: a }: { attempt: Attempt }) {
       </div>
       {comments.length > 0 && (
         <ol className="list-decimal space-y-3 pl-5">
-          {comments.map((c, i) => (
+          {order.map(({ c, index: i }) => (
             <li className="scroll-mt-8" id={`comment-${a.id}-${i}`} key={i}>
               <span className="font-semibold">
                 {c.type === "strength" ? "Strength" : "Improvement"}

@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { ensureSession, withAuthRetry } from "@/lib/auth-client";
 import type { Attempt } from "@/lib/practice";
 import { Button } from "./ui/button";
 export function WrittenAnswer({
@@ -30,6 +31,37 @@ export function WrittenAnswer({
   const [notes, setNotes] = useState("");
   const locked = !["pending", "transcribed"].includes(a.status);
   const photo = a.transcript !== null;
+  const applyRef = useRef(local);
+  useEffect(() => {
+    applyRef.current = local;
+  });
+  useEffect(() => {
+    if (a.status !== "marking") return;
+    const db = createClient();
+    let cancelled = false;
+    const tick = async () => {
+      const { data } = await db
+        .from("attempts")
+        .select("status, mark, max_marks, band, feedback")
+        .eq("id", a.id)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      if (data.status === "marked" || data.status === "failed")
+        applyRef.current({
+          status: data.status,
+          mark: data.mark,
+          max_marks: data.max_marks,
+          band: data.band,
+          feedback: data.feedback,
+        });
+    };
+    void tick();
+    const id = setInterval(() => void tick(), 1500);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [a.id, a.status]);
   async function act(fn: () => Promise<void>) {
     setBusy(true);
     onBusy(true);
@@ -52,10 +84,12 @@ export function WrittenAnswer({
     const ext = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
     const path = `${userId}/${a.id}-${Date.now()}.${ext}`;
     const db = createClient();
-    const { error } = await db.storage
-      .from("answers")
-      .upload(path, file, { contentType: file.type });
-    if (error) throw new Error(error.message);
+    await withAuthRetry(db, async () => {
+      const { error } = await db.storage
+        .from("answers")
+        .upload(path, file, { contentType: file.type });
+      if (error) throw new Error(error.message);
+    });
     await save({ image_path: path });
     local({ image_path: path });
     const response = await fetch(`/api/attempts/${a.id}/transcribe`, {
@@ -78,27 +112,33 @@ export function WrittenAnswer({
       photo ? { transcript: a.transcript } : { answer_text: a.answer_text },
     );
     local({ status: "marking" });
+    await ensureSession(createClient());
     void fetch(`/api/attempts/${a.id}/mark`, {
       method: "POST",
-      keepalive: true,
+      credentials: "same-origin",
     })
       .then(async (response) => {
-        if (!response.ok) {
+        if (response.ok) {
           const result = await response.json();
-          if (response.status !== 409) {
-            local({ status: "failed" });
-            setError(
-              result.error ??
-                "Could not mark your answer. You can retry on the results page.",
-            );
-          }
+          local({
+            status: result.status ?? "marked",
+            mark: result.mark,
+            max_marks: result.max_marks,
+            band: result.band,
+            feedback: result.feedback,
+          });
+          return;
         }
-      })
-      .catch(() => {
+        if (response.status === 409) return; // already marking; poll will pick it up
+        const result = await response.json().catch(() => ({}));
         local({ status: "failed" });
         setError(
-          "Could not send your answer for marking. You can retry on the results page.",
+          result.error ??
+            "Could not mark your answer. You can retry on the results page.",
         );
+      })
+      .catch(() => {
+        // Keep "marking" and let the poll catch up if the request was interrupted.
       });
   }
   return (

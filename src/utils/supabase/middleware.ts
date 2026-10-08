@@ -47,9 +47,10 @@ export async function updateSession(request: NextRequest) {
   ) {
     return supabaseResponse;
   }
-  const redirect = NextResponse.redirect(
-    new URL(signedIn ? "/" : "/sign-in", request.url),
-  );
+  const target = new URL(signedIn ? "/" : "/sign-in", request.url);
+  if (!signedIn && path !== "/")
+    target.searchParams.set("next", path + request.nextUrl.search);
+  const redirect = NextResponse.redirect(target);
   supabaseResponse.cookies
     .getAll()
     .forEach((cookie) => redirect.cookies.set(cookie));

@@ -10,7 +10,13 @@ import { type AuthState, signIn, signUp } from "./actions";
 const field =
   "h-12 w-full rounded-2xl border border-line bg-white px-4 text-base text-ink outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand/20";
 
-export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
+export function AuthForm({
+  mode,
+  next = "/",
+}: {
+  mode: "sign-in" | "sign-up";
+  next?: string;
+}) {
   const [state, action, pending] = useActionState<AuthState, FormData>(
     mode === "sign-in" ? signIn : signUp,
     {},
@@ -18,6 +24,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const signingUp = mode === "sign-up";
   return (
     <form action={action} className="flex flex-col gap-4">
+      {!signingUp && <input type="hidden" name="next" value={next} />}
       {signingUp && (
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           Name

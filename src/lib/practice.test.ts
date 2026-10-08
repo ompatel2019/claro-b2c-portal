@@ -59,3 +59,32 @@ it("formats scores without inventing an average", () => {
   expect(percentage(1, 3)).toBe("33%");
   expect(percentage(null, 0)).toBe("No score yet");
 });
+
+import { orderedComments } from "./practice";
+
+it("orders comment numbers by appearance in the answer", () => {
+  const comments = [
+    {
+      quote: "later",
+      start: 20,
+      line: null,
+      type: "improvement" as const,
+      comment: "b",
+    },
+    {
+      quote: "first",
+      start: 0,
+      line: null,
+      type: "strength" as const,
+      comment: "a",
+    },
+    {
+      quote: "middle",
+      start: 10,
+      line: null,
+      type: "improvement" as const,
+      comment: "c",
+    },
+  ];
+  expect(orderedComments(comments).map((x) => x.index)).toEqual([1, 2, 0]);
+});

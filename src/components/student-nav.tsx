@@ -44,7 +44,7 @@ export function StudentNav({ name }: { name: string | null }) {
   );
   return (
     <>
-      <aside className="border-line fixed inset-y-0 left-0 hidden w-64 flex-col gap-12 border-r bg-white p-7 lg:flex">
+      <aside className="border-line fixed inset-y-0 left-0 z-20 hidden h-dvh w-64 flex-col gap-12 overflow-y-auto border-r bg-white p-7 lg:flex">
         <Link href="/" aria-label="Claro dashboard">
           <Logo />
         </Link>

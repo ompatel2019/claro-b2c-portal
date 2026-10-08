@@ -19,7 +19,8 @@ export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: error.message };
-  redirect("/");
+  const next = String(form.get("next") ?? "/");
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
 }
 
 export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {

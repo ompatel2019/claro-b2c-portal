@@ -3,9 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@base-ui/react/dialog";
 import { createClient } from "@/utils/supabase/client";
+import { ensureSession, withAuthRetry } from "@/lib/auth-client";
 import { answered, timer, type Attempt, type Session } from "@/lib/practice";
 import { Button } from "./ui/button";
 import { Logo } from "./logo";
+import { RichText } from "./rich-text";
 import { WrittenAnswer } from "./written-answer";
 export function SprintRunner({
   session,
@@ -37,20 +39,22 @@ export function SprintRunner({
     setAttempts(rows.current);
   }
   function save(id: string, patch: Partial<Attempt>) {
-    const operation = queue.current.then(async () => {
-      const { error, data } = await db
-        .from("attempts")
-        .update(patch)
-        .eq("id", id)
-        .eq("user_id", userId)
-        .in("status", ["pending", "transcribed"])
-        .select("id");
-      if (error || !data?.length)
-        throw new Error(
-          error?.message ??
-            "This answer is no longer editable. Refresh to see its status.",
-        );
-    });
+    const operation = queue.current.then(() =>
+      withAuthRetry(db, async () => {
+        const { error, data } = await db
+          .from("attempts")
+          .update(patch)
+          .eq("id", id)
+          .eq("user_id", userId)
+          .in("status", ["pending", "transcribed"])
+          .select("id");
+        if (error || !data?.length)
+          throw new Error(
+            error?.message ??
+              "This answer is no longer editable. Refresh to see its status.",
+          );
+      }),
+    );
     queue.current = operation.catch(() => {});
     return operation;
   }
@@ -67,13 +71,15 @@ export function SprintRunner({
     await queue.current;
   }
   async function persistTime() {
-    const { error } = await db
-      .from("sessions")
-      .update({ elapsed_s: seconds.current })
-      .eq("id", session.id)
-      .eq("user_id", userId)
-      .is("finished_at", null);
-    if (error) throw new Error(error.message);
+    await withAuthRetry(db, async () => {
+      const { error } = await db
+        .from("sessions")
+        .update({ elapsed_s: seconds.current })
+        .eq("id", session.id)
+        .eq("user_id", userId)
+        .is("finished_at", null);
+      if (error) throw new Error(error.message);
+    });
   }
   function edit(id: string, patch: Partial<Attempt>) {
     local(id, patch);
@@ -90,20 +96,30 @@ export function SprintRunner({
       setElapsed(seconds.current);
     }, 1000);
     const persist = setInterval(() => {
-      void db
-        .from("sessions")
-        .update({ elapsed_s: seconds.current })
-        .eq("id", session.id)
-        .eq("user_id", userId)
-        .is("finished_at", null)
-        .then(({ error }) => {
-          if (error)
-            setError("Could not save your timer. Check your connection.");
-        });
+      void withAuthRetry(db, async () => {
+        const { error } = await db
+          .from("sessions")
+          .update({ elapsed_s: seconds.current })
+          .eq("id", session.id)
+          .eq("user_id", userId)
+          .is("finished_at", null);
+        if (error) throw new Error(error.message);
+      }).catch((e: Error) =>
+        setError(
+          e.message.includes("sign-in expired")
+            ? e.message
+            : "Could not save your timer. Check your connection.",
+        ),
+      );
     }, 15000);
+    // Keep the access token fresh while the tab stays open.
+    const refresh = setInterval(() => {
+      void ensureSession(db).catch(() => {});
+    }, 4 * 60_000);
     return () => {
       clearInterval(tick);
       clearInterval(persist);
+      clearInterval(refresh);
     };
   }, [db, session.id, userId]);
   useEffect(() => {
@@ -119,6 +135,7 @@ export function SprintRunner({
       await fn();
     } catch (e) {
       setFinishing(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       setError(
         e instanceof Error
           ? e.message
@@ -134,19 +151,31 @@ export function SprintRunner({
     setIndex(next);
   }
   async function finish() {
-    await flush();
-    await persistTime();
     setConfirm(false);
     setFinishing(true);
-    const response = await fetch(`/api/sessions/${session.id}/finish`, {
-      method: "POST",
-    });
-    const result = await response.json();
+    setError("");
+    await ensureSession(db);
+    await flush();
+    await persistTime();
+    async function post() {
+      const response = await fetch(`/api/sessions/${session.id}/finish`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const result = await response.json().catch(() => ({}));
+      return { response, result };
+    }
+    let { response, result } = await post();
+    if (response.status === 401) {
+      await ensureSession(db);
+      ({ response, result } = await post());
+    }
     if (!response.ok)
       throw new Error(
         result.error ?? "Could not finish your session. Please try again.",
       );
-    router.push(`/practice/${session.id}/results`);
+    // Hard navigation so no cached "unfinished" redirect can bounce us back.
+    window.location.assign(`/practice/${session.id}/results`);
   }
   const a = attempts[index];
   const remaining = Math.max(0, session.config.time_limit_min * 60 - elapsed);
@@ -205,9 +234,20 @@ export function SprintRunner({
         </div>
       )}
       {error && (
-        <p role="alert" className="text-destructive">
-          {error}
-        </p>
+        <div
+          role="alert"
+          className="panel border-destructive text-destructive sticky top-3 z-10 flex flex-wrap items-center justify-between gap-3 p-4"
+        >
+          <p>{error}</p>
+          {error.includes("sign-in expired") && (
+            <a
+              className="button-link"
+              href={`/sign-in?next=/practice/${session.id}`}
+            >
+              Sign in again
+            </a>
+          )}
+        </div>
       )}
       <nav aria-label="Question navigator" className="panel p-4">
         <p className="mb-3 text-sm">
@@ -249,13 +289,15 @@ export function SprintRunner({
             {a.flagged ? "Unflag question" : "Flag question"}
           </Button>
         </div>
-        <h1 className="text-2xl leading-snug whitespace-pre-wrap sm:text-3xl">
-          {a.question.stem}
-        </h1>
+        <RichText
+          className="text-2xl leading-snug font-bold tracking-tight sm:text-3xl"
+          text={a.question.stem}
+        />
         {a.question.stimulus && (
-          <div className="bg-paper rounded-2xl p-5 whitespace-pre-wrap">
-            {a.question.stimulus}
-          </div>
+          <RichText
+            className="bg-paper space-y-3 rounded-2xl p-5"
+            text={a.question.stimulus}
+          />
         )}
         {a.question.type === "mcq" ? (
           <fieldset className="space-y-3">
