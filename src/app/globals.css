@@ -69,3 +69,46 @@
     @apply font-sans;
   }
 }
+
+@layer base {
+  h1 {
+    @apply text-4xl font-bold tracking-tight sm:text-5xl;
+  }
+  h1 em {
+    @apply text-brand font-serif font-normal;
+  }
+  h2 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  summary {
+    @apply focus-visible:outline-brand focus-visible:outline-2 focus-visible:outline-offset-4;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    @apply accent-brand size-4 shrink-0;
+  }
+}
+@layer components {
+  .panel {
+    @apply rounded-card border bg-white;
+    border-color: #1e223d1a;
+    box-shadow: 0 20px 48px -16px #1e223d14;
+  }
+  .chip {
+    @apply border-line bg-surface inline-flex rounded-full border px-3 py-1 text-sm;
+  }
+  .eyebrow {
+    @apply text-muted-foreground mb-3 text-sm font-semibold;
+  }
+  .field {
+    @apply border-line bg-surface w-full min-w-0 rounded-2xl border px-4 py-3;
+  }
+  .button-link {
+    @apply bg-ink text-surface inline-flex min-h-12 items-center justify-center rounded-full px-6 py-3 text-sm font-semibold;
+  }
+}

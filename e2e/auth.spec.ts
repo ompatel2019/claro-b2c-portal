@@ -25,3 +25,15 @@ test("sign up validates input before calling Supabase", async ({ page }) => {
     page.getByText("Password must be at least 8 characters."),
   ).toBeVisible();
 });
+
+test("student routes stay protected when signed out", async ({ page }) => {
+  for (const route of [
+    "/practice",
+    "/activity",
+    "/profile",
+    "/practice/00000000-0000-0000-0000-000000000000/results",
+  ]) {
+    await page.goto(route);
+    await expect(page).toHaveURL(/\/sign-in$/);
+  }
+});

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 
-import { AppHeader } from "@/components/app-header";
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
+import { signOut } from "@/app/(auth)/actions";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 
@@ -34,15 +36,20 @@ export default async function AdminHome() {
   ];
   return (
     <>
-      <AppHeader name={profile.full_name} />
+      <header className="panel m-4 flex flex-wrap items-center justify-between gap-4 p-5">
+        <Logo />
+        <span>{profile.full_name}</span>
+        <form action={signOut}>
+          <Button variant="outline" type="submit">
+            Sign out
+          </Button>
+        </form>
+      </header>
       <main className="mx-auto w-full max-w-3xl px-6 py-10">
         <h1 className="text-4xl font-bold tracking-tight">Admin</h1>
         <dl className="mt-8 grid gap-4 sm:grid-cols-3">
           {stats.map(([label, value]) => (
-            <div
-              key={label}
-              className="rounded-card border-line border bg-white p-6"
-            >
+            <div key={label} className="panel p-6">
               <dt className="text-muted-foreground text-sm">{label}</dt>
               <dd className="mt-1 font-serif text-4xl">{value ?? 0}</dd>
             </div>

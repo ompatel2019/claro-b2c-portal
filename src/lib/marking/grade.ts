@@ -100,3 +100,39 @@ export function anchorComments<T extends { quote: string }>(
     return { ...comment, start: match?.index ?? null };
   });
 }
+
+/** Session summary for sessions with no AI-graded answers (e.g. multiple choice only), built from topic results. */
+export function topicSummary(items: { topic: string; correct: boolean }[]) {
+  const byTopic = new Map<string, { right: number; total: number }>();
+  for (const { topic, correct } of items) {
+    const entry = byTopic.get(topic) ?? { right: 0, total: 0 };
+    entry.total += 1;
+    if (correct) entry.right += 1;
+    byTopic.set(topic, entry);
+  }
+  const topics = [...byTopic].map(([topic, r]) => ({ topic, ...r }));
+  const strong = topics
+    .filter((t) => t.right / t.total >= 0.75)
+    .sort((a, b) => b.right - a.right);
+  const weak = topics
+    .filter((t) => t.right < t.total)
+    .sort((a, b) => b.total - b.right - (a.total - a.right));
+  return {
+    strengths: strong.length
+      ? strong
+          .slice(0, 3)
+          .map((t) => `${t.right}/${t.total} correct on ${t.topic}.`)
+      : ["You attempted every question type in this session."],
+    improvements: weak.length
+      ? weak
+          .slice(0, 3)
+          .map(
+            (t) => `${t.total - t.right} of ${t.total} missed on ${t.topic}.`,
+          )
+      : ["No misses this time: try a harder mode or a mixed sprint."],
+    next_steps: [
+      ...weak.slice(0, 2).map((t) => `Run a Topic Sprint on ${t.topic}.`),
+      "Read why each correct option is right for the questions you missed.",
+    ],
+  };
+}

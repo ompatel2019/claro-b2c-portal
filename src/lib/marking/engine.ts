@@ -8,6 +8,7 @@ import {
   clampMark,
   findBand,
   scoreMcq,
+  topicSummary,
   validateGrade,
   type MarkableQuestion,
 } from "./grade";
@@ -137,8 +138,15 @@ type Attempt = {
   } | null;
 };
 type AttemptQuestion = Attempt & {
-  question: MarkableQuestion & { correct_index: number };
+  question: MarkableQuestion & {
+    correct_index: number;
+    topic?: { name: string } | null;
+  };
 };
+
+/** A claim older than this belongs to a marking call that died; it may be taken over. */
+export const STALE_CLAIM_MS = 3 * 60_000;
+const WAIT_FOR_MARKING_MS = 90_000;
 
 export class AlreadyMarking extends Error {
   message = "This answer is already being marked.";
@@ -180,11 +188,14 @@ export async function markAttempt(attemptId: string) {
           feedback: { note: "No answer" },
         };
       } else {
+        const stale = new Date(Date.now() - STALE_CLAIM_MS).toISOString();
         const { data: claimed } = await admin()
           .from("attempts")
-          .update({ status: "marking" })
+          .update({ status: "marking", claimed_at: new Date().toISOString() })
           .eq("id", attemptId)
-          .in("status", ["pending", "transcribed", "failed"])
+          .or(
+            `status.in.(pending,transcribed,failed),and(status.eq.marking,claimed_at.lt.${stale})`,
+          )
           .select("id")
           .throwOnError();
         if (!claimed?.length) throw new AlreadyMarking();
@@ -240,32 +251,19 @@ export async function finishSession(sessionId: string) {
     );
     max = reviews?.length ?? 0;
   } else {
-    const { data } = await admin()
-      .from("attempts")
-      .select("*, question:questions(*)")
-      .eq("session_id", sessionId)
-      .eq("user_id", session.user_id)
-      .throwOnError();
-    const attempts = (data ?? []) as AttemptQuestion[];
-    const results = await Promise.allSettled(
-      attempts
-        .filter((a) => a.status !== "marked")
-        .map((a) => markAttempt(a.id)),
-    );
-    const failure = results.find((result) => result.status === "rejected");
-    if (failure?.status === "rejected") throw failure.reason;
-    const { data: marked } = await admin()
-      .from("attempts")
-      .select("*, question:questions(*)")
-      .eq("session_id", sessionId)
-      .eq("user_id", session.user_id)
-      .throwOnError();
-    const rows = (marked ?? []) as AttemptQuestion[];
-    score = rows.reduce((sum, a) => sum + Number(a.mark ?? 0), 0);
-    max = rows.reduce((sum, a) => sum + (a.max_marks ?? a.question.marks), 0);
-    if (rows.length) {
+    const rows = await markRemaining(sessionId, session.user_id);
+    ({ score, max } = totals(rows));
+    const marked = rows.filter((a) => a.status === "marked");
+    if (marked.length && !marked.some((a) => a.feedback?.analysis)) {
+      summary = topicSummary(
+        marked.map((a) => ({
+          topic: a.question.topic?.name ?? "this topic",
+          correct: Number(a.mark) === (a.max_marks ?? a.question.marks),
+        })),
+      );
+    } else if (marked.length) {
       summary = await summariseSession(
-        rows.map((a) => ({
+        marked.map((a) => ({
           source: a.question.source,
           stem: a.question.stem,
           mark: Number(a.mark ?? 0),
@@ -275,7 +273,10 @@ export async function finishSession(sessionId: string) {
           improvements: a.feedback?.missing_points ?? [],
         })),
         session.user_id,
-      );
+      ).catch((error) => {
+        console.error(error);
+        return null;
+      });
     }
   }
   const { data: finished } = await admin()
@@ -291,4 +292,74 @@ export async function finishSession(sessionId: string) {
     .single()
     .throwOnError();
   return finished;
+}
+
+async function sessionAttempts(sessionId: string, userId: string) {
+  const { data } = await admin()
+    .from("attempts")
+    .select("*, question:questions(*, topic:topics(name))")
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .order("position")
+    .throwOnError();
+  return (data ?? []) as (AttemptQuestion & { claimed_at: string | null })[];
+}
+
+/** Waits for in-flight marking, then marks everything left (retrying failures once). Never throws for one bad answer. */
+async function markRemaining(sessionId: string, userId: string) {
+  const deadline = Date.now() + WAIT_FOR_MARKING_MS;
+  let rows = await sessionAttempts(sessionId, userId);
+  const inFlight = (a: (typeof rows)[number]) =>
+    a.status === "marking" &&
+    Date.now() - new Date(a.claimed_at ?? 0).getTime() < STALE_CLAIM_MS;
+  const settle = async () => {
+    while (rows.some(inFlight) && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      rows = await sessionAttempts(sessionId, userId);
+    }
+  };
+  for (let round = 0; round < 2; round++) {
+    await settle();
+    const todo = rows.filter((a) => a.status !== "marked" && !inFlight(a));
+    if (!todo.length) break;
+    const results = await Promise.allSettled(
+      todo.map((a) => markAttempt(a.id)),
+    );
+    results.forEach((result) => {
+      if (result.status === "rejected") console.error(result.reason);
+    });
+    rows = await sessionAttempts(sessionId, userId);
+  }
+  // A background mark may have claimed an answer while this call was marking the rest.
+  await settle();
+  return rows;
+}
+
+function totals(rows: AttemptQuestion[]) {
+  return {
+    score: rows.reduce(
+      (sum, a) => sum + (a.status === "marked" ? Number(a.mark ?? 0) : 0),
+      0,
+    ),
+    max: rows.reduce((sum, a) => sum + (a.max_marks ?? a.question.marks), 0),
+  };
+}
+
+/** After a late re-mark (e.g. a retry on the results page), refresh a finished session's score. */
+export async function rescoreSession(sessionId: string) {
+  const { data: session } = await admin()
+    .from("sessions")
+    .select("user_id, finished_at")
+    .eq("id", sessionId)
+    .single()
+    .throwOnError();
+  if (!session.finished_at) return;
+  const { score, max } = totals(
+    await sessionAttempts(sessionId, session.user_id),
+  );
+  await admin()
+    .from("sessions")
+    .update({ score, max_score: max })
+    .eq("id", sessionId)
+    .throwOnError();
 }

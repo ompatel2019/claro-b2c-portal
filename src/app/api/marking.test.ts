@@ -11,6 +11,7 @@ vi.mock("@/lib/marking/engine", () => ({
     message = "This answer is already being marked.";
   },
   markAttempt: vi.fn(),
+  rescoreSession: vi.fn(),
   transcribeImage: vi.fn(),
   markFlashcard: vi.fn(),
   finishSession: vi.fn(),
@@ -22,6 +23,7 @@ import {
   AlreadyMarking,
   finishSession,
   markAttempt,
+  rescoreSession,
   markFlashcard,
   transcribeImage,
 } from "@/lib/marking/engine";
@@ -103,7 +105,14 @@ it.each([mark, transcribe, flashcard, finish])(
 );
 
 it("returns the MCQ answer key after marking an owned attempt", async () => {
-  const { chains } = client([{ id: "id" }]);
+  const { chains } = client([
+    {
+      id: "id",
+      session_id: sessionId,
+      session: { finished_at: "2026-10-08" },
+      question: { type: "mcq" },
+    },
+  ]);
   vi.mocked(markAttempt).mockResolvedValue({
     mark: 1,
     max_marks: 1,
@@ -241,7 +250,14 @@ it("downloads handwriting and saves the transcript for confirmation", async () =
 });
 
 it("returns only the score and summary for an owned session", async () => {
-  const { chains } = client([{ id: "id" }]);
+  const { chains } = client([
+    {
+      id: "id",
+      session_id: sessionId,
+      session: { finished_at: "2026-10-08" },
+      question: { type: "mcq" },
+    },
+  ]);
   vi.mocked(finishSession).mockResolvedValue({
     score: 3,
     max_score: 4,
@@ -257,7 +273,14 @@ it("returns only the score and summary for an owned session", async () => {
 });
 
 it("returns a generic failure if marking throws", async () => {
-  client([{ id: "id" }]);
+  client([
+    {
+      id: "id",
+      session_id: sessionId,
+      session: { finished_at: "2026-10-08" },
+      question: { type: "mcq" },
+    },
+  ]);
   vi.mocked(markAttempt).mockRejectedValue(new Error("Internal details"));
   const response = await mark(request(), ctx);
   expect(response.status).toBe(500);
@@ -265,11 +288,61 @@ it("returns a generic failure if marking throws", async () => {
 });
 
 it("returns 409 when an owned attempt is already being marked", async () => {
-  client([{ id: "id" }]);
+  client([
+    {
+      id: "id",
+      session_id: sessionId,
+      session: { finished_at: "2026-10-08" },
+      question: { type: "mcq" },
+    },
+  ]);
   const error = new AlreadyMarking();
   vi.mocked(markAttempt).mockRejectedValue(error);
   const response = await mark(request(), ctx);
   expect(response.status).toBe(409);
   expect(await response.json()).toEqual({ error: error.message });
   expect(markAttempt).toHaveBeenCalledExactlyOnceWith("id");
+});
+
+it("prevents marking multiple choice before finishing", async () => {
+  client([
+    {
+      session_id: sessionId,
+      session: { finished_at: null },
+      question: { type: "mcq" },
+    },
+  ]);
+  expect((await mark(request(), ctx)).status).toBe(409);
+  expect(markAttempt).not.toHaveBeenCalled();
+  expect(rescoreSession).not.toHaveBeenCalled();
+});
+it("rescores a finished session after a retry", async () => {
+  client([
+    {
+      session_id: sessionId,
+      session: { finished_at: "2026-10-08" },
+      question: { type: "short" },
+    },
+  ]);
+  vi.mocked(markAttempt).mockResolvedValue({
+    mark: 2,
+    status: "marked",
+  } as never);
+  expect((await mark(request(), ctx)).status).toBe(200);
+  expect(rescoreSession).toHaveBeenCalledWith(sessionId);
+});
+it("marks written answers in progress without rescoring", async () => {
+  client([
+    {
+      session_id: sessionId,
+      session: { finished_at: null },
+      question: { type: "short" },
+    },
+  ]);
+  vi.mocked(markAttempt).mockResolvedValue({
+    mark: 2,
+    status: "marked",
+  } as never);
+  expect((await mark(request(), ctx)).status).toBe(200);
+  expect(rescoreSession).not.toHaveBeenCalled();
 });

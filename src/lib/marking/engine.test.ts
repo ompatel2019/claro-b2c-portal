@@ -15,6 +15,7 @@ import {
   AlreadyMarking,
   finishSession,
   markAttempt,
+  rescoreSession,
   markFlashcard,
   markWritten,
   summariseSession,
@@ -193,11 +194,21 @@ function query(data: unknown) {
     select: vi.fn(),
     eq: vi.fn(),
     in: vi.fn(),
+    or: vi.fn(),
+    order: vi.fn(),
     update: vi.fn(),
     single: vi.fn(),
     throwOnError: vi.fn().mockResolvedValue({ data }),
   };
-  for (const key of ["select", "eq", "in", "update", "single"] as const)
+  for (const key of [
+    "select",
+    "eq",
+    "in",
+    "or",
+    "order",
+    "update",
+    "single",
+  ] as const)
     chain[key].mockReturnValue(chain);
   return chain;
 }
@@ -270,13 +281,16 @@ it("sets failed and rethrows when grading fails", async () => {
     .mockReturnValueOnce(failed as never);
   mockedCall.mockRejectedValue(new Error("Budget reached"));
   await expect(markAttempt("attempt")).rejects.toThrow("Budget reached");
-  expect(marking.update).toHaveBeenCalledWith({ status: "marking" });
+  expect(marking.update).toHaveBeenCalledWith({
+    status: "marking",
+    claimed_at: expect.any(String),
+  });
   expect(marking.eq).toHaveBeenCalledWith("id", "attempt");
-  expect(marking.in).toHaveBeenCalledWith("status", [
-    "pending",
-    "transcribed",
-    "failed",
-  ]);
+  expect(marking.or).toHaveBeenCalledWith(
+    expect.stringMatching(
+      /^status.in.\(pending,transcribed,failed\),and\(status.eq.marking,claimed_at.lt./,
+    ),
+  );
   expect(marking.select).toHaveBeenCalledWith("id");
   expect(failed.update).toHaveBeenCalledWith({ status: "failed" });
 });
@@ -296,7 +310,10 @@ it("throws AlreadyMarking without setting failed when no attempt is claimed", as
     .mockReturnValueOnce(marking as never)
     .mockReturnValueOnce(failed as never);
   await expect(markAttempt("attempt")).rejects.toBeInstanceOf(AlreadyMarking);
-  expect(marking.update).toHaveBeenCalledExactlyOnceWith({ status: "marking" });
+  expect(marking.update).toHaveBeenCalledExactlyOnceWith({
+    status: "marking",
+    claimed_at: expect.any(String),
+  });
   expect(admin().from).toHaveBeenCalledTimes(2);
   expect(failed.update).not.toHaveBeenCalled();
   expect(mockedCall).not.toHaveBeenCalled();
@@ -469,7 +486,7 @@ it("marks unfinished session attempts in parallel before totalling and summarisi
   );
 });
 
-it("does not finish or summarise when an attempt fails", async () => {
+it("retries failures once and finishes with all possible marks in the denominator", async () => {
   const attempt = {
     id: "attempt",
     user_id: "user",
@@ -478,25 +495,33 @@ it("does not finish or summarise when an attempt fails", async () => {
     transcript: null,
     question: q,
   };
-  const chains = [
-    query({
-      id: "session",
-      user_id: "user",
-      kind: "homework",
-      finished_at: null,
-    }),
+  const failed = { ...attempt, status: "failed", mark: 99 };
+  const save = query({ score: 0, max_score: 4, summary: null });
+  for (const chain of [
+    query({ user_id: "user", kind: "sprint" }),
     query([attempt]),
     query(attempt),
     query([{ id: "attempt" }]),
     query(null),
-  ];
-  for (const chain of chains)
+    query([failed]),
+    query(failed),
+    query([{ id: "attempt" }]),
+    query(null),
+    query([failed]),
+    save,
+  ])
     vi.mocked(admin().from).mockReturnValueOnce(chain as never);
   mockedCall.mockRejectedValue(new Error("Budget reached"));
-  await expect(finishSession("session")).rejects.toThrow("Budget reached");
-  expect(mockedCall).toHaveBeenCalledTimes(1);
-  expect(chains[0].update).not.toHaveBeenCalled();
-  expect(chains[4].update).toHaveBeenCalledWith({ status: "failed" });
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  expect(await finishSession("session")).toMatchObject({
+    score: 0,
+    max_score: 4,
+  });
+  expect(mockedCall).toHaveBeenCalledTimes(2);
+  expect(save.update).toHaveBeenCalledWith(
+    expect.objectContaining({ score: 0, max_score: 4, summary: null }),
+  );
+  log.mockRestore();
 });
 
 it("finishes an empty sprint without a summary call", async () => {
@@ -509,7 +534,6 @@ it("finishes an empty sprint without a summary call", async () => {
       finished_at: null,
     }),
     query([]),
-    query([]),
     save,
   ])
     vi.mocked(admin().from).mockReturnValueOnce(chain as never);
@@ -518,4 +542,88 @@ it("finishes an empty sprint without a summary call", async () => {
     expect.objectContaining({ score: 0, max_score: 0, summary: null }),
   );
   expect(mockedCall).not.toHaveBeenCalled();
+});
+
+it("waits for fresh in-flight marking and uses a deterministic topic summary", async () => {
+  vi.useFakeTimers();
+  try {
+    const inflight = {
+      id: "a",
+      status: "marking",
+      claimed_at: new Date().toISOString(),
+      question: { ...q, type: "mcq", topic: { name: "Inflation" } },
+    };
+    const marked = {
+      ...inflight,
+      status: "marked",
+      mark: 1,
+      max_marks: 1,
+      feedback: { correct_index: 0 },
+    };
+    const save = query({ score: 1, max_score: 1 });
+    for (const chain of [
+      query({ user_id: "user", kind: "sprint" }),
+      query([inflight]),
+      query([marked]),
+      save,
+    ])
+      vi.mocked(admin().from).mockReturnValueOnce(chain as never);
+    const finishing = finishSession("s");
+    await vi.advanceTimersByTimeAsync(1500);
+    await finishing;
+    expect(mockedCall).not.toHaveBeenCalled();
+    expect(save.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: expect.objectContaining({
+          strengths: ["1/1 correct on Inflation."],
+        }),
+      }),
+    );
+  } finally {
+    vi.useRealTimers();
+  }
+});
+it("finishes even when the AI summary fails", async () => {
+  const row = {
+    status: "marked",
+    mark: 2,
+    max_marks: 4,
+    feedback: { analysis: { strengths: [] } },
+    question: q,
+  };
+  const save = query({ score: 2, max_score: 4 });
+  for (const chain of [
+    query({ user_id: "user", kind: "sprint" }),
+    query([row]),
+    save,
+  ])
+    vi.mocked(admin().from).mockReturnValueOnce(chain as never);
+  mockedCall.mockRejectedValue(new Error("Summary failed"));
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  await finishSession("s");
+  expect(save.update).toHaveBeenCalledWith(
+    expect.objectContaining({ score: 2, summary: null }),
+  );
+  log.mockRestore();
+});
+it("rescores a finished session using marked marks over all possible marks", async () => {
+  const save = query(null);
+  for (const chain of [
+    query({ user_id: "user", finished_at: "2026-10-08" }),
+    query([
+      { status: "marked", mark: 3, max_marks: 4, question: q },
+      { status: "failed", mark: 99, max_marks: null, question: q },
+    ]),
+    save,
+  ])
+    vi.mocked(admin().from).mockReturnValueOnce(chain as never);
+  await rescoreSession("s");
+  expect(save.update).toHaveBeenCalledWith({ score: 3, max_score: 8 });
+});
+it("does not rescore an unfinished session", async () => {
+  vi.mocked(admin().from).mockReturnValueOnce(
+    query({ user_id: "user", finished_at: null }) as never,
+  );
+  await rescoreSession("s");
+  expect(admin().from).toHaveBeenCalledTimes(1);
 });

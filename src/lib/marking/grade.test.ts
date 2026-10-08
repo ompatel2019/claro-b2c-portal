@@ -6,6 +6,7 @@ import {
   findBand,
   numberLines,
   scoreMcq,
+  topicSummary,
   validateGrade,
 } from "./grade";
 
@@ -121,5 +122,25 @@ describe("anchorComments", () => {
       { quote: "invented", start: null },
       { quote: "", start: null },
     ]);
+  });
+});
+
+describe("topicSummary", () => {
+  it("groups topics, prioritises misses and identifies strengths", () => {
+    const summary = topicSummary([
+      { topic: "Inflation", correct: true },
+      { topic: "Inflation", correct: false },
+      { topic: "Trade", correct: true },
+      { topic: "Employment", correct: false },
+      { topic: "Employment", correct: false },
+    ]);
+    expect(summary.strengths).toEqual(["1/1 correct on Trade."]);
+    expect(summary.improvements[0]).toBe("2 of 2 missed on Employment.");
+    expect(summary.next_steps[0]).toBe("Run a Topic Sprint on Employment.");
+  });
+  it("handles a perfect session", () => {
+    expect(
+      topicSummary([{ topic: "Trade", correct: true }]).improvements,
+    ).toEqual(["No misses this time: try a harder mode or a mixed sprint."]);
   });
 });
