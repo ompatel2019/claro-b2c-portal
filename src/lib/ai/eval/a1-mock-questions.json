@@ -1,0 +1,1209 @@
+[
+  {
+    "id": "m2-21a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Outline local content rules as a form of protection.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines local content rules as a method of protection"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Local content rules refer to government policies, where a certain percentage of inputs or outputs must be manufactured domestically. One key feature is that they act as a non-tariff barrier, artificially diverting demand towards domestic producers by legally requiring a set percentage of local content in production, without directly taxing or limiting the quantity of imports as a tariff or quota would.",
+    "source": "A1 HSC Mock Exam 2 Q21(a)"
+  },
+  {
+    "id": "m2-21b",
+    "type": "short",
+    "marks": 3,
+    "stem": "With reference to an economy other than Australia, explain how globalisation has impacted environmental sustainability.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains how globalisation has impacted environmental sustainability, with reference to an economy other than Australia"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Describes how globalisation has impacted environmental sustainability, with reference to an economy other than Australia"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Country chosen: China\nGlobalisation is the increased integration of individual economies on the basis of trade, finance, investment, technology, and labour. Since China’s Open Door Policy (1978) and WTO Accession (2001), globalisation has been a key driver of environmental degradation as a result of its integration into global supply chains, attracting significant foreign direct investment into manufacturing This was caused by rapid, export oriented industrialisation, which caused a surge in fossil fuel-based energy consumption, contributing to China becoming the world's largest emitter of CO₂, accounting for approximately 30% of global carbon emissions by 2023, alongside severe air pollution in industrial hubs such as Beijing and Hebei province.\nNote: Students may choose any country for this question - as long as they complete the requirements for the 4 mark criteria, they can earn full marks.",
+    "source": "A1 HSC Mock Exam 2 Q21(b)"
+  },
+  {
+    "id": "m2-21c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Assess the consequences of an unequal distribution of global income and wealth.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a comprehensive assessment of the consequences of an unequal distribution of global income and wealth"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a sound assessment of the consequences of an unequal distribution of global income and wealth"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some assessment of the consequences of an unequal distribution of global income and wealth"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of the consequences of an unequal distribution of global income and wealth"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Income and wealth inequality refers to the uneven distribution of income and wealth between individuals or countries, commonly measured via the Gini coefficient. One key consequence of global income inequality is reduced growth. This is because as income is distributed unproportionally to high income earners with a high APS, they tend to save their income rather than consume. As a result, global aggregate demand would fall and reduce GWP. This concept is illustrated effectively via the IMF’s research (2015) that estimates that a 1 percentage point increase in the income share of the top 20% is associated with a 0.08 percentage point reduction in GDP growth over the following five years. Hence, a higher global income gini coefficient will substantially degrade spending and thus economic growth. However, when income and wealth inequality is present, incomes and assets are directed towards a smaller percentage of the population. This will incentivise individuals to improve their education/skills and encourage entrepreneurship. As a result, global labour productivity will significantly rise to boost aggregate supply and hence GWP. Overall, the consequences of global income and wealth inequality have therefore been highly significant, though partially cushioned by ongoing multilateral (World Bank, UN) and government redistributive efforts.",
+    "source": "A1 HSC Mock Exam 2 Q21(c)"
+  },
+  {
+    "id": "m2-22a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between a fixed and managed exchange rate determination system.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides a distinguishing factor between a fixed and managed exchange rate determination system"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "A fixed exchange rate refers to a system where the government or central bank sets and maintains the value of its currency at a predetermined rate, intervening continuously in the foreign exchange market to defend this “hard peg”. Alternately, a managed exchange rate refers to a system where the currency's value is primarily determined by market forces, but the central bank periodically intervenes to smooth excessive volatility without maintaining a strict peg. The key distinguishing factor is that a fixed rate requires continuous intervention to defend an exact rate, whereas a managed rate only involves occasional, discretionary intervention.",
+    "source": "A1 HSC Mock Exam 2 Q22(a)"
+  },
+  {
+    "id": "m2-22b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain ONE structural factor influencing Australia’s Balance of Payments.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains ONE structural factor influencing Australia's balance of payments"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines ONE structural factor influencing Australia's balance of payments"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "A structural factor refers to a long-term, persistent characteristic of an economy that influences trends in the Balance of Payments over time. One key structural factor influencing Australia's BOP is its culture of conspicuous consumption, characterised\n\nby consistently high household spending on discretionary and imported goods. This\nwas caused by Australians' entrenched preference for current consumption over\nsaving, driving persistently low national savings relative to domestic investment\nneeds. As a result, this savings-investment gap must be financed through foreign\nborrowing, as seen through Australia's consistently negative net primary income\naccount, as international borrowing generates ongoing interest repayments to foreign\nlenders, recorded as a debit in the NPY section of the current account.",
+    "source": "A1 HSC Mock Exam 2 Q22(b)"
+  },
+  {
+    "id": "m2-22c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Discuss the impact of free trade agreements on the quality of life in Australia.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a comprehensive discussion of the positive and negative impacts of free trade on the quality of life in Australia"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a sound discussion of the positive and negative impacts of free trade on the quality of life in Australia"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some discussion of the positive and/or negative impacts of free trade on the quality of life in Australia"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of free trade and/or quality of life"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Free trade refers to the removal of trade barriers such as tariffs, quotas, and subsidies\nbetween economies, allowing goods, services and factors of production to move without\ngovernment-imposed restrictions. Free trade has had both positive and negative\nimplications on quality of life in Australia. One key advantage is increased choice and lower\nprices for consumers. This is because the removal of tariffs allows domestic consumers to\naccess foreign goods without the added cost of import duties, lowering the price of\nimported goods and increasing real purchasing power. This is evident through the\nChina-Australia Free Trade Agreement (ChAFTA, 2015), which reduced tariff duties collected\non Chinese imports from $1,141 million in 2015 to just $118 million by 2019, an 89.7%\ndecrease, saving Australian importers and consumers an estimated average of $940 million\nannually. Additionally, free trade has boosted export opportunities. This is because the\nelimination of foreign tariffs allows Australian exporters to sell goods and services more\ncompetitively in overseas markets, increasing export revenue and supporting employment\n\nin export-oriented industries. This is evident through the Comprehensive and Progressive\nAgreement for Trans-Pacific Partnership (CPTPP, 2018), which eliminated over 98% of tariffs\namong its 12 member countries, expanding market access for Australian exporters across\nresources, agriculture and services sectors. However, one key disadvantage is the negative\nimpact on domestic industries exposed to import competition. This is because cheaper\nimports place downward pressure on the prices and market share of domestically produced\ngoods, forcing uncompetitive firms to reduce output or close, leading to job losses. This is\nevident through Australia's textile, clothing and footwear (TCF) manufacturing sector, where\nemployment fell from around 73,000 workers in 2002 to just 34,000 by 2022, reducing\nquality of life for displaced workers and their communities. Additionally, a second\ndisadvantage is increased income inequality between skilled and unskilled workers. This is\nbecause free trade favours industries that use Australia's comparative advantage in\nhigh-skill and capital-intensive production, such as mining and finance, while placing\ngreater pressure on low-skill, labour-intensive industries most exposed to import\ncompetition. This is evident through the growing wage gap between Australia's resources\nand finance sectors, which recorded some of the nation's highest average full-time\nearnings, and lower-skill manufacturing roles, which have faced stagnant wage growth and\ndeclining job security, worsening quality of life for lower-skilled households relative to\nhigher-skilled ones.",
+    "source": "A1 HSC Mock Exam 2 Q22(c)"
+  },
+  {
+    "id": "m2-23b",
+    "type": "short",
+    "marks": 4,
+    "stem": "The global economy experiences an increase in oil prices due to political conflicts. Explain how this may impact the types of inflation within the domestic economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Demonstrates a clear and comprehensive understanding of how the increase in oil prices may impact TWO types of inflation in the domestic economy"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Demonstrates a sound understanding of how the increase in oil prices may impact TWO types of inflation in the domestic economy"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Demonstrates some understanding of how the increase in oil prices may impact type(s) of inflation in the domestic economy"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Cost-push/imported\nUnderlying\nRising oil prices from political conflict push up production and transport costs across the\neconomy, since oil is a key input for manufacturing, freight and energy generation. This\ndirectly causes cost-push inflation, as firms facing higher input costs raise prices to\nmaintain profit margins (passing costs onto consumers). In addition, since oil is imported,\nthis increase also constitutes imported inflation.\nIn addition, this supply-side pressure feeds into underlying inflation, since oil is used across\nmany industries (transport, manufacturing, packaging), meaning the price rises are\nbroad-based and persistent rather than confined to one volatile item. This is what the RBA's\ntrimmed mean/weighted median measures capture, as opposed to headline inflation which\nincludes volatile items like oil directly.",
+    "source": "A1 HSC Mock Exam 2 Q23(b)"
+  },
+  {
+    "id": "m2-23c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Analyse the effects of high inflation on the Australian economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Demonstrates a clear and comprehensive understanding of the effects of inflation on the Australian economy"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Demonstrates a sound understanding of the effects of inflation on the Australian economy"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Demonstrates some understanding of the effects of inflation on the Australian economy"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of inflation and/or the Australian economy"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Inflation refers to a sustained increase in the general level of prices of goods and services\nwithin an economy, typically measured by the Consumer Price Index (CPI). Inflation rose\nsharply in Australia following the COVID-19 pandemic. This was caused by the\noverexpansion of aggregate demand, driven by unprecedented fiscal and monetary\nstimulus injected into the economy to support households and businesses during the\npandemic. This is evident through Australia's inflation rate, which was pushed to a peak of\n7.8% in December 2022, well above the RBA's 2–3% target band.\nOne key implication is on individuals, specifically the erosion of real household purchasing\npower. This is because rising prices reduce the quantity of goods and services a given level\nof income can purchase, particularly when wage growth fails to keep pace. This is evident\nthrough the ABS Wage Price Index, which recorded nominal wage growth of only around\n3.3% in the December 2022 quarter, well below the rate of inflation, resulting in a decline in\nreal wages and a fall in living standards for many Australian households.\nThis inflationary pressure also generated significant implications for businesses, specifically\nrising production and input costs. This is because higher prices for imported materials,\nenergy and freight increase businesses' cost of production, which firms often pass on to\nconsumers through higher prices, further compounding inflationary pressures. This is\nevident through rising producer price indices across the construction and manufacturing\nsectors during 2022–23, as firms faced higher costs for imported steel, fuel and shipping,\nsqueezing profit margins and, in some cases, reducing investment and hiring intentions.\nAt a government level, this necessitated contractionary monetary policy intervention. This is\nbecause persistently high inflation above the target band requires the RBA to raise interest\nrates to curb aggregate demand and bring inflation back under control in its target range of\n\n2–3%. This is evident through the RBA progressively raising the cash rate target from 0.1%\nin 2022 to 4.35% by November 2023, which slowed consumer borrowing and business\ninvestment, gradually bringing headline inflation back down to around 2.4% by the\nDecember 2024 quarter, though this followed a period of markedly slower economic\ngrowth, with annual GDP growth falling to just 0.8% by the September 2024 quarter as the\nRBA's contractionary stance weighed on consumer spending and investment.",
+    "source": "A1 HSC Mock Exam 2 Q23(c)"
+  },
+  {
+    "id": "m2-24a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Outline the use of regulation and deregulation in Competition Policy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines the use of regulation and deregulation in competition policy"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Competition policy refers to the set of government laws and measures designed to promote\ncompetitive market structures and prevent anti-competitive conduct within an economy.\nOne key feature is that competition policy utilises both regulation and deregulation to\nstimulate competition. Regulation stimulates competition by prohibiting anti-competitive\nconduct such as price-fixing, cartel behaviour, and misuse of market power by dominant\nfirms, ensuring smaller or new firms can enter and compete on a level playing field without\nbeing unfairly squeezed out. In contrast, deregulation stimulates competition by removing\nunnecessary government restrictions, such as licensing requirements or entry barriers, that\npreviously limited the number of firms able to operate in a market, allowing new entrants to\nincrease supply and drive down prices through greater market contestability.",
+    "source": "A1 HSC Mock Exam 2 Q24(a)"
+  },
+  {
+    "id": "m2-24b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain ONE policy used to promote labour productivity in the Australian economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains ONE policy used to promote labour productivity in the Australian economy"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines ONE policy used to promote labour productivity in the Australian economy"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "A microeconomic policy refers to government measures targeting specific markets or\nindustries to improve efficiency, productive capacity and international competitiveness. One\nkey policy used to promote labour productivity in Australia is investment in vocational\neducation and training, such as the Free TAFE initiative, introduced in 2023. The program\nprovides fee-free places for students studying accredited diplomas, certificates and short\ncourses in priority skill areas, including care (aged care, disability care, childcare),\nconstruction, and technology, targeting industries facing significant skills shortages. This is\nevident through the Fee-Free TAFE Skills Agreement, under which the Australian\nGovernment has partnered with state and territory governments to deliver $1.5 billion in\nfunding for over 500,000 Free TAFE and VET places across Australia between 2023 and\n2026. As a result, this policy has improved workers' human capital and skill levels, enabling\na given quantity of labour input to produce a greater level of output, thereby increasing\nlabour productivity across the Australian economy.",
+    "source": "A1 HSC Mock Exam 2 Q24(b)"
+  },
+  {
+    "id": "m2-24c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Compare the use of centralised and decentralised wage determination systems in the Australian economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a comprehensive comparison of the similarities and differences between centralised and decentralised wage determination systems"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a sound comparison of the similarities and differences between centralised and decentralised wage determination systems"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some comparison of the similarities and/or differences between centralised and decentralised wage determination systems"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of centralised and/or decentralised wage determination systems"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Centralised wage determination refers to a system where wages are set by a central\nauthority, such as the Fair Work Commission (FWC), through mechanisms like Modern\nAwards and the National Minimum Wage. Decentralised wage determination refers to a\nsystem where wages are negotiated directly between employers and employees or unions\nat the workplace level, such as through Enterprise Bargaining Agreements (EBAs). One key\nsimilarity is that both systems operate within Australia's current wage framework and\nremain subject to FWC oversight, which reviews EBAs to ensure they meet the \"Better Off\nOverall Test\" (BOOT). Additionally, both systems aim to balance fairness for workers with\nmaintaining Australia's international competitiveness. However, one key difference is that\ncentralised systems, such as the FWC's 2024 minimum wage review (raising the National\nMinimum Wage by 3.75% to $24.10 per hour), provide a uniform safety net for low-paid\nworkers, whereas decentralised systems allow wage outcomes to reflect firm-specific\nproductivity. In contrast, decentralised systems can create greater wage flexibility, evident\nin sectors such as mining where EBAs have delivered above-award wages tied to\nenterprise-level productivity, whereas centralised systems risk contributing to wage\ncompression and weaker firm-level productivity incentives.",
+    "source": "A1 HSC Mock Exam 2 Q24(c)"
+  },
+  {
+    "id": "m3-21a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Describe one reason for global wealth inequality, using an example.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Describes one reason for global wealth inequality, using an example"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "One reason for global wealth inequality is unequal access to capital which allows specific economies to accumulate assets faster than others. For example, the USA's developed financial markets enable high savings and investment, channelled into asset ownership (equities, property, businesses) that generate returns, compounding wealth over time. In contrast, Sub Saharan African economies have limited capital access, so income goes largely to consumption rather than asset accumulation. This creates a widening gap in accumulated wealth, not just income, between advanced and developing economies.",
+    "source": "A1 HSC Mock Exam 3 Q21(a)"
+  },
+  {
+    "id": "m3-21b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain how export incentives are used as a form of protection.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains how export incentives are used as a form of protection"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines how export incentives are used as a form of protection"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Export incentives refer to government measures, such as subsidies and tax concessions, designed to encourage increase in exports of goods and services from the domestic economy. Export incentives promote protection by giving domestic firms an artificial competitive advantage, such as lower costs or prices, that foreign firms do not receive. This effectively shields and favours the domestic export industries from genuine international competition, making export incentives a form of indirect protectionism",
+    "source": "A1 HSC Mock Exam 3 Q21(b)"
+  },
+  {
+    "id": "m3-21c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Explain the effects of domestic and global protection on Australia’s economic growth and quality of life.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a comprehensive explanation of the effects of domestic and global protection on Australia's economic growth and quality of life"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a sound explanation of the effects of domestic and global protection on Australia's economic growth and quality of life"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some explanation of the effects of domestic and/or global protection on Australia's economic growth and quality of life"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of protection and/or economic growth and quality of life"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Protection refers to the artificial barriers to trade a nation may impose such as tariffs, subsidies and quotas, which affect economic growth and quality of life through changes to incomes, prices and employment.\n\nDomestic protection historically worsened Australia's economic growth by diverting resources into inefficient sectors like the passenger motor vehicle (PMV) and textile, clothing and footwear (TCF) industries rather than allowing capital and labour to flow into more internationally competitive sectors like mining. PMV tariffs peaked at 57.5 per cent in 1985, sustaining a high-cost manufacturing base that lacked economies of scale and misallocated resources, constraining long-run output growth while raising prices for protected goods and reducing material living standards for consumers. Following liberalisation, PMV tariffs were cut to 5 per cent by 2010, causing firm closures and structural unemployment that harmed non material quality of life in affected regions, but freeing capital and labour for reallocation into more productive, export-oriented sectors like mining and services, improving allocative efficiency, incomes and material living standards over time.\n\nGlobal protection, such as the US's 2025 tariffs, has mixed effects on growth and quality of life. While such measures threaten global trade volumes and raise consumer prices, Productivity Commission modelling found Trump's tariffs could raise Australian GDP by 0.37 per cent, as capital outflow from the US is redirected into open economies like Australia's, boosting investment, employment and material living standards.",
+    "source": "A1 HSC Mock Exam 3 Q21(c)"
+  },
+  {
+    "id": "m3-22b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain why the TWI provides a more accurate measure of the value of domestic currency rather than a bilateral exchange rate.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains why the TWI provides a more accurate measure of currency value than a bilateral exchange rate"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines why the TWI provides a more accurate measure of currency value than a bilateral exchange rate"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The Trade-Weighted Index (TWI) measures the value of a currency against a basket of currencies from its major trading partners, weighted according to the two way trade volumes with each country, whilst the bilateral exchange rate measures the value of one currency against a single other currency. The TWI captures overall changes in international competitiveness, since a currency can appreciate against one currency while depreciating against another. In contrast, a bilateral exchange rate only reflects movements against a single currency, making it less representative of a country's overall trade position, and therefore less reliable than the TWI as an indicator of true currency value.",
+    "source": "A1 HSC Mock Exam 3 Q22(b)"
+  },
+  {
+    "id": "m3-22c",
+    "type": "short",
+    "marks": 4,
+    "stem": "Explain recent trends in the composition of Australia's Balance of Payments",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a comprehensive explanation of trends in the composition of Australia's Balance of Payments"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides a sound explanation of trends in the composition of Australia's Balance of Payments"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some explanation/description of trends in the composition of Australia's Balance of Payments"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "One trend for Australia can be seen through a persistent Current Account Deficit which has been driven by low national savings relative to investment, creating a structural savings-investment gap where domestic savings are insufficient to fund required investment. This forces the economy to rely on foreign capital through international borrowing to finance investment growth. This debt increases interest repayments causing interest to be debited through the NPY account of the CA, contributing directly to the nation's structural CAD.\n\nAdditionally, another trend can be seen through Australia's volatile Balance on Goods and Services (BOGS) caused by its narrow export base. Exports are heavily concentrated in commodities like iron ore and coal, making export revenue highly sensitive to fluctuations in global commodity prices and demand. This causes the trade balance to swing sharply between surplus and deficit with the terms of trade, for example, high commodity prices during a mining boom pushing Australia into surplus, while falling prices or demand reverse this into deficit. This was seen in the BOGS peaking at $41.5bn in 2021, resulting in a CAS of $9.5bn.",
+    "source": "A1 HSC Mock Exam 3 Q22(c)"
+  },
+  {
+    "id": "m3-23a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between the capital and financial account.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides a distinguishing factor between the capital and financial account"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The capital account refers to the section of the BOP that records receipts of capital transfers and the transfer of non produced, non financial assets, whereas the financial account records receipts of financial flows related to the transfer of ownership of financial assets and liabilities. The key distinguishing factor is that the capital account records the transfer of non-financial assets, while the financial account records the transfer of financial assets and liabilities.",
+    "source": "A1 HSC Mock Exam 3 Q23(a)"
+  },
+  {
+    "id": "m3-23b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain the effects of high levels of international borrowing on the Australian economy",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains the effects of high levels of international borrowing on the Australian economy"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines the effects of high levels of international borrowing on the Australian economy"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "High levels of international borrowing have led to Australia recording a net foreign debt position exceeding $1 trillion, reflecting decades of reliance on foreign capital to fund the structural savings investment gap. This borrowing generates ongoing debt servicing costs, primarily interest payments debited through the NPY account, which contribute to Australia's persistent Current Account Deficit, historically averaging around 3-4 per cent of GDP. While this borrowing has funded investment, particularly in mining and infrastructure, it also increases Australia's vulnerability to global interest rate rises, credit rating downgrades, and exchange rate volatility, raising the cost of future borrowing.",
+    "source": "A1 HSC Mock Exam 3 Q23(b)"
+  },
+  {
+    "id": "m3-23c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Analyse the causes and effects of recent changes in Australia’s external stability",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a comprehensive analysis of the causes and effects of recent changes in Australia's external stability"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a sound analysis of the causes and effects of recent changes in Australia's external stability"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some analysis of the causes and/or effects of recent changes in Australia's external stability"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of Australia's external stability"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Australia's external stability has recently been affected by volatile terms of trade, driven by its narrow export base (iron ore, coal, gas). Fluctuations in global demand, particularly from China, cause fluctuations in export revenue and the balance of goods and services, thus the CAD as a % of GDP and external stability. Additionally, the persistent savings investment gap continues to drive reliance on foreign capital inflows to fund investment. This leads to a rise in Net Foreign Debt as a % of GDP and an increase in outflows via interest repayments, reducing the NPY balance and thus the CAD as a % of GDP.\n\nThese factors have led to more volatility. Higher commodity prices during favourable terms of trade periods can create a smaller CAD or even generate temporary surpluses, while decreases in these prices reverse this into deficit, increasing reliance on foreign borrowing. This volatility can also pressure the exchange rate, affecting international competitiveness through changes in export prices. However, sustained capital inflows have supported investment in productive sectors like mining and infrastructure, contributing to economic growth despite short term external volatility, indicating this instability is more cyclical than structural in nature.",
+    "source": "A1 HSC Mock Exam 3 Q23(c)"
+  },
+  {
+    "id": "m3-24a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between minimum wage and the modern award",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides a distinguishing factor between minimum wage and the modern award"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The minimum wage is the base standard of hourly or weekly rate of pay that an employer can legally pay an employee, set annually by the Fair Work Commission. A modern award is a legally binding document that sets out minimum pay rates and employment conditions such as hours, leave or overtime for employees within a specific industry or occupation. The key distinguishing factor is that the minimum wage applies as a single price floor of wages across the entire economy, whereas a modern award sets more detailed, industry or occupation specific minimum pay rates and conditions that sit above the minimum wage.",
+    "source": "A1 HSC Mock Exam 3 Q24(a)"
+  },
+  {
+    "id": "m3-24b",
+    "type": "short",
+    "marks": 2,
+    "stem": "Describe how minimum employment standards influence the supply of labour",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides a comprehensive description of how minimum employment standards influence the supply of labour"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Minimum employment standards such as the National Employment Standards (NES) set legal base requirements for conditions like maximum weekly hours, annual leave, and parental leave. By guaranteeing safer, fairer working conditions, these standards can increase labour supply by making work more attractive to groups such as parents or older workers, who may otherwise be discouraged from participating due to poor conditions or job insecurity. For example, provisions like flexible working arrangements and parental leave can encourage higher workforce participation, particularly among women, increasing the aggregate supply of labour.",
+    "source": "A1 HSC Mock Exam 3 Q24(b)"
+  },
+  {
+    "id": "m3-24c",
+    "type": "short",
+    "marks": 6,
+    "stem": "Assess the effectiveness of labour market policies in achieving full employment within the Australian economy",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 6,
+        "max": 6,
+        "descriptor": "Provides a comprehensive assessment of the effectiveness of labour market policies in achieving full employment, using TWO relevant policies"
+      },
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a sound assessment of the effectiveness of labour market policies in achieving full employment, using TWO relevant policies"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides some assessment of the effectiveness of labour market policies in achieving full employment"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some explanation of labour market policies and/or full employment"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of labour market policies and/or full employment"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Australia's labour market policies have been moderately effective in promoting full employment, however has had key limitations in partially addressing structural issues. This can be seen through Wage subsidies for example, under Workforce Australia. These were introduced to reduce structural (mismatch of skills of labour and requirements of the economy) and long term unemployment (>12 months of u/e) by lowering the cost to firms of hiring disadvantaged workers, offsetting their lower productivity. This has helped move Australia toward full employment, with the unemployment rate sitting at 4.5 per cent in July 2026, as more disadvantaged jobseekers are incentivised into paid work, reducing structural unemployment and improving allocative efficiency in the labour market. However, a key limitation is deadweight loss, where subsidies are paid to firms that would have hired the worker regardless, reducing the policy's cost effectiveness and limiting its net impact on full employment.\n\nSecondly, Vocational Education and Training (VET) programs have contributed to achieving full employment in Australia. These were introduced to address structural unemployment caused by skills mismatches from technological change and automation. By retraining workers in demand-driven skills, VET improves the quality and adaptability of labour supply, supporting participation, currently at 66.9 per cent, and reducing long-term structural unemployment. However, a key limitation is that retraining is slow acting, meaning it cannot respond quickly to rapid industry change such as changes in artificial intelligence currently, and the underemployment rate (6.4 per cent) suggests many remain underutilised despite retraining efforts, limiting full employment.",
+    "source": "A1 HSC Mock Exam 3 Q24(c)"
+  },
+  {
+    "id": "m4-21a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between the role of the IMF and World Bank.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Distinguishes between the role of the IMF and the World Bank"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The IMF promotes global financial stability by monitoring economies and providing conditional loans to countries facing balance of payments or currency crises, often with structural adjustment conditions. The World Bank promotes long term economic development by providing conditional funding for infrastructure, education and health projects in developing economies. The key distinguishing factor is that the IMF focuses on short term financial stability, whereas the World Bank focuses on long term economic development and poverty reduction.",
+    "source": "A1 HSC Mock Exam 4 Q21(a)"
+  },
+  {
+    "id": "m4-21b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Describe the effects of globalisation on Australia’s levels of unemployment.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Describes the effects of globalisation on Australia's levels of unemployment"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines an effect of globalisation on Australia's unemployment"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Globalisation refers to the increased integration of individual economies on the basis of trade, financial flows, labour, investment and technology. Globalisation has increased competition from low cost producers, causing structural unemployment in import competing industries. For example, Australia’s passenger motor vehicle industry closing in 2017 led to roughly 50,000 individuals unemployed. However, globalisation has created jobs in export and service industries such as mining, international education and tourism, where Australia holds a comparative advantage. This is as we have a greater output in such industries, leading to higher derived demand of labour and thus employment.",
+    "source": "A1 HSC Mock Exam 4 Q21(b)"
+  },
+  {
+    "id": "m4-21c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Analyse strategies used to promote environmental sustainability in an economy other than Australia.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a comprehensive analysis of strategies used to promote environmental sustainability in an economy other than Australia, making a clear judgement"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a sound analysis of strategies used to promote environmental sustainability in an economy other than Australia"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some explanation of strategies used to promote environmental sustainability in an economy"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of strategies and/or environmental sustainability"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "China has implemented a range of strategies to improve environmental sustainability, which involves conserving natural resources and limiting environmental degradation to preserve intergenerational and intragenerational equity. China has introduced a national Emissions Trading System (ETS), which places a price on carbon emissions for covered firms. By increasing the cost of emitting carbon, the scheme provides firms with a financial incentive to reduce emissions and invest in cleaner technologies, helping internalise the negative externality associated with emissions. This scheme has been moderately effective in promoting environmental sustainability, with carbon emissions falling by approximately 18.2%. Additionally, China’s Three Gorges Dam has promoted environmental sustainability by generating electricity without directly burning fossil fuels, reducing reliance on coal-fired electricity and associated carbon emissions. However, its environmental benefits are partly offset by negative impacts including habitat disruption, flooding and changes to the Yangtze River ecosystem.",
+    "source": "A1 HSC Mock Exam 4 Q21(c)"
+  },
+  {
+    "id": "m4-22b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain ONE likely change to the structure of Industry in Australia as a result of current trends in the global economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains one likely change to the structure of industry in Australia as a result of current trends in the global economy"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines one likely change to the structure of industry in Australia"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "One likely change is the expansion of Australia's critical minerals sector, driven by the global transition to renewable energy and electric vehicles. Rising world demand for lithium, rare earths and nickel increases export prices and returns attracting capital and labour into mining and mineral processing. Australia already produces around half of the world's lithium, and the US Australia critical minerals framework signed in October 2025 aims to diversify supply chains away from China. Government incentives such as the Critical Minerals Production Tax Incentive further encourage domestic processing. This shifts Australia's industry structure toward resource-based and higher value added processing activities.",
+    "source": "A1 HSC Mock Exam 4 Q22(b)"
+  },
+  {
+    "id": "m4-22c",
+    "type": "short",
+    "marks": 6,
+    "stem": "Assess the impact of recent changes in the global economy on Australia’s trade and financial flows.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 6,
+        "max": 6,
+        "descriptor": "Provides a comprehensive assessment of the impact of recent changes in the global economy on Australia's trade AND financial flows, making a clear judgement"
+      },
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a sound assessment of the impact of recent changes in the global economy on Australia's trade and financial flows"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides some assessment of the impact of recent changes in the global economy on Australia's trade and/or financial flows"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some explanation of recent changes in the global economy and/or Australia's trade and financial flows"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of the global economy and/or trade and financial flows"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Recent changes in the global economy have had a mixed impact on Australia's trade and financial flows, reducing export revenue while diversifying trade and supporting capital inflows. China's economic slowdown and in particular its weak property sector, has reduced demand for steel and lowered iron ore prices. As China takes around one third of Australia's goods exports, this has lowered export revenue, contributing to the current account returning to a deficit of around 2 per cent of GDP after surpluses from 2019 to 2022 through a lower level of the Balance of Goods and Services. However, this has encouraged diversification toward markets such as India and ASEAN.\n\nRising global protectionism, including the US's 10 per cent baseline tariff on Australian goods in 2025, has threatened trade volumes. However, its direct impact is limited as the US takes only around 5 per cent of Australia's goods exports, and Productivity Commission modelling found the tariffs could raise Australian GDP by 0.37 per cent through redirected capital inflows. Financial flows have also shifted. Superannuation assets exceeding $4 trillion have increased outward equity investment, making Australia a net foreign equity asset holder, while global demand for critical minerals has attracted foreign direct investment into mining.\n\nOverall, recent global changes have had a moderately negative short term impact on trade flows, but have diversified Australia's trade and strengthened its financial position.",
+    "source": "A1 HSC Mock Exam 4 Q22(c)"
+  },
+  {
+    "id": "m4-23a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Outline ONE reason why wealth may be distributed more unequally than income in Australia.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines one reason why wealth may be distributed more unequally than income in Australia"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Wealth is a stock that accumulates over time, whereas income is a flow received over a period. High income households can save and invest in assets such as property and shares, which generate returns and capital gains that compound over time, while low income households spend most of their income on consumption. Inheritance further concentrates wealth. This is reflected in Australia's wealth Gini coefficient of 0.611 compared to 0.308 for income in 2023-24.",
+    "source": "A1 HSC Mock Exam 4 Q23(a)"
+  },
+  {
+    "id": "m4-23b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain how an increase in unemployment may affect the distribution of income in Australia.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains how an increase in unemployment may affect the distribution of income in Australia"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines how an increase in unemployment may affect the distribution of income"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "An increase in unemployment is likely to widen income inequality in Australia. Unemployment is concentrated among low-skilled and low-income workers, who lose wage income and must rely on welfare. As JobSeeker pays less than half the national minimum wage, their income falls sharply relative to higher income earners, whose jobs are more secure. Long-term unemployment also erodes skills, reducing future earning capacity. However, progressive taxation and transfer payments partially offset this. Overall, a rise from the current 4.5 per cent unemployment rate would likely increase the Gini coefficient and shift the Lorenz curve further from the line of equality.",
+    "source": "A1 HSC Mock Exam 4 Q23(b)"
+  },
+  {
+    "id": "m4-23c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Analyse the effects of greater income inequality on economic growth in Australia.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a comprehensive analysis of the effects of greater income inequality on economic growth in Australia"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a sound analysis of the effects of greater income inequality on economic growth in Australia"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some analysis of the effects of income inequality on economic growth"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of income inequality and/or economic growth"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Income inequality refers to the disparity of incomes (returns of 4 factors of production) between a population.\n\nInequality can positively impact growth through providing greater incentives for individuals to work, gain skills and take entrepreneurial risk, as higher productivity is rewarded with higher incomes. Higher income earners also have a higher marginal propensity to save, thus increasing funds available for investment, which expands aggregate supply increasing the productive capacity of the economy.\n\nHowever, excessive inequality can constrain growth. Low-income households have a higher marginal propensity to consume, so shifting income toward high-income earners reduces consumption, the largest component of AD at around 55 per cent of GDP, lowering short-run growth. Inequality can also limit access to education for low-income groups, reducing human capital and labour productivity, which has grown weakly in Australia over the past decade. Rising inequality, with Australia's income Gini increasing from 0.302 in 1994-95 to 0.324 in 2019-20, may also increase welfare spending, reducing funds for productive investment.",
+    "source": "A1 HSC Mock Exam 4 Q23(c)"
+  },
+  {
+    "id": "m4-24a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between the structural and cyclical components of a budget outcome.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Distinguishes between the structural and cyclical components of a budget outcome"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The structural component of a budget outcome reflects discretionary policy decisions, such as changes to tax rates or spending programs. The cyclical component reflects automatic changes in revenue and spending caused by fluctuations in economic activity, through key automatic stabilisers such as progressive income tax and unemployment benefits. The key distinguishing factor is that the structural component is determined by government decisions whereas the cyclical component is determined by the business cycle.",
+    "source": "A1 HSC Mock Exam 4 Q24(a)"
+  },
+  {
+    "id": "m5-21a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Outline ONE way transnational corporations contribute to globalisation",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines ONE way transnational corporations contribute to globalisation"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Globalisation refers to the increased integration of individual economies on the basis of trade, finance, investment & Transnational corporations (TNCs), labour and technology. TNCs contribute to globalisation by spreading production across many countries through foreign direct investment (FDI). For example, a TNC may design products in one economy and manufacture components in others to take advantage of lower costs. This increases international trade in goods and services and integrates national economies into global supply chains.",
+    "source": "A1 HSC Mock Exam 5 Q21(a)"
+  },
+  {
+    "id": "m5-21b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain how globalisation can reduce inflation in an economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains how globalisation can reduce inflation in an economy"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines how globalisation can reduce inflation in an economy"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Globalisation refers to the increased integration of individual economies on the basis of trade, finance, investment & Transnational corporations (TNCs), labour and technology. Globalisation increases access to imports from lower cost producers, especially manufactured goods from emerging economies with lower labour costs. Greater import competition then forces domestic firms to keep their prices down to ensure market share, which creates lower prices domestically and lower imported inflation. At the same time, cheaper imported intermediate goods sourced through global supply chains lower firms' costs of production, which reduces cost-push inflation.",
+    "source": "A1 HSC Mock Exam 5 Q21(b)"
+  },
+  {
+    "id": "m5-21c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Compare the effects of international migration on advanced and developing economies",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a comprehensive comparison of the effects of international migration on advanced and developing economies, clearly identifying similarities and differences"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a sound comparison of the effects of international migration on advanced and developing economies"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some comparison of the effects of international migration on advanced and/or developing economies"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of international migration and/or its effects"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "International migration is the movement of people between countries in search of employment and higher incomes. Its effects differ because advanced economies (those with high levels of development and GDP) are mainly host economies, while developing economies (those with low levels of development and GDP) are mainly source economies.\n\nIn advanced economies, international migration increases labour supply. This fills skill shortages which supports economic growth via aggregate supply through higher levels of labour productivity. In contrast, developing economies lose workers. This can reduce unemployment where there is a labour surplus. However, it often causes a “brain drain” of skilled professionals such as doctors and engineers, reducing productive capacity and the quality of essential services.\n\nFurthermore, individuals from developing nations who migrate to advanced nations typically send capital back to their nation to help their families financially. These remittance outflows from advanced economies are small relative to GDP. For developing economies, remittances are a major source of household income and foreign currency. They reduce poverty, fund education and health, and support the balance of payments. Although both nations experience different outcomes, advanced nations gain skilled labour to fill shortages, while developing nations gain capital via remittances.",
+    "source": "A1 HSC Mock Exam 5 Q21(c)"
+  },
+  {
+    "id": "m5-22a",
+    "type": "short",
+    "marks": 1,
+    "stem": "Define Trade Weighted Index",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Correctly defines the Trade Weighted Index"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The Trade Weighted Index (TWI) measures the value of the Australian dollar against a basket of the currencies of Australia's major trading partners according to 2-way trade.",
+    "source": "A1 HSC Mock Exam 5 Q22(a)"
+  },
+  {
+    "id": "m5-22b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain why an economy's international competitiveness may improve even when its exchange rate appreciates",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains why international competitiveness may improve even when the exchange rate appreciates"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines why international competitiveness may improve even when the exchange rate appreciates"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "International competitiveness is the ability of an economy's firms to sell goods and services at a cheaper price point than global competitors. It depends on relative costs and quality, not only on the exchange rate. If labour productivity growth is strong, firms produce more output per hour worked, which lowers unit labour costs. If these cost savings outweigh the higher foreign currency prices caused by the appreciation, domestic firms can still undercut foreign competitors, so competitiveness improves overall. Similarly, if domestic inflation is lower than that of trading partners, relative prices can fall even as the currency rises.",
+    "source": "A1 HSC Mock Exam 5 Q22(b)"
+  },
+  {
+    "id": "m5-22c",
+    "type": "short",
+    "marks": 6,
+    "stem": "Analyse the effects of an appreciation of the Australian dollar on Australia’s balance of payments.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 6,
+        "max": 6,
+        "descriptor": "Provides a comprehensive analysis of the effects of an appreciation of the Australian dollar on the components of Australia's balance of payments, showing the links between components, with relevant data"
+      },
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a sound analysis of the effects of an appreciation of the Australian dollar on Australia's balance of payments"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides some analysis of the effects of an appreciation on at least one component of the balance of payments"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains some effect(s) of an appreciation on the balance of payments"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines an effect of an appreciation and/or the balance of payments"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "An appreciation is a rise in the value of the Australian dollar against other currencies. The balance of payments (BOP) records all financial transactions between Australia and the rest of the world over a period and is divided into the current account (CA) and the capital and financial account (KAFA).\n\nA higher AUD, such as its rise from below US60c in March 2020 to around US80c in early 2021, makes exports more expensive in foreign currency and imports cheaper in Australian dollars. As a result, export volumes fall especially in education and tourism, while import volumes rise worsening the Balance of Goods and Services (BOGS → X–M). Cheaper servicing of foreign currency debt reduces net primary income debits, partly offsetting this. However, net primary income remains the largest debit in Australia's current account. Overall, the current account balance deteriorates. This was seen through Australia recording its first current account surplus in 44 years in 2019, before returning to deficit from 2023. An implication of this however, can be seen through lower net exports reducing aggregate demand, slowing growth and employment in trade competing industries.\n\nOn the other hand in terms of the KAFA, higher interest rates, such as the cash rate increasing to 4.60% in 2026, widen the interest rate differential. This creates increased portfolio investment as investors opt to earn higher returns in Australia, leading to a higher demand of the $A and thus appreciation. As a result under a floating exchange rate, a weaker current account is matched by a larger KAFA surplus, increasing reliance on foreign borrowing and investment. An implication of this can be seen through inflows adding to net foreign liabilities, which had fallen from around 60% of GDP in 2016. This raises future net primary income debits and Australia's vulnerability to sudden capital outflows.",
+    "source": "A1 HSC Mock Exam 5 Q22(c)"
+  },
+  {
+    "id": "m5-23c",
+    "type": "short",
+    "marks": 6,
+    "stem": "Analyse the economic and social costs of unemployment",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 6,
+        "max": 6,
+        "descriptor": "Provides a comprehensive analysis of the economic and social costs of unemployment, showing the relationships between costs"
+      },
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a sound analysis of the economic and social costs of unemployment"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides some analysis of the economic and/or social costs of unemployment"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some explanation of the costs of unemployment"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of unemployment"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Unemployment refers to the state of actively seeking work, without work. In Australia, the unemployment rate rose to 4.6% in August 2026, its highest since late 2021, with underemployment at 6.2%.\n\nIn terms of economic costs, there is a loss of output. Unemployment is a permanent loss of potential output. Spare capacity of labour means the economy operates inside its production possibility frontier, so real GDP is lower than it could be. Furthermore, it would lead to weaker economic growth. Higher unemployment leads to lower or loss of incomes reducing household consumption and aggregate demand (AD = C + I + G + (X–M)), which slows growth further. Another economic cost can be seen through budgetary constraints. Through automatic stabilisers, the government pays more in unemployment benefits and collects less income tax, which widens the budget deficit.\n\nIn terms of social costs, firstly a lower household income widens income inequality and raises the risk of poverty. This would lead to the gini coefficient rising. Furthermore, unemployment is linked to poorer mental and physical health, family stress and higher crime rates, which add further costs for government services. These costs fall most heavily on young people, older workers, people with lower skills and particular regions, deepening disadvantage.",
+    "source": "A1 HSC Mock Exam 5 Q23(c)"
+  },
+  {
+    "id": "m5-24a",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between technical efficiency and allocative efficiency.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides a distinguishing factor between technical efficiency and allocative efficiency"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Technical efficiency occurs when firms produce goods and services at the lowest possible cost, using the fewest resources for a given level of output. Allocative efficiency occurs when resources are allocated to producing the combination of goods and services that consumers value most. The key difference is that technical efficiency concerns how goods are produced in terms of cost, while allocative efficiency concerns what is produced in terms of resources.",
+    "source": "A1 HSC Mock Exam 5 Q24(a)"
+  },
+  {
+    "id": "m5-24b",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain how deregulation can increase efficiency in a product market.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains how deregulation can increase efficiency in a product market"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines how deregulation can increase efficiency in a product market"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Deregulation is the removal of government restrictions that reduce competition in a market, such as limits on the number of firms or price controls. Lower barriers to entry allow new firms to enter a product market. Existing firms are then forced to cut costs and improve operations to protect market share, which increases technical efficiency. Greater competition also pushes firms to supply the goods and services consumers value most at competitive prices, because firms that fail to respond lose customers. This improves allocative efficiency. For example, deregulation of Australia's domestic aviation market allowed new airlines to enter, which lowered airfares and increased choice.",
+    "source": "A1 HSC Mock Exam 5 Q24(b)"
+  },
+  {
+    "id": "m5-24c",
+    "type": "short",
+    "marks": 5,
+    "stem": "Assess the impact of microeconomic reform on individuals and firms in Australia",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Provides a comprehensive assessment of the impact of microeconomic reform on individuals and firms in Australia"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Provides a sound assessment of the impact of microeconomic reform on individuals and firms in Australia"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some assessment of the impact of microeconomic reform on individuals and/or firms"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides some understanding of microeconomic reform"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Microeconomic reform refers to policies that improve the efficiency and productivity of individual markets and industries, shifting aggregate supply to the right. Its long-run impact on individuals and firms is largely positive, but it imposes significant short run costs.\n\nFor individuals, consumers benefit from lower prices, greater choice and higher quality as competition increases. This was seen through the introduction of 16 foreign banks in 1983 after Australia’s financial deregulation. Increased competition from foreign banks, led to greater variety of services and lower prices overall in the financial market. However, firms that cannot compete may close or restructure, causing structural unemployment, especially among older or lower-skilled workers and in regional areas showcasing limitations of microeconomic policy. This was seen through the reduction of protection via trade and industry microeconomic reforms in the passenger motor vehicle industry, whereby 50,000 individuals were left structurally unemployed following the closure of the industry in 2017.\n\nFor firms, efficient businesses gain from cheaper inputs such as energy, transport and telecommunications, and from access to new markets. This was primarily seen in Australia through the decrease in overall protectionism via trade and industry reforms to roughly 1%-2% in most industries. As a result, Australian firms source a large amount of their inputs from imports due to their cost feasibility, reflecting its highest import category of intermediate goods.This improves their profitability and international competitiveness. Less efficient firms face stronger competition and may lose market share or leave the industry. This showcases a limitation of microeconomic policy, where domestic market share may be lost.",
+    "source": "A1 HSC Mock Exam 5 Q24(c)"
+  }
+]
