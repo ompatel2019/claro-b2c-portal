@@ -1,0 +1,275 @@
+// @vitest-environment node
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+
+vi.mock("@/utils/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/utils/supabase/admin", () => {
+  const client = { from: vi.fn(), storage: { from: vi.fn() } };
+  return { admin: () => client };
+});
+vi.mock("@/lib/marking/engine", () => ({
+  AlreadyMarking: class extends Error {
+    message = "This answer is already being marked.";
+  },
+  markAttempt: vi.fn(),
+  transcribeImage: vi.fn(),
+  markFlashcard: vi.fn(),
+  finishSession: vi.fn(),
+}));
+
+import { createClient } from "@/utils/supabase/server";
+import { admin } from "@/utils/supabase/admin";
+import {
+  AlreadyMarking,
+  finishSession,
+  markAttempt,
+  markFlashcard,
+  transcribeImage,
+} from "@/lib/marking/engine";
+import { POST as mark } from "./attempts/[id]/mark/route";
+import { POST as transcribe } from "./attempts/[id]/transcribe/route";
+import { POST as flashcard } from "./flashcards/[id]/mark/route";
+import { POST as finish } from "./sessions/[id]/finish/route";
+
+const userId = "d0d38222-b9bb-4089-81d5-383878dd9d9d";
+const sessionId = "75f2a40b-3e20-4a56-9e14-1b237cfc8396";
+const ctx = { params: Promise.resolve({ id: "id" }) };
+const request = (body?: unknown) =>
+  new Request("http://localhost/api", {
+    method: "POST",
+    ...(body === undefined
+      ? {}
+      : {
+          body: JSON.stringify(body),
+          headers: { "Content-Type": "application/json" },
+        }),
+  });
+
+function client(rows: unknown[], signedIn = true) {
+  const chains = rows.map((data) => {
+    const chain = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      single: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({ data }),
+      throwOnError: vi.fn().mockResolvedValue({ data }),
+    };
+    for (const key of ["select", "eq", "single"] as const)
+      chain[key].mockReturnValue(chain);
+    return chain;
+  });
+  const supabase = {
+    auth: {
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: signedIn ? { id: userId } : null },
+      }),
+    },
+    from: vi.fn(),
+  };
+  for (const chain of chains) supabase.from.mockReturnValueOnce(chain);
+  vi.mocked(createClient).mockResolvedValue(supabase as never);
+  return { supabase, chains };
+}
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  vi.spyOn(console, "error").mockImplementation(() => {});
+});
+afterEach(() => vi.restoreAllMocks());
+
+it.each([mark, transcribe, flashcard, finish])(
+  "requires authentication for handler %#",
+  async (handler) => {
+    const { supabase } = client([], false);
+    expect((await handler(request({ answer: "Answer" }), ctx)).status).toBe(
+      401,
+    );
+    expect(supabase.from).not.toHaveBeenCalled();
+    expect(admin().from).not.toHaveBeenCalled();
+  },
+);
+
+it.each([mark, transcribe, flashcard, finish])(
+  "returns 404 for invisible rows in handler %#",
+  async (handler) => {
+    client([null]);
+    expect((await handler(request({ answer: "Answer" }), ctx)).status).toBe(
+      404,
+    );
+    expect(markAttempt).not.toHaveBeenCalled();
+    expect(markFlashcard).not.toHaveBeenCalled();
+    expect(transcribeImage).not.toHaveBeenCalled();
+    expect(finishSession).not.toHaveBeenCalled();
+  },
+);
+
+it("returns the MCQ answer key after marking an owned attempt", async () => {
+  const { chains } = client([{ id: "id" }]);
+  vi.mocked(markAttempt).mockResolvedValue({
+    mark: 1,
+    max_marks: 1,
+    band: null,
+    feedback: { correct_index: 2, chosen_index: 2 },
+    status: "marked",
+  } as never);
+  const response = await mark(request(), ctx);
+  expect(await response.json()).toMatchObject({
+    mark: 1,
+    correct_index: 2,
+    status: "marked",
+  });
+  expect(chains[0].eq).toHaveBeenCalledWith("user_id", userId);
+});
+
+it.each([
+  { answer: "" },
+  { answer: "a".repeat(2001) },
+  { answer: "Valid", sessionId: "invalid" },
+  { answer: 1 },
+])("rejects invalid flashcard body %#", async (body) => {
+  const { supabase } = client([]);
+  expect((await flashcard(request(body), ctx)).status).toBe(400);
+  expect(supabase.from).not.toHaveBeenCalled();
+});
+
+it("rejects malformed JSON", async () => {
+  client([]);
+  expect(
+    (
+      await flashcard(
+        new Request("http://localhost/api", { method: "POST", body: "{" }),
+        ctx,
+      )
+    ).status,
+  ).toBe(400);
+});
+
+it.each([
+  [null, 404],
+  [{ finished_at: "2026-10-08" }, 409],
+] as const)(
+  "rejects absent or finished review session %#",
+  async (session, status) => {
+    const { chains } = client([
+      { kind: "term", front: "Front", back: "Back" },
+      session,
+    ]);
+    expect(
+      (await flashcard(request({ answer: "Answer", sessionId }), ctx)).status,
+    ).toBe(status);
+    expect(chains[1].eq).toHaveBeenCalledWith("user_id", userId);
+    expect(markFlashcard).not.toHaveBeenCalled();
+    expect(admin().from).not.toHaveBeenCalled();
+  },
+);
+
+it("stores an AI review against the caller and returns the card back", async () => {
+  client([
+    { kind: "term", front: "Front", back: "Back" },
+    { finished_at: null },
+  ]);
+  vi.mocked(markFlashcard).mockResolvedValue({ mark: 1, reason: "Correct" });
+  const insert = vi.fn().mockReturnValue({
+    throwOnError: vi.fn().mockResolvedValue({ error: null }),
+  });
+  vi.mocked(admin().from).mockReturnValue({ insert } as never);
+  const response = await flashcard(
+    request({ answer: "Answer", sessionId }),
+    ctx,
+  );
+  expect(await response.json()).toEqual({
+    mark: 1,
+    reason: "Correct",
+    back: "Back",
+  });
+  expect(insert).toHaveBeenCalledWith({
+    flashcard_id: "id",
+    user_id: userId,
+    session_id: sessionId,
+    answer: "Answer",
+    source: "ai",
+    mark: 1,
+    reason: "Correct",
+  });
+});
+
+it("rejects an image path outside the caller's storage folder", async () => {
+  client([{ image_path: "another-user/image.jpg", status: "pending" }]);
+  expect((await transcribe(request(), ctx)).status).toBe(400);
+  expect(admin().storage.from).not.toHaveBeenCalled();
+});
+
+it("does not reopen a marked attempt for transcription", async () => {
+  client([{ image_path: `${userId}/image.jpg`, status: "marked" }]);
+  expect((await transcribe(request(), ctx)).status).toBe(409);
+  expect(admin().storage.from).not.toHaveBeenCalled();
+});
+
+it("downloads handwriting and saves the transcript for confirmation", async () => {
+  client([
+    { image_path: `${userId}/image.png`, status: "pending", question_id: "q" },
+    { stem: "Explain" },
+  ]);
+  const download = vi.fn().mockResolvedValue({
+    data: new Blob(["image"], { type: "image/png" }),
+    error: null,
+  });
+  vi.mocked(admin().storage.from).mockReturnValue({ download } as never);
+  const update = vi.fn();
+  const save = {
+    update,
+    eq: vi.fn(),
+    in: vi.fn(),
+    throwOnError: vi.fn().mockResolvedValue({ error: null }),
+  };
+  update.mockReturnValue(save);
+  save.eq.mockReturnValue(save);
+  save.in.mockReturnValue(save);
+  vi.mocked(admin().from).mockReturnValue(save as never);
+  const result = {
+    transcript: "Written answer",
+    lines: ["Written answer"],
+    notes: "",
+  };
+  vi.mocked(transcribeImage).mockResolvedValue(result);
+  expect(await (await transcribe(request(), ctx)).json()).toEqual(result);
+  expect(admin().storage.from).toHaveBeenCalledWith("answers");
+  expect(download).toHaveBeenCalledWith(`${userId}/image.png`);
+  expect(update).toHaveBeenCalledWith({
+    transcript: "Written answer",
+    status: "transcribed",
+  });
+});
+
+it("returns only the score and summary for an owned session", async () => {
+  const { chains } = client([{ id: "id" }]);
+  vi.mocked(finishSession).mockResolvedValue({
+    score: 3,
+    max_score: 4,
+    summary: null,
+    user_id: userId,
+  });
+  expect(await (await finish(request(), ctx)).json()).toEqual({
+    score: 3,
+    max_score: 4,
+    summary: null,
+  });
+  expect(chains[0].eq).toHaveBeenCalledWith("user_id", userId);
+});
+
+it("returns a generic failure if marking throws", async () => {
+  client([{ id: "id" }]);
+  vi.mocked(markAttempt).mockRejectedValue(new Error("Internal details"));
+  const response = await mark(request(), ctx);
+  expect(response.status).toBe(500);
+  expect(await response.json()).toEqual({ error: "Could not mark answer" });
+});
+
+it("returns 409 when an owned attempt is already being marked", async () => {
+  client([{ id: "id" }]);
+  const error = new AlreadyMarking();
+  vi.mocked(markAttempt).mockRejectedValue(error);
+  const response = await mark(request(), ctx);
+  expect(response.status).toBe(409);
+  expect(await response.json()).toEqual({ error: error.message });
+  expect(markAttempt).toHaveBeenCalledExactlyOnceWith("id");
+});

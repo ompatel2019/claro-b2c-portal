@@ -1,35 +1,47 @@
+import { redirect } from "next/navigation";
+
+import { AppHeader } from "@/components/app-header";
+import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
+export default async function StudentHome() {
+  const profile = await requireProfile();
+  if (profile.role === "admin") redirect("/admin");
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("health_check")
-    .select("id, message, created_at")
-    .order("id");
-
+  const [{ data: topics }, { data: questions }] = await Promise.all([
+    supabase
+      .from("topics")
+      .select("id, name")
+      .is("parent_id", null)
+      .order("sort"),
+    supabase.from("questions").select("topic_id"),
+  ]);
+  const count = (topicId: string) =>
+    questions?.filter((q) => q.topic_id.startsWith(`${topicId}-`)).length ?? 0;
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 p-8 font-sans">
-      <h1 className="text-2xl font-semibold">Claro portal: e2e check</h1>
-      {error ? (
-        <p className="text-red-600">Supabase error: {error.message}</p>
-      ) : (
-        <ul className="space-y-2">
-          {data?.map((row) => (
-            <li key={row.id} className="rounded-lg border p-3">
-              <p>{row.message}</p>
-              <p className="text-sm opacity-60">
-                row {row.id} · {new Date(row.created_at).toISOString()}
+    <>
+      <AppHeader name={profile.full_name} />
+      <main className="mx-auto w-full max-w-3xl px-6 py-10">
+        <h1 className="text-4xl font-bold tracking-tight">
+          Hi {profile.full_name?.split(" ")[0] ?? "there"}
+        </h1>
+        <p className="text-muted-foreground mt-2 font-serif text-xl italic">
+          {questions?.length ?? 0} past HSC questions, ready to practise.
+        </p>
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2">
+          {topics?.map((t) => (
+            <li
+              key={t.id}
+              className="rounded-card border-line border bg-white p-6"
+            >
+              <p className="font-semibold">{t.name}</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {count(t.id)} questions
               </p>
             </li>
           ))}
         </ul>
-      )}
-      <p className="text-sm opacity-60">
-        Fetched live from the <code>health_check</code> table at{" "}
-        {new Date().toISOString()}.
-      </p>
-    </main>
+      </main>
+    </>
   );
 }

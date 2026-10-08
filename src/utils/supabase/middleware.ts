@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { clientEnv } from "@/env/client";
 
+const PUBLIC_PAGES = ["/sign-in", "/sign-up", "/auth/callback"];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -33,7 +35,23 @@ export async function updateSession(request: NextRequest) {
 
   // Refresh the auth token. Do not add logic between createServerClient
   // and getClaims() — it can cause intermittent auth bugs.
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
 
-  return supabaseResponse;
+  const path = request.nextUrl.pathname;
+  const signedIn = Boolean(data?.claims.sub);
+  const isPublic = PUBLIC_PAGES.includes(path);
+  if (
+    path.startsWith("/api/") ||
+    signedIn === !isPublic ||
+    path === "/auth/callback"
+  ) {
+    return supabaseResponse;
+  }
+  const redirect = NextResponse.redirect(
+    new URL(signedIn ? "/" : "/sign-in", request.url),
+  );
+  supabaseResponse.cookies
+    .getAll()
+    .forEach((cookie) => redirect.cookies.set(cookie));
+  return redirect;
 }

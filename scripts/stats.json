@@ -1,0 +1,102 @@
+[
+  {
+    "topic_id": "t4-monetary",
+    "front": "RBA cash rate target (October 2026)",
+    "back": "4.60% after a 25 basis point rise on 29 September 2026, the fourth increase in 2026 (RBA)."
+  },
+  {
+    "topic_id": "t4-monetary",
+    "front": "RBA inflation target",
+    "back": "2 to 3% CPI inflation on average over time, with a focus on the 2.5% midpoint (RBA)."
+  },
+  {
+    "topic_id": "t3-inflation",
+    "front": "Headline CPI inflation (12 months to June 2026)",
+    "back": "3.8%, down from 4.0% in the 12 months to May 2026 (ABS)."
+  },
+  {
+    "topic_id": "t3-inflation",
+    "front": "Trimmed mean (underlying) inflation (12 months to June 2026)",
+    "back": "3.6%, above the RBA's 2 to 3% target band (ABS)."
+  },
+  {
+    "topic_id": "t3-inflation",
+    "front": "Largest contributor to annual CPI inflation (June 2026)",
+    "back": "Housing, up 6.8% over the year to June 2026 (ABS)."
+  },
+  {
+    "topic_id": "t3-unemployment",
+    "front": "Unemployment rate (August 2026)",
+    "back": "4.6% seasonally adjusted, up from 4.5% in July 2026; about 722,900 people unemployed (ABS)."
+  },
+  {
+    "topic_id": "t3-unemployment",
+    "front": "Participation rate (August 2026)",
+    "back": "67.1% seasonally adjusted, up 0.2 percentage points (ABS)."
+  },
+  {
+    "topic_id": "t3-unemployment",
+    "front": "Underemployment rate (August 2026)",
+    "back": "6.2% seasonally adjusted (ABS)."
+  },
+  {
+    "topic_id": "t3-unemployment",
+    "front": "Youth unemployment rate (August 2026)",
+    "back": "10.8% seasonally adjusted, up 0.4 percentage points (ABS)."
+  },
+  {
+    "topic_id": "t3-growth",
+    "front": "Real GDP growth (year to June quarter 2026)",
+    "back": "2.1% through the year; 0.4% in the June quarter 2026 (ABS, seasonally adjusted, chain volume)."
+  },
+  {
+    "topic_id": "t3-growth",
+    "front": "Real GDP growth in the 2025-26 financial year",
+    "back": "2.4%, with GDP per capita up 0.8% (ABS)."
+  },
+  {
+    "topic_id": "t3-growth",
+    "front": "GDP per capita growth (year to June quarter 2026)",
+    "back": "0.7% through the year; flat in the June quarter 2026 (ABS)."
+  },
+  {
+    "topic_id": "t2-bop",
+    "front": "Current account deficit (June quarter 2026)",
+    "back": "$27.2 billion seasonally adjusted, up $1.8 billion on the March quarter (ABS)."
+  },
+  {
+    "topic_id": "t2-bop",
+    "front": "Net primary income balance (June quarter 2026)",
+    "back": "A deficit of $21.9 billion, the largest part of the current account deficit (ABS)."
+  },
+  {
+    "topic_id": "t3-external-stability",
+    "front": "Net foreign debt (30 June 2026)",
+    "back": "About $1,486 billion ($1.49 trillion) (ABS)."
+  },
+  {
+    "topic_id": "t3-external-stability",
+    "front": "Net international investment position (30 June 2026)",
+    "back": "A net liability of $638.9 billion, down $122.8 billion on March 2026 as overseas equity values rose (ABS)."
+  },
+  {
+    "topic_id": "t4-fiscal",
+    "front": "Budget 2026-27 underlying cash balance (May 2026 forecast)",
+    "back": "A deficit of $31.5 billion, about 1.0% of GDP (Budget Paper No. 1, 2026-27)."
+  },
+  {
+    "topic_id": "t4-fiscal",
+    "front": "Gross government debt forecast (30 June 2027)",
+    "back": "$1,051 billion, about 34.0% of GDP (Budget Paper No. 1, 2026-27)."
+  },
+  {
+    "topic_id": "t4-labour",
+    "front": "National Minimum Wage (from 1 July 2026)",
+    "back": "$26.44 per hour or $1,004.90 per week (Fair Work Commission Annual Wage Review 2026)."
+  },
+  {
+    "topic_id": "t3-inflation",
+    "front": "Wage Price Index growth (year to June quarter 2026)",
+    "back": "3.2% seasonally adjusted, down from 3.4% a year earlier (ABS)."
+  }
+]

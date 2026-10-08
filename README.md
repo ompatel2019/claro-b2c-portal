@@ -1,61 +1,32 @@
-# Project Template
+# Claro portal
 
-A deliberately small, production-oriented foundation for Next.js applications.
-The template includes Supabase authentication, shadcn/ui, Tailwind
-CSS, unit and browser testing, formatting, linting, type checking, and CI.
-
-## Requirements
-
-- Node.js 22 (see `.nvmrc`)
-- npm 10.9.8
-- A Supabase project
+Student portal for Claro: NSW HSC Economics practice with instant AI marking.
+Next.js 16 (App Router, `src/proxy.ts`), Supabase (auth, Postgres with RLS, storage), OpenAI.
 
 ## Setup
 
 ```bash
 nvm use
 npm install
-cp .env.example .env.local
-```
-
-Fill in every value in `.env.local`, then start the application:
-
-```bash
+cp .env.example .env.local   # then fill in every value
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+## Layout
 
-Environment variables are validated with Zod at startup. Public variables live
-in `src/env/client.ts`; server-only variables live in `src/env/server.ts`.
+- `src/app/(auth)`: sign in / sign up; `src/app/page.tsx` student home; `src/app/admin` admin home
+- `src/app/api`: marking route handlers (attempt mark/transcribe, flashcard mark, session finish)
+- `src/lib/marking`: band-first marking engine (pure grading helpers, prompts, schemas, server engine)
+- `src/lib/ai`: OpenAI structured-output calls, per-model prices, cost logging to `ai_usage` and the budget guard
+- `supabase/migrations`: every schema change, applied in order (`scripts/sql.sh <file>` runs one via the Management API)
+- `scripts`: content seeding (NESA past papers, flashcards), marking eval, AI spend export
 
-## Why development uses Webpack
-
-Next.js 16 defaults to Turbopack. This template temporarily uses
-`next dev --webpack` because current Turbopack builds can emit severe allocator
-noise and consume excessive memory on Apple Silicon with macOS 26. Re-test
-Turbopack when upgrading Next.js and remove the flag once the upstream issue is
-resolved.
+Scripts run with `npx tsx --conditions=react-server --env-file=.env.local scripts/<name>.mts`.
 
 ## Quality commands
 
 ```bash
 npm run check       # formatting, linting, types, and unit tests
-npm run test:watch  # unit tests in watch mode
-npm run test:e2e    # Playwright browser tests
-npm run build       # production build
+npm run test:e2e    # Playwright (set PORT to change the dev server port)
+npm run build
 ```
-
-GitHub Actions runs `check`, `build`, and the Playwright suite for pull requests
-and pushes to `main`.
-
-## Structure
-
-- `src/app` — App Router routes and layouts
-- `src/components` — reusable UI components
-- `src/env` — validated environment boundaries
-- `src/utils/supabase` — browser/server Supabase clients and session refresh
-- `e2e` — Playwright tests
-
-Add architecture only when a real product requirement justifies it. Prefer
-small, explicit modules.
