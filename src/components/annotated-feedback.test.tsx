@@ -134,7 +134,7 @@ it("reads old-shape comments without tags", () => {
 
 it("hides the mark while marking and pills each review state", () => {
   const { rerender } = render(
-    <AnnotatedFeedback row={{ ...row, check_status: "pending" }} />,
+    <AnnotatedFeedback row={{ ...row, status: "marking" }} />,
   );
   expect(screen.queryByText("3 / 6")).toBeNull();
   screen.getByText("Marking");

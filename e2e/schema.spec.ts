@@ -174,5 +174,23 @@ test.describe("Schema and RLS", () => {
     expect(
       (await db.from("marking_examples").select("id").limit(1)).error,
     ).toBeNull();
+    // The 20 A1 eval questions are retired, with their held-out test answers.
+    const evalSet = await db
+      .from("marking_examples")
+      .select("question_id")
+      .eq("split", "test")
+      .like("question_id", "a1-%");
+    expect(evalSet.error).toBeNull();
+    expect(evalSet.data).toHaveLength(20);
+    const evalQuestions = await db
+      .from("questions")
+      .select("status")
+      .like("id", "a1-%");
+    expect(evalQuestions.data).toEqual(Array(20).fill({ status: "retired" }));
+    const hidden = await student.db
+      .from("questions")
+      .select("id")
+      .like("id", "a1-%");
+    expect(hidden.data).toEqual([]);
   });
 });

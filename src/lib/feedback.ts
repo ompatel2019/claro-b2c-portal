@@ -1,5 +1,6 @@
-import { orderedComments } from "./practice";
+import { orderedComments, type Comment } from "./practice";
 
+/** claro-ml's comment tags (Comment["tag"]), for checking stored rows at runtime. */
 export const TAGS = [
   "Verb",
   "Knowledge",
@@ -7,21 +8,15 @@ export const TAGS = [
   "Analysis",
   "Terminology",
   "Structure",
-] as const;
-export type Tag = (typeof TAGS)[number];
+] as const satisfies readonly Comment["tag"][];
+export type Tag = Comment["tag"];
 
 /**
- * Read-side §2.1 comment. Rows marked before claro-ml's shape change carry
- * {type: strength|improvement, comment, line} and no tag; they read as tag null.
+ * Read-side §2.1 comment: claro-ml's Comment, except rows marked before the
+ * shape change carry {type: strength|improvement, comment, line} and no tag;
+ * they read as tag null.
  */
-export type FeedbackComment = {
-  quote: string;
-  start: number | null;
-  kind: "strength" | "fix";
-  tag: Tag | null;
-  body: string;
-  next_mark: string | null;
-};
+export type FeedbackComment = Omit<Comment, "tag"> & { tag: Tag | null };
 export type Criterion = { min: number; max: number; descriptor: string };
 export type MarkReview = {
   status: "open" | "resolved";
@@ -82,7 +77,6 @@ export function markingState(
   if (a.feedback?.note === "No answer") return "not_answered";
   if (a.check_status === "in_review") return "in_review";
   if (a.check_status === "reviewed") return "reviewed";
-  if (a.check_status === "pending") return "marking";
   return "marked";
 }
 

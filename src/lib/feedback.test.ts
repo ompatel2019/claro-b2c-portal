@@ -20,8 +20,7 @@ describe("markingState", () => {
   it.each([
     ["pending", "skipped", "marking"],
     ["transcribed", "skipped", "marking"],
-    ["marking", "pending", "marking"],
-    ["marked", "pending", "marking"],
+    ["marking", "skipped", "marking"],
     ["marked", "skipped", "marked"],
     ["marked", "agreed", "marked"],
     ["marked", "second_pass", "marked"],
