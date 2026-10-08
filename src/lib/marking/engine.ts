@@ -1,6 +1,8 @@
 import "server-only";
 
-import { callJson } from "@/lib/ai/openai";
+import type { z } from "zod";
+
+import { callJson, type Message } from "@/lib/ai/openai";
 import { MODELS } from "@/lib/ai/prices";
 import { admin } from "@/utils/supabase/admin";
 import { firstReviews, type FlashcardReview } from "@/lib/flashcards";
@@ -8,6 +10,7 @@ import {
   anchorComments,
   clampMark,
   findBand,
+  marksAgree,
   scoreMcq,
   topicSummary,
   validateGrade,
@@ -17,59 +20,129 @@ import {
   bandCorrection,
   flashcardMessages,
   gradeMessages,
+  reconcileMessages,
   summaryMessages,
   transcribeMessages,
 } from "./prompts";
 import {
+  CheckSchema,
   FlashcardSchema,
   GradeSchema,
   SummarySchema,
   TranscriptSchema,
 } from "./schemas";
 
-export const MARKER = { model: MODELS.strong, effort: "low" } as const;
+export const MARKER = {
+  model: MODELS.strong,
+  effort: { grade: "low", check: "low", reconcile: "medium" },
+} as const;
 
 export async function markWritten(
   q: MarkableQuestion,
   answer: string,
   userId: string | null,
-  task = "mark_written",
+  task?: string,
 ) {
-  const messages = gradeMessages(q, answer);
-  const options = {
-    task,
-    ...MARKER,
-    schema: GradeSchema,
-    fast: true,
-    userId,
-  };
-  let grade = await callJson({ ...options, messages });
-  let validation = validateGrade(q.criteria, q.marks, grade);
-  if (!validation.ok) {
-    messages.push(
-      { role: "assistant", content: JSON.stringify(grade) },
-      bandCorrection(validation.problem, q.criteria),
-    );
-    grade = await callJson({ ...options, messages });
-    validation = validateGrade(q.criteria, q.marks, grade);
+  async function pass<S extends z.ZodType<z.infer<typeof CheckSchema>>>(
+    schema: S,
+    messages: Message[],
+    effort: "low" | "medium",
+    passTask: string,
+  ) {
+    const options = {
+      task: task ?? passTask,
+      model: MARKER.model,
+      effort,
+      schema,
+      fast: true,
+      userId,
+    };
+    let grade = await callJson<S>({ ...options, messages });
+    let validation = validateGrade(q.criteria, q.marks, grade);
+    if (!validation.ok) {
+      messages.push(
+        { role: "assistant", content: JSON.stringify(grade) },
+        bandCorrection(validation.problem, q.criteria),
+      );
+      grade = await callJson<S>({ ...options, messages });
+      validation = validateGrade(q.criteria, q.marks, grade);
+    }
+    const mark = validation.ok ? grade.mark : clampMark(grade.mark, q.marks);
+    const criterion = validation.ok
+      ? findBand(q.criteria, grade.band_selected)
+      : mark === 0
+        ? null
+        : q.criteria.find((c) => mark >= c.min && mark <= c.max);
+    return { grade, mark, criterion, validated: validation.ok };
   }
-  const mark = validation.ok ? grade.mark : clampMark(grade.mark, q.marks);
-  const criterion = validation.ok
-    ? findBand(q.criteria, grade.band_selected)
-    : q.criteria.find((c) => mark >= c.min && mark <= c.max);
+
+  const [first, second] = await Promise.all([
+    pass(
+      GradeSchema,
+      gradeMessages(q, answer),
+      MARKER.effort.grade,
+      "mark_written",
+    ),
+    pass(
+      CheckSchema,
+      gradeMessages(q, answer, true),
+      MARKER.effort.check,
+      "check_written",
+    ),
+  ]);
+  const agrees = (a: number, b: number) =>
+    marksAgree(q.criteria, q.marks, a, b);
+  const check: {
+    status: "agreed" | "second_pass" | "in_review";
+    marks: number[];
+  } = {
+    status: "agreed",
+    marks: [first.mark, second.mark],
+  };
+  let final: typeof first | typeof second = first;
+  if (!agrees(first.mark, second.mark)) {
+    const third = await pass(
+      CheckSchema,
+      reconcileMessages(
+        q,
+        answer,
+        {
+          band_selected: first.criterion?.descriptor ?? "NO BAND SATISFIED",
+          mark: first.mark,
+          justification: first.grade.justification,
+        },
+        {
+          band_selected: second.criterion?.descriptor ?? "NO BAND SATISFIED",
+          mark: second.mark,
+          justification: second.grade.justification,
+        },
+      ),
+      MARKER.effort.reconcile,
+      "second_pass",
+    );
+    check.marks.push(third.mark);
+    if (agrees(third.mark, first.mark) || agrees(third.mark, second.mark)) {
+      check.status = "second_pass";
+      final = third;
+    } else {
+      check.status = "in_review";
+    }
+  }
+  const grade = first.grade;
   return {
-    mark,
-    band: criterion?.descriptor ?? "NO BAND SATISFIED",
+    mark: final.mark,
+    band: final.criterion?.descriptor ?? "NO BAND SATISFIED",
     feedback: {
       analysis: grade.analysis,
-      justification: grade.justification,
+      justification: final.grade.justification,
       why_not_higher: grade.why_not_higher,
       comments: anchorComments(answer, grade.comments),
       earned: grade.earned,
       missing_points: grade.missing_points,
       next_band: grade.next_band,
       better_answer_outline: grade.better_answer_outline,
-      validated: validation.ok,
+      validated: first.validated,
+      check,
     },
   };
 }

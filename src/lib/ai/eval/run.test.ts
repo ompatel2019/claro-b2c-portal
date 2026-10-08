@@ -21,7 +21,10 @@ vi.mock("@/utils/supabase/admin", () => ({
   admin: () => ({ rpc: mocks.rpc, from: mocks.from }),
 }));
 vi.mock("@/lib/marking/engine", () => ({
-  MARKER: { model: "gpt-6.1-sol", effort: "low" },
+  MARKER: {
+    model: "gpt-6.1-sol",
+    effort: { grade: "low", check: "low", reconcile: "medium" },
+  },
   markWritten: mocks.mark,
 }));
 vi.mock("../openai", () => ({ callJson: mocks.judge }));
@@ -45,6 +48,7 @@ const feedback = {
   why_not_higher: "Limited judgement",
   better_answer_outline: ["Define", "Explain", "Assess"],
   validated: true,
+  check: { status: "second_pass", marks: [1, 3, 3] },
 };
 
 beforeEach(() => {
@@ -145,12 +149,26 @@ it("runs sequentially with eval labels, separate costs and a clamped judge score
     '1. [Strength · Analysis] "trade" — Clear',
   );
   expect(rows[0]).toMatchObject({
+    check: feedback.check,
+    firstScore: expect.objectContaining({
+      exact: expect.any(Boolean),
+      within1: expect.any(Boolean),
+      band: expect.any(Boolean),
+    }),
     usd: 0.02,
     judgeUsd: 0.02,
     verdict: { score: 10 },
     error: null,
   });
-  expect(rows[1]).toMatchObject({ usd: 0.02, judgeUsd: 0, verdict: null });
+  expect(rows[0].firstScore.delta).toBe(1 - rows[0].expected);
+  expect(rows[0].firstScore.exact).toBe(rows[0].expected === 1);
+  expect(rows[0].firstScore.within1).toBe(Math.abs(1 - rows[0].expected) <= 1);
+  expect(rows[1]).toMatchObject({
+    check: feedback.check,
+    usd: 0.02,
+    judgeUsd: 0,
+    verdict: null,
+  });
 });
 
 it("records a thrown marking item without scoring it as zero and continues", async () => {

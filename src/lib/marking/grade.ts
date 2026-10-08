@@ -42,6 +42,19 @@ export function findBand(criteria: Criterion[], bandText: string) {
   );
 }
 
+export function marksAgree(
+  criteria: Criterion[],
+  maxMarks: number,
+  a: number,
+  b: number,
+): boolean {
+  const band = (mark: number) =>
+    mark === 0
+      ? undefined
+      : criteria.find((c) => mark >= c.min && mark <= c.max);
+  return band(a) === band(b) && (maxMarks < 6 || Math.abs(a - b) <= 1);
+}
+
 export function validateGrade(
   criteria: Criterion[],
   maxMarks: number,

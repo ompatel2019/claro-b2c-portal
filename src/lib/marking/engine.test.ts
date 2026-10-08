@@ -23,6 +23,7 @@ import {
 } from "./engine";
 import { MODELS } from "@/lib/ai/prices";
 import {
+  CheckSchema,
   FlashcardSchema,
   GradeSchema,
   SummarySchema,
@@ -78,18 +79,24 @@ const grade = {
   next_band: "",
   better_answer_outline: ["Cause", "Mechanism", "Effect"],
 };
+const checkGrade = (
+  mark = grade.mark,
+  justification = grade.justification,
+) => ({
+  analysis: grade.analysis,
+  bands_considered: grade.bands_considered,
+  band_selected:
+    mark === 0
+      ? "NO BAND SATISFIED"
+      : q.criteria.find((c) => mark >= c.min && mark <= c.max)!.descriptor,
+  mark,
+  justification,
+});
 const mockedCall = vi.mocked(callJson);
 
-beforeEach(() => vi.resetAllMocks());
-
-it("labels both marking attempts as eval when requested", async () => {
-  mockedCall
-    .mockResolvedValueOnce({ ...grade, mark: 2 })
-    .mockResolvedValueOnce(grade);
-  await markWritten(q, "The prices rise rapidly", null, "eval");
-  expect(mockedCall).toHaveBeenCalledTimes(2);
-  for (const [options] of mockedCall.mock.calls)
-    expect(options.task).toBe("eval");
+beforeEach(() => {
+  vi.resetAllMocks();
+  mockedCall.mockResolvedValue(grade);
 });
 
 it("returns validated grade on the first reply and anchors quotes", async () => {
@@ -100,7 +107,7 @@ it("returns validated grade on the first reply and anchors quotes", async () => 
     band: q.criteria[0].descriptor,
     feedback: { validated: true, comments: [{ start: 4 }, { start: null }] },
   });
-  expect(mockedCall).toHaveBeenCalledTimes(1);
+  expect(mockedCall).toHaveBeenCalledTimes(2);
   expect(mockedCall).toHaveBeenCalledWith(
     expect.objectContaining({
       task: "mark_written",
@@ -119,8 +126,8 @@ it("retries once with the invalid assistant reply and correction", async () => {
     (await markWritten(q, "The prices rise rapidly", "user")).feedback
       .validated,
   ).toBe(true);
-  expect(mockedCall).toHaveBeenCalledTimes(2);
-  const messages = mockedCall.mock.calls[1][0].messages;
+  expect(mockedCall).toHaveBeenCalledTimes(3);
+  const messages = mockedCall.mock.calls[2][0].messages;
   expect(messages[2]).toEqual({
     role: "assistant",
     content: JSON.stringify(invalid),
@@ -149,8 +156,8 @@ it.each(["missing fix", "missing strength", "empty next mark"])(
       (await markWritten(q, "The prices rise rapidly", "user")).feedback
         .validated,
     ).toBe(true);
-    expect(mockedCall).toHaveBeenCalledTimes(2);
-    expect(mockedCall.mock.calls[1][0].messages[3].content).toContain(
+    expect(mockedCall).toHaveBeenCalledTimes(3);
+    expect(mockedCall.mock.calls[2][0].messages[3].content).toContain(
       "comment",
     );
   },
@@ -203,7 +210,120 @@ it("falls back after two invalid replies, clamping and matching the resulting ba
   expect(await markWritten(q, "The prices rise rapidly", "user")).toMatchObject(
     { mark: 4, band: q.criteria[0].descriptor, feedback: { validated: false } },
   );
+  expect(mockedCall).toHaveBeenCalledTimes(4);
+});
+
+it("starts both blind passes before either resolves", async () => {
+  let resolveFirst!: (value: typeof grade) => void;
+  let resolveCheck!: (value: ReturnType<typeof checkGrade>) => void;
+  mockedCall
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveFirst = resolve;
+        }),
+    )
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveCheck = resolve;
+        }),
+    );
+  const marking = markWritten(q, "prices rise", "user");
   expect(mockedCall).toHaveBeenCalledTimes(2);
+  expect(
+    mockedCall.mock.calls.map(([o]) => [o.task, o.effort, o.fast, o.schema]),
+  ).toEqual([
+    ["mark_written", "low", true, GradeSchema],
+    ["check_written", "low", true, CheckSchema],
+  ]);
+  expect(mockedCall.mock.calls[1][0].messages[1]).toEqual(
+    mockedCall.mock.calls[0][0].messages[1],
+  );
+  expect(mockedCall.mock.calls[1][0].messages).toHaveLength(2);
+  resolveCheck(checkGrade(3));
+  resolveFirst(grade);
+  expect(await marking).toMatchObject({
+    mark: 4,
+    feedback: { check: { status: "agreed", marks: [4, 3] } },
+  });
+});
+
+it.each([undefined, "eval"])(
+  "reconciles independently and uses the task override %s",
+  async (task) => {
+    mockedCall
+      .mockResolvedValueOnce(grade)
+      .mockResolvedValueOnce(checkGrade(2, "Marker B evidence"))
+      .mockResolvedValueOnce(checkGrade(1, "Reconciler evidence"));
+    const result = await markWritten(q, "prices rise", "user", task);
+    expect(result).toMatchObject({
+      mark: 1,
+      band: q.criteria[1].descriptor,
+      feedback: {
+        justification: "Reconciler evidence",
+        validated: true,
+        check: { status: "second_pass", marks: [4, 2, 1] },
+        earned: grade.earned,
+        missing_points: grade.missing_points,
+        next_band: grade.next_band,
+        why_not_higher: grade.why_not_higher,
+        better_answer_outline: grade.better_answer_outline,
+        analysis: grade.analysis,
+      },
+    });
+    expect(result.feedback.comments).toMatchObject(grade.comments);
+    expect(mockedCall.mock.calls.map(([o]) => o.task)).toEqual(
+      task
+        ? [task, task, task]
+        : ["mark_written", "check_written", "second_pass"],
+    );
+    expect(
+      mockedCall.mock.calls.map(([o]) => [o.effort, o.fast, o.model]),
+    ).toEqual([
+      ["low", true, MODELS.strong],
+      ["low", true, MODELS.strong],
+      ["medium", true, MODELS.strong],
+    ]);
+    const messages = mockedCall.mock.calls[2][0].messages;
+    expect(messages[2].content).toContain("Marker A:");
+    expect(messages[2].content).toContain('"mark":4');
+    expect(messages[2].content).toContain("Marker B:");
+    expect(messages[2].content).toContain('"mark":2');
+    expect(messages[2].content).toContain(
+      grade.justification.replaceAll('"', '\\"'),
+    );
+    expect(messages[2].content).toContain("Marker B evidence");
+  },
+);
+
+it("keeps the first assessment when the reconciler agrees with neither", async () => {
+  mockedCall
+    .mockResolvedValueOnce(grade)
+    .mockResolvedValueOnce(checkGrade(2))
+    .mockResolvedValueOnce(checkGrade(0, "Neither"));
+  expect(await markWritten(q, "prices rise", null)).toMatchObject({
+    mark: 4,
+    band: q.criteria[0].descriptor,
+    feedback: {
+      justification: grade.justification,
+      check: { status: "in_review", marks: [4, 2, 0] },
+    },
+  });
+});
+
+it("retries and clamps check passes independently without requiring feedback", async () => {
+  mockedCall
+    .mockResolvedValueOnce(grade)
+    .mockResolvedValueOnce({ ...checkGrade(), mark: 99 })
+    .mockResolvedValueOnce({ ...checkGrade(), mark: 99 });
+  expect(await markWritten(q, "prices rise", null, "eval")).toMatchObject({
+    mark: 4,
+    feedback: { validated: true, check: { status: "agreed", marks: [4, 4] } },
+  });
+  expect(mockedCall).toHaveBeenCalledTimes(3);
+  for (const [options] of mockedCall.mock.calls)
+    expect(options.task).toBe("eval");
 });
 
 it("passes flashcard results through using the cheap model", async () => {
@@ -478,7 +598,7 @@ it("persists a written grade and skips grading an already marked attempt", async
     mark: 4,
     status: "marked",
   });
-  expect(mockedCall).toHaveBeenCalledTimes(1);
+  expect(mockedCall).toHaveBeenCalledTimes(2);
 });
 
 it("marks unfinished session attempts in parallel before totalling and summarising", async () => {
@@ -543,24 +663,26 @@ it("marks unfinished session attempts in parallel before totalling and summarisi
           resolveFirst = resolve;
         }),
     )
+    .mockResolvedValueOnce(checkGrade())
     .mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           resolveSecond = resolve;
         }),
     )
+    .mockResolvedValueOnce(checkGrade())
     .mockResolvedValueOnce({
       strengths: ["You explain"],
       improvements: ["Explain mechanism"],
       next_steps: ["Practise"],
     });
   const finishing = finishSession("session");
-  await vi.waitFor(() => expect(mockedCall).toHaveBeenCalledTimes(2));
+  await vi.waitFor(() => expect(mockedCall).toHaveBeenCalledTimes(4));
   expect(save.update).not.toHaveBeenCalled();
   resolveFirst(grade);
   resolveSecond(grade);
   expect(await finishing).toMatchObject({ score: 10, max_score: 12 });
-  expect(mockedCall).toHaveBeenCalledTimes(3);
+  expect(mockedCall).toHaveBeenCalledTimes(5);
   expect(save.update).toHaveBeenCalledWith(
     expect.objectContaining({
       score: 10,
@@ -601,7 +723,7 @@ it("retries failures once and finishes with all possible marks in the denominato
     score: 0,
     max_score: 4,
   });
-  expect(mockedCall).toHaveBeenCalledTimes(2);
+  expect(mockedCall).toHaveBeenCalledTimes(4);
   expect(save.update).toHaveBeenCalledWith(
     expect.objectContaining({ score: 0, max_score: 4, summary: null }),
   );

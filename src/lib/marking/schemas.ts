@@ -45,6 +45,14 @@ export const GradeSchema = z.strictObject({
   better_answer_outline: z.array(z.string()).min(3).max(6),
 });
 
+export const CheckSchema = GradeSchema.pick({
+  analysis: true,
+  bands_considered: true,
+  band_selected: true,
+  justification: true,
+  mark: true,
+});
+
 export const TranscriptSchema = z.strictObject({
   lines: z.array(z.string()),
   notes: z.string(),

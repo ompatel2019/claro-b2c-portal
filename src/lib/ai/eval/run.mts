@@ -144,6 +144,7 @@ for (const item of items) {
     expected: item.expected,
     mark: null,
     band: null,
+    check: null,
     delta: null,
     flags: {
       ...(item.section === "A1" && excluded[item.id]
@@ -172,6 +173,7 @@ for (const item of items) {
     }
     row.mark = result.mark;
     row.band = result.band;
+    row.check = result.feedback.check;
     row.flags.validated = result.feedback.validated;
     row.feedback = renderFeedback(result.feedback);
     if (typeof item.expected === "number") {
@@ -180,6 +182,12 @@ for (const item of items) {
         marks: q.marks,
         expected: item.expected,
         mark: result.mark,
+      });
+      row.firstScore = scoreItem({
+        criteria: q.criteria,
+        marks: q.marks,
+        expected: item.expected,
+        mark: result.feedback.check.marks[0],
       });
       row.delta = row.score.delta;
       if (evalBlocked(await spend())) {

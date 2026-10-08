@@ -2,22 +2,26 @@
 import { zodResponseFormat } from "openai/helpers/zod";
 import { expect, it } from "vitest";
 import {
+  CheckSchema,
   FlashcardSchema,
   GradeSchema,
   SummarySchema,
   TranscriptSchema,
 } from "./schemas";
 
-it.each([GradeSchema, TranscriptSchema, FlashcardSchema, SummarySchema])(
-  "builds strict structured output for schema %#",
-  (schema) => {
-    const format = zodResponseFormat(schema, "result");
-    expect(format.json_schema.strict).toBe(true);
-    const json = format.json_schema.schema!;
-    expect(json.additionalProperties).toBe(false);
-    expect(json.required).toEqual(Object.keys(json.properties as object));
-  },
-);
+it.each([
+  GradeSchema,
+  CheckSchema,
+  TranscriptSchema,
+  FlashcardSchema,
+  SummarySchema,
+])("builds strict structured output for schema %#", (schema) => {
+  const format = zodResponseFormat(schema, "result");
+  expect(format.json_schema.strict).toBe(true);
+  const json = format.json_schema.schema!;
+  expect(json.additionalProperties).toBe(false);
+  expect(json.required).toEqual(Object.keys(json.properties as object));
+});
 
 it("parses a full grade and rejects missing fields, fractional marks and invalid comments", () => {
   const grade = {
@@ -86,4 +90,19 @@ it("validates transcription, flashcard marks and summary fields", () => {
     SummarySchema.parse({ strengths: [], improvements: [], next_steps: [] }),
   ).toEqual({ strengths: [], improvements: [], next_steps: [] });
   expect(SummarySchema.safeParse({ strengths: [] }).success).toBe(false);
+});
+
+it("checks require only assessment fields and reject feedback fields", () => {
+  const check = {
+    analysis: { strengths: [], imprecise: [], missing: [] },
+    bands_considered: [],
+    band_selected: "NO BAND SATISFIED",
+    justification: "Empty",
+    mark: 0,
+  };
+  expect(CheckSchema.parse(check)).toEqual(check);
+  expect(CheckSchema.safeParse({ ...check, comments: [] }).success).toBe(false);
+  expect(
+    CheckSchema.safeParse({ ...check, justification: undefined }).success,
+  ).toBe(false);
 });

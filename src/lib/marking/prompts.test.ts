@@ -4,6 +4,7 @@ import {
   bandCorrection,
   flashcardMessages,
   gradeMessages,
+  reconcileMessages,
   summaryMessages,
   transcribeMessages,
 } from "./prompts";
@@ -119,4 +120,41 @@ it("truncates summary stems and requests specific Australian English advice", ()
   expect(JSON.parse(messages[1].content as string)[0].stem).toHaveLength(240);
   expect(messages[0].content).toContain("Australian English");
   expect(messages[0].content).toContain("no em dashes");
+});
+
+it("shares all grading instructions above the final paragraph with blind checks", () => {
+  const full = gradeMessages(q, "Answer");
+  const check = gradeMessages(q, "Answer", true);
+  expect((full[0].content as string).split("Return the full JSON")[0]).toBe(
+    (check[0].content as string).split("Return only analysis")[0],
+  );
+  expect(check[1]).toEqual(full[1]);
+  const instruction = (check[0].content as string).split(
+    "Return only analysis",
+  )[1];
+  expect(instruction).toContain("justification quoting the student's words");
+  expect(instruction).not.toMatch(/comments|outline/);
+});
+
+it("adds the two assessments to the check messages for reconciliation", () => {
+  const a = {
+    band_selected: "Describes policies",
+    mark: 10,
+    justification: 'Quotes "policy"',
+  };
+  const b = {
+    band_selected: "Evaluates two policies comprehensively",
+    mark: 16,
+    justification: "Judgement",
+  };
+  const messages = reconcileMessages(q, "Answer", a, b);
+  expect(messages.slice(0, 2)).toEqual(gradeMessages(q, "Answer", true));
+  expect(messages[2].content).toContain(
+    'Marker A: {"band_selected":"Describes policies","mark":10,',
+  );
+  expect(messages[2].content).toContain(
+    'Marker B: {"band_selected":"Evaluates two policies comprehensively","mark":16,',
+  );
+  expect(messages[2].content).toContain("either assessment or neither");
+  expect(messages[2].content).not.toMatch(/first|comments/);
 });

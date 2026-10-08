@@ -4,6 +4,7 @@ import {
   anchorComments,
   clampMark,
   findBand,
+  marksAgree,
   scoreMcq,
   topicSummary,
   validateGrade,
@@ -298,5 +299,27 @@ describe("topicSummary", () => {
     expect(
       topicSummary([{ topic: "Trade", correct: true }]).improvements,
     ).toEqual(["No misses this time: try a harder mode or a mixed sprint."]);
+  });
+});
+
+describe("marksAgree", () => {
+  it.each([
+    [4, 3, 4, true],
+    [4, 2, 3, false],
+    [6, 3, 4, true],
+    [6, 3, 5, false],
+    [6, 0, 0, true],
+    [6, 0, 1, false],
+  ])("compares marks for max %s: %s and %s", (max, a, b, expected) => {
+    const bands = [{ min: 3, max: 6, descriptor: "Explains" }, criteria[1]];
+    expect(marksAgree(bands, max, a, b)).toBe(expected);
+    expect(marksAgree(bands, max, b, a)).toBe(expected);
+  });
+  it("treats zero and marks outside every band as no band", () => {
+    expect(marksAgree([{ min: 0, max: 0, descriptor: "Zero" }], 4, 0, 2)).toBe(
+      true,
+    );
+    expect(marksAgree(criteria, 6, 7, 8)).toBe(true);
+    expect(marksAgree(criteria, 6, 0, 7)).toBe(false);
   });
 });
