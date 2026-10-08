@@ -13,6 +13,7 @@ import { markingState, type ReviewRow } from "@/lib/feedback";
 import { RichText } from "@/components/rich-text";
 import { AnnotatedFeedback } from "@/components/annotated-feedback";
 import { ReportProblem } from "@/components/feedback-widget";
+import { QuestionMark } from "@/components/question-mark";
 import { McReview } from "@/components/mc-review";
 import { PageHeader } from "@/components/page-header";
 import { RefreshWhile } from "@/components/refresh-while";
@@ -142,7 +143,14 @@ export default async function Results({
                     photos={(r.image_paths ?? []).flatMap(
                       (p) => url.get(p) ?? [],
                     )}
-                    actions={report(r)}
+                    actions={
+                      <>
+                        {["marked", "reviewed"].includes(state) && (
+                          <QuestionMark attemptId={r.attempt_id} />
+                        )}
+                        {report(r)}
+                      </>
+                    }
                   />
                 )}
               </div>

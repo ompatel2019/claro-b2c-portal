@@ -39,6 +39,8 @@ test.describe("annotated written feedback", () => {
   const ids: string[] = [];
   const reports: { id: string; screenshots: string[] }[] = [];
   let results = "";
+  let attemptId = "";
+  let otherIds: string[] = [];
   test.afterAll(async () => {
     const db = adminClient()!;
     for (const r of reports) {
@@ -63,6 +65,8 @@ test.describe("annotated written feedback", () => {
       .eq("session_id", id)
       .order("position");
     const [first, ...rest] = attempts!;
+    attemptId = first.id;
+    otherIds = rest.map((a) => a.id);
     const skipped = await db
       .from("attempts")
       .update({ status: "skipped" })
@@ -196,5 +200,90 @@ test.describe("annotated written feedback", () => {
     ).toHaveAttribute("aria-pressed", "true");
     await dialog.getByRole("button", { name: "Cancel" }).click();
     await expect(dialog).toHaveCount(0);
+  });
+
+  test("disputes are validated and capped at 3 open per student", async ({
+    page,
+  }) => {
+    await signIn(page);
+    const post = (note: string) =>
+      page.request.post(`/api/attempts/${attemptId}/dispute`, {
+        data: { note },
+      });
+    expect((await post("too short")).status()).toBe(400);
+    const db = adminClient()!;
+    const { count } = await db
+      .from("mark_reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("reason", "student_dispute")
+      .eq("status", "open")
+      .in("attempt_id", otherIds);
+    expect(count).toBe(0);
+    const { data: user } = await db
+      .from("attempts")
+      .select("user_id")
+      .eq("id", attemptId)
+      .single();
+    const { count: open } = await db
+      .from("mark_reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user!.user_id)
+      .eq("reason", "student_dispute")
+      .eq("status", "open");
+    test.skip(open !== 0, "The test student already has open disputes");
+    // Three open disputes on this run's other attempts (deleted with the session).
+    const seeded = await db.from("mark_reviews").insert(
+      otherIds.slice(0, 3).map((id) => ({
+        attempt_id: id,
+        user_id: user!.user_id,
+        reason: "student_dispute",
+        student_note: "Seeded by the E2E run.",
+      })),
+    );
+    expect(seeded.error).toBeNull();
+    const over = await post("Please check my second paragraph again.");
+    expect(over.status()).toBe(409);
+    expect((await over.json()).error).toBe(
+      "You have 3 marks being checked. You can question another once one is done.",
+    );
+    await db.from("mark_reviews").delete().in("attempt_id", otherIds);
+  });
+
+  test("question this mark puts the answer under review", async ({ page }) => {
+    await signIn(page);
+    await page.goto(results);
+    await page.locator("summary").first().click();
+    await page.getByRole("button", { name: "Question this mark" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(
+      dialog.getByText(
+        "Our team will re-check your answer. Your mark can go up or down.",
+      ),
+    ).toBeVisible();
+    await dialog
+      .getByRole("textbox", { name: "What do you think we missed?" })
+      .fill("I explained the cause with a CPI figure in my second sentence.");
+    await dialog.getByRole("button", { name: "Submit" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText("Being double-checked").first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Question this mark" }),
+    ).toHaveCount(0);
+    const again = await page.request.post(
+      `/api/attempts/${attemptId}/dispute`,
+      {
+        data: { note: "Another go at questioning this." },
+      },
+    );
+    expect(again.status()).toBe(409);
+    const { data } = await adminClient()!
+      .from("attempts")
+      .select("check_status, mark_reviews(reason, status, ai_mark)")
+      .eq("id", attemptId)
+      .single();
+    expect(data).toMatchObject({
+      check_status: "in_review",
+      mark_reviews: [{ reason: "student_dispute", status: "open", ai_mark: 2 }],
+    });
   });
 });
