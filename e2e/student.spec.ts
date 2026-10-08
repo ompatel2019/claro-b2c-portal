@@ -80,8 +80,8 @@ test.describe("Student practice", () => {
 
 test.describe("AI backed written practice", () => {
   test.skip(
-    !process.env.STUDENT_EMAIL || !process.env.STUDENT_PASSWORD,
-    "Requires a real student account",
+    !process.env.E2E_AI || !process.env.STUDENT_EMAIL,
+    "Calls OpenAI: set E2E_AI=1 with a real student account",
   );
   test.describe.configure({ mode: "serial" });
   test.setTimeout(180000);

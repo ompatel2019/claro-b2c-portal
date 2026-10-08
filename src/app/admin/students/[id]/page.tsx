@@ -45,11 +45,7 @@ export default async function StudentDetail({
             const href =
               s.kind === "flashcards"
                 ? `/flashcards/${s.id}${s.finished_at ? "/results" : ""}`
-                : s.kind === "homework"
-                  ? s.finished_at
-                    ? `/practice/${s.id}/results`
-                    : `/homework/${s.homework_set_id}`
-                  : `/practice/${s.id}${s.finished_at ? "/results" : ""}`;
+                : `/practice/${s.id}${s.finished_at ? "/results" : ""}`;
             const cfg =
               s.config &&
               typeof s.config === "object" &&
@@ -59,9 +55,7 @@ export default async function StudentDetail({
             const label =
               s.kind === "flashcards"
                 ? `Flashcards: ${String(cfg.mode ?? "study")}`
-                : s.kind === "homework"
-                  ? "Homework"
-                  : modeLabel(cfg.mode);
+                : modeLabel(cfg.mode);
             return (
               <li key={s.id}>
                 <Link

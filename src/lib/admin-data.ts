@@ -86,9 +86,7 @@ export async function loadStudent(id: string) {
   const { data: user } = await admin().auth.admin.getUserById(id);
   const { data: sessions } = await db
     .from("sessions")
-    .select(
-      "id,kind,config,started_at,finished_at,score,max_score,homework_set_id",
-    )
+    .select("id,kind,config,started_at,finished_at,score,max_score")
     .eq("user_id", id)
     .order("started_at", { ascending: false })
     .limit(30)

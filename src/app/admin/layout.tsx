@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { signOut } from "@/app/(auth)/actions";
 const links = [
   ["Admin", "/admin"],
-  ["Homework", "/admin/homework"],
   ["Students", "/admin/students"],
   ["Submissions", "/admin/submissions"],
   ["Questions", "/admin/questions"],

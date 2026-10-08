@@ -33,9 +33,7 @@ describe("flashcard persist queue", () => {
   it("detects missing-session errors", () => {
     expect(
       isMissingSessionError(
-        new Error(
-          "This homework session was reset or expired. Open Homework and continue again.",
-        ),
+        new Error("This session was reset or expired. Start the deck again."),
       ),
     ).toBe(true);
     expect(isMissingSessionError(new Error("network down"))).toBe(false);

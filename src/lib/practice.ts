@@ -15,8 +15,6 @@ export type Topic = {
 };
 export type Session = {
   kind?: string;
-  homework_set_id?: string;
-  homework_set?: { title: string } | null;
   id: string;
   user_id: string;
   config: {

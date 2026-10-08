@@ -39,16 +39,13 @@ export async function POST(
   if (sessionId) {
     const { data: session } = await supabase
       .from("sessions")
-      .select("finished_at,kind,config,homework_set_id")
+      .select("finished_at,kind,config")
       .eq("id", sessionId)
       .eq("user_id", user.id)
       .maybeSingle();
     if (!session)
       return Response.json(
-        {
-          error:
-            "This homework session was reset or expired. Open Homework and continue again.",
-        },
+        { error: "This session was reset or expired. Start the deck again." },
         { status: 404 },
       );
     if (session.finished_at)
@@ -56,25 +53,11 @@ export async function POST(
         { error: "Session already finished" },
         { status: 409 },
       );
-    let valid =
-      session.kind === "flashcards" &&
-      session.config?.mode === "test" &&
-      session.config.card_ids?.includes(id);
-    if (session.kind === "homework") {
-      const { data: item, error } = await supabase
-        .from("homework_items")
-        .select("position")
-        .eq("set_id", session.homework_set_id)
-        .eq("flashcard_id", id)
-        .maybeSingle();
-      if (error)
-        return Response.json(
-          { error: "Could not check this homework card. Please try again." },
-          { status: 500 },
-        );
-      valid = Boolean(item);
-    }
-    if (!valid)
+    if (
+      session.kind !== "flashcards" ||
+      session.config?.mode !== "test" ||
+      !session.config.card_ids?.includes(id)
+    )
       return Response.json(
         { error: "Card is not in this active session" },
         { status: 400 },

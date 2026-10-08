@@ -28,11 +28,6 @@ export default async function AdminHome() {
   ];
   const cards = [
     [
-      "Homework builder",
-      "Create sets, choose flashcards and questions, and track submissions.",
-      "/admin/homework",
-    ],
-    [
       "Students",
       "Names, emails, sessions, averages and recent activity.",
       "/admin/students",

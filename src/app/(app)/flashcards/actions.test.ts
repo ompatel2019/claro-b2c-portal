@@ -151,7 +151,7 @@ it.each([
       "active study session",
     );
     expect(owned.eq).toHaveBeenCalledWith("user_id", "user");
-    expect(owned.in).toHaveBeenCalledWith("kind", ["flashcards", "homework"]);
+    expect(owned.eq).toHaveBeenCalledWith("kind", "flashcards");
     expect(db.from).toHaveBeenCalledTimes(1);
   },
 );
@@ -199,37 +199,4 @@ it("does not advance the schedule on a recycled self rating", async () => {
   );
   await rateFlashcard(sessionId, "c", 1);
   expect(db.from).not.toHaveBeenCalledWith("flashcard_progress");
-});
-
-it("checks homework membership before recording a self review", async () => {
-  const owned = query({
-    kind: "homework",
-    finished_at: null,
-    homework_set_id: "set",
-    config: {},
-  });
-  const membership = query({ position: 1 });
-  const review = query({ id: "repeat" });
-  client(owned, membership, review, query({ id: "first" }));
-  await rateFlashcard(sessionId, "c", 1);
-  expect(membership.eq).toHaveBeenCalledWith("set_id", "set");
-  expect(membership.eq).toHaveBeenCalledWith("flashcard_id", "c");
-  expect(review.insert).toHaveBeenCalledWith(
-    expect.objectContaining({ flashcard_id: "c", mark: 1, source: "self" }),
-  );
-});
-it("rejects a flashcard outside the homework set without inserting a review", async () => {
-  const db = client(
-    query({
-      kind: "homework",
-      finished_at: null,
-      homework_set_id: "set",
-      config: {},
-    }),
-    query(null),
-  );
-  await expect(rateFlashcard(sessionId, "outside", 1)).rejects.toThrow(
-    "active study session",
-  );
-  expect(db.from).toHaveBeenCalledTimes(2);
 });

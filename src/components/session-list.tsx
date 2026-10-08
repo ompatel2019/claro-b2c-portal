@@ -21,21 +21,13 @@ export function SessionList({
           <Link
             prefetch={false}
             className="panel hover:border-brand flex flex-wrap items-center justify-between gap-4 p-5"
-            href={
-              s.kind === "homework" && !s.finished_at
-                ? `/homework/${s.homework_set_id}`
-                : s.kind === "homework"
-                  ? `/practice/${s.id}/results`
-                  : `/${s.kind === "flashcards" ? "flashcards" : "practice"}/${s.id}${s.finished_at ? "/results" : ""}`
-            }
+            href={`/${s.kind === "flashcards" ? "flashcards" : "practice"}/${s.id}${s.finished_at ? "/results" : ""}`}
           >
             <div>
               <p className="font-semibold">
-                {s.kind === "homework"
-                  ? `Homework: ${s.homework_set?.title ?? "Homework"}`
-                  : s.kind === "flashcards"
-                    ? `Flashcards: ${String(s.config.mode) === "test" ? "Test" : "Study"}`
-                    : modeLabel(s.config.mode)}
+                {s.kind === "flashcards"
+                  ? `Flashcards: ${String(s.config.mode) === "test" ? "Test" : "Study"}`
+                  : modeLabel(s.config.mode)}
               </p>
               <p className="mt-1 text-sm">
                 {topicNames(s.config.topics, topics)}

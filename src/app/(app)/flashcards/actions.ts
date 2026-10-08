@@ -103,33 +103,18 @@ export async function rateFlashcard(
   const db = await createClient();
   const { data: session } = await db
     .from("sessions")
-    .select("finished_at,config,kind,homework_set_id")
+    .select("finished_at,config")
     .eq("id", sessionId)
     .eq("user_id", profile.id)
-    .in("kind", ["flashcards", "homework"])
+    .eq("kind", "flashcards")
     .maybeSingle()
     .throwOnError();
-  let homeworkCard = false;
-  if (session?.kind === "homework") {
-    const { data: item } = await db
-      .from("homework_items")
-      .select("position")
-      .eq("set_id", session.homework_set_id)
-      .eq("flashcard_id", cardId)
-      .maybeSingle()
-      .throwOnError();
-    homeworkCard = Boolean(item);
-  }
   if (!session || session.finished_at)
-    throw new Error(
-      "This homework session was reset or expired. Open Homework and continue again.",
-    );
-  if (!(
-    homeworkCard ||
-    (session.kind === "flashcards" &&
-      session.config.mode === "study" &&
-      session.config.card_ids?.includes(cardId))
-  ))
+    throw new Error("This session was reset or expired. Start the deck again.");
+  if (
+    session.config.mode !== "study" ||
+    !session.config.card_ids?.includes(cardId)
+  )
     throw new Error("This card is not available in an active study session.");
   const { data: review } = await db
     .from("flashcard_reviews")
@@ -167,7 +152,7 @@ export async function saveFlashcardTime(sessionId: string, elapsed: number) {
     .update({ elapsed_s: elapsed })
     .eq("id", sessionId)
     .eq("user_id", profile.id)
-    .in("kind", ["flashcards", "homework"])
+    .eq("kind", "flashcards")
     .is("finished_at", null)
     .throwOnError();
 }
@@ -194,7 +179,7 @@ export async function drainPersistRating(item: {
     .select("id,finished_at")
     .eq("id", parsed.data.sessionId)
     .eq("user_id", profile.id)
-    .in("kind", ["flashcards", "homework"])
+    .eq("kind", "flashcards")
     .maybeSingle();
   if (!session || session.finished_at) return "missing";
   try {

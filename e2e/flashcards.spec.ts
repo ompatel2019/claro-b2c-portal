@@ -140,6 +140,7 @@ test.describe("Student flashcards", () => {
   test("test mode checks one answer and finishes with a model answer", async ({
     page,
   }) => {
+    test.skip(!process.env.E2E_AI, "Calls OpenAI: set E2E_AI=1");
     test.setTimeout(180000);
     let aiRequests = 0;
     page.on("request", (r) => {
@@ -190,14 +191,13 @@ test.describe("Flashcard persist queue", () => {
     test.setTimeout(120000);
     const staleSession = "00000000-0000-4000-8000-000000000099";
     const markUrls: string[] = [];
-    const doStatuses: number[] = [];
+    const serverErrors: string[] = [];
     page.on("request", (req) => {
       if (req.url().includes("/api/flashcards/") && req.url().includes("/mark"))
         markUrls.push(req.url());
     });
     page.on("response", (res) => {
-      if (res.url().includes("/homework/") && res.url().includes("/do"))
-        doStatuses.push(res.status());
+      if (res.status() >= 500) serverErrors.push(res.url());
     });
     await signIn(page);
     await page.goto("/flashcards", { waitUntil: "domcontentloaded" });
@@ -224,8 +224,8 @@ test.describe("Flashcard persist queue", () => {
         { timeout: 15000 },
       )
       .toBeNull();
-    // Drain uses rateFlashcard (server action). Mark API must stay quiet; /do must not 5xx.
+    // Drain uses rateFlashcard (server action). Mark API must stay quiet; nothing may 5xx.
     expect(markUrls).toEqual([]);
-    expect(doStatuses.filter((status) => status >= 500)).toEqual([]);
+    expect(serverErrors).toEqual([]);
   });
 });
