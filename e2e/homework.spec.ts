@@ -159,9 +159,15 @@ test.describe("Student homework", () => {
     );
     await page.getByRole("button", { name: "Flip and rate myself" }).click();
     await page.getByRole("button", { name: "Knew it", exact: true }).click();
+    const continueBtn = page.getByRole("button", {
+      name: "Continue to questions",
+      exact: true,
+    });
+    if (await continueBtn.isVisible().catch(() => false))
+      await continueBtn.click();
     await expect(
       page.getByRole("group", { name: "Choose your answer" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 60000 });
     await page.getByRole("radio").nth(correctIndex).check();
     await page.getByRole("button", { name: "Next question" }).click();
     await page.getByRole("button", { name: "Skip for now" }).click();

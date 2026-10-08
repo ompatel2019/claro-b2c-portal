@@ -116,8 +116,8 @@ export function FlashcardRunner({
   async function finish() {
     await saveTime();
     if (homework) {
-      router.push(`/homework/${homework.setId}/do?stage=questions`);
-      router.refresh();
+      // Hard nav so the server re-renders SprintRunner once stage 1 is complete.
+      window.location.assign(`/homework/${homework.setId}/do?stage=questions`);
       return;
     }
     await post(`/api/sessions/${session.id}/finish`);
