@@ -19,11 +19,14 @@ export function SessionList({
       {sessions.map((s) => (
         <li key={s.id}>
           <Link
+            prefetch={false}
             className="panel hover:border-brand flex flex-wrap items-center justify-between gap-4 p-5"
             href={
               s.kind === "homework" && !s.finished_at
-                ? `/homework/${s.homework_set_id}/do`
-                : `/${s.kind === "flashcards" ? "flashcards" : "practice"}/${s.id}${s.finished_at ? "/results" : ""}`
+                ? `/homework/${s.homework_set_id}`
+                : s.kind === "homework"
+                  ? `/practice/${s.id}/results`
+                  : `/${s.kind === "flashcards" ? "flashcards" : "practice"}/${s.id}${s.finished_at ? "/results" : ""}`
             }
           >
             <div>

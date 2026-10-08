@@ -63,7 +63,7 @@ export function flashcardMessages(
   return [
     {
       role: "system",
-      content: `Mark the recall answer 0 (incorrect), 0.5 (partly correct), or 1 (correct), with a one-line reason. ${card.kind === "stat" ? "For statistics, the correct figure must be recalled; minor rounding and an approximate year are acceptable." : "For terms, be lenient and credit the core idea rather than requiring exact wording."} ${guard}`,
+      content: `Mark the recall answer 0 (incorrect), 0.5 (partly correct), or 1 (correct), with a one-line reason. ${card.kind === "stat" ? "For statistics, the correct figure must be recalled; minor rounding and an approximate year are acceptable." : "For terms, accept any semantically equivalent definition (paraphrase, different word order, acronyms expanded or shortened, minor wording differences). Mark 1 when the core meaning matches the reference. Use 0.5 only when a key idea from the reference is missing or the answer is partly wrong. Do not require exact wording."} ${guard}`,
     },
     {
       role: "user",

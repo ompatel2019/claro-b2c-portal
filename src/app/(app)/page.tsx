@@ -35,9 +35,9 @@ export default async function Dashboard() {
       .limit(1),
     db
       .from("sessions")
-      .select("*")
+      .select("*,homework_set:homework_sets(title)")
       .eq("user_id", profile.id)
-      .eq("kind", "sprint")
+      .in("kind", ["sprint", "homework"])
       .not("finished_at", "is", null)
       .order("finished_at", { ascending: false })
       .limit(3),

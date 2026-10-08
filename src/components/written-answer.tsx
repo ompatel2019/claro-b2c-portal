@@ -161,9 +161,11 @@ export function WrittenAnswer({
           <label className="grid gap-3 font-semibold">
             {photo ? "Check your transcript" : "Your answer"}
             <textarea
+              key={a.id}
               className="field min-h-64 font-normal"
               value={a.transcript ?? a.answer_text ?? ""}
               disabled={busy || disabled}
+              data-question-id={a.question_id}
               onChange={(e) => {
                 edit(
                   photo

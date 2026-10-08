@@ -64,8 +64,9 @@ export default async function Results({
           </p>
         )}
         <p>
-          {homework ? "Homework" : modeLabel(s.config.mode)} ·{" "}
-          {topicNames(s.config.topics, (data ?? []) as Topic[])}
+          {homework
+            ? homework.set.title
+            : `${modeLabel(s.config.mode)} · ${topicNames(s.config.topics, (data ?? []) as Topic[])}`}
         </p>
         <p className="mt-2">
           {timer(s.elapsed_s ?? 0)} used · {dateLabel(s.finished_at)}

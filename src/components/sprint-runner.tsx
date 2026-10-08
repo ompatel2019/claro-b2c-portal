@@ -150,7 +150,8 @@ export function SprintRunner({
     }
   }
   async function change(next: number) {
-    setIndex(next);
+    // Persist the current draft before swapping questions so keystrokes
+    // during the transition cannot land on the next question.
     try {
       await flush();
       await persistTime();
@@ -162,7 +163,9 @@ export function SprintRunner({
             ? e.message
             : "Could not save your timer. Check your connection.",
       );
+      return;
     }
+    setIndex(next);
   }
   async function finish() {
     setConfirm(false);
@@ -467,7 +470,7 @@ export function SprintRunner({
           <WrittenAnswer
             disabled={busy}
             onBusy={setBusy}
-            key={a.id}
+            key={a.question_id ?? a.id}
             attempt={a}
             userId={userId}
             edit={(patch) => edit(a.id, patch)}

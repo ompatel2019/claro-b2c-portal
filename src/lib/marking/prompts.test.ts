@@ -73,7 +73,7 @@ it("uses different stat and term rules", () => {
   const card = { front: "Recall", back: "Reference" };
   expect(
     flashcardMessages({ ...card, kind: "term" }, "answer")[0].content,
-  ).toContain("credit the core idea");
+  ).toContain("semantically equivalent");
   expect(
     flashcardMessages({ ...card, kind: "stat" }, "answer")[0].content,
   ).toContain("correct figure must be recalled");

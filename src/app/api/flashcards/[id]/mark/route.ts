@@ -77,7 +77,7 @@ export async function POST(
       );
   }
   try {
-    const local = matchFlashcardAnswer(answer, card.back);
+    const local = matchFlashcardAnswer(answer, card.back, card.front);
     const result =
       local ??
       (await markFlashcard(

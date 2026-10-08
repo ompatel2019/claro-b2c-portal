@@ -89,42 +89,93 @@ export function resumeQueue(
   return ids.filter((id) => latest.get(id) !== 1);
 }
 
-/** Normalise for exact/near flashcard matching (lowercase, strip punctuation/extra space). */
+/** Normalise for flashcard matching. */
 export function normaliseAnswer(text: string) {
-  return text
+  let s = text
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s.%$]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/[\u0300-\u036f]/g, "");
+  // Expand "term (ACR)" → keep both full phrase and acronym as tokens later
+  s = s.replace(/\(([^)]+)\)/g, " $1 ");
+  s = s.replace(/[^a-z0-9\s%$]/g, " ");
+  s = s.replace(/\b(a|an|the)\b/g, " ");
+  // Light plural fold: economies→economy, services→service (keep short words)
+  s = s
+    .replace(/\b([a-z]{4,})ies\b/g, "$1y")
+    .replace(/\b([a-z]{4,})s\b/g, "$1");
+  return s.replace(/\s+/g, " ").trim();
+}
+
+function tokens(text: string) {
+  return text.split(" ").filter(Boolean);
+}
+
+function sortedJoin(text: string) {
+  return tokens(text).sort().join(" ");
+}
+
+function parentheticals(raw: string) {
+  return [...raw.matchAll(/\(([^)]+)\)/g)].map((m) => normaliseAnswer(m[1]));
+}
+
+function withoutParentheticals(raw: string) {
+  return normaliseAnswer(raw.replace(/\([^)]*\)/g, " "));
 }
 
 /**
- * Deterministic flashcard mark before calling AI.
- * Exact / containment → 1; high token overlap → 0.5; else null (use AI).
+ * Deterministic flashcard mark. Returns 1 when confidently correct, else null
+ * (defer to AI). Does not return 0.5 — partials are for the model.
  */
 export function matchFlashcardAnswer(
   answer: string,
   back: string,
+  front?: string,
 ): { mark: FlashcardMark; reason: string } | null {
   const a = normaliseAnswer(answer);
   const b = normaliseAnswer(back);
   if (!a || !b) return null;
-  if (a === b) return { mark: 1, reason: "Exact match with the model answer." };
-  if (
-    a.includes(b) ||
-    (b.length <= 80 && b.includes(a) && a.length >= b.length * 0.6)
-  )
+  if (a === b || sortedJoin(a) === sortedJoin(b))
+    return { mark: 1, reason: "Exact match with the model answer." };
+  // Acronym inside parentheses, or expanded form without the acronym
+  const acrs = parentheticals(back);
+  if (acrs.includes(a))
+    return { mark: 1, reason: "Matches the acronym in the model answer." };
+  const bare = withoutParentheticals(back);
+  if (bare && (a === bare || sortedJoin(a) === sortedJoin(bare)))
+    return { mark: 1, reason: "Matches the expanded model answer." };
+  // Answer contains the full model answer
+  if (a.includes(b)) return { mark: 1, reason: "Matches the model answer." };
+  // Model contains answer — only when the answer covers most content tokens
+  // (blocks thin substrings like "GDP" matching "GDP per capita")
+  const stop = new Set([
+    "by",
+    "of",
+    "to",
+    "in",
+    "on",
+    "for",
+    "and",
+    "or",
+    "as",
+    "is",
+    "are",
+    "with",
+  ]);
+  const aTok = tokens(a).filter((t) => !stop.has(t));
+  const bTok = tokens(b).filter((t) => !stop.has(t));
+  if (!bTok.length) return null;
+  if (b.includes(a) && aTok.length >= Math.ceil(bTok.length * 0.75))
     return { mark: 1, reason: "Matches the model answer." };
-  const aTokens = new Set(a.split(" ").filter((t) => t.length > 2));
-  const bTokens = b.split(" ").filter((t) => t.length > 2);
-  if (!bTokens.length) return null;
-  const hit = bTokens.filter((t) => aTokens.has(t)).length;
-  const ratio = hit / bTokens.length;
-  if (ratio >= 0.85)
+  const aSet = new Set(aTok);
+  const hit = bTok.filter((t) => aSet.has(t)).length;
+  const ratio = hit / bTok.length;
+  // High coverage of content tokens in the model answer → accept
+  if (ratio >= 0.7 && hit >= Math.min(3, bTok.length))
     return { mark: 1, reason: "Covers the key points of the model answer." };
-  if (ratio >= 0.5)
-    return { mark: 0.5, reason: "Partly covers the model answer." };
+  // Answering with the prompt term alone is not the definition
+  if (front) {
+    const f = normaliseAnswer(front);
+    if (f && (a === f || sortedJoin(a) === sortedJoin(f))) return null;
+  }
   return null;
 }

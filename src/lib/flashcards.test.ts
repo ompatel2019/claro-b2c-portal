@@ -79,18 +79,106 @@ it("uses first reviews for scoring and latest reviews for ordered resume", () =>
   ]);
   expect(resumeQueue(["a", "b", "c", "d"], reviews)).toEqual(["c", "d"]);
 });
+
 describe("flashcard answer matching", () => {
-  it("normalises answers for matching", () => {
-    expect(normaliseAnswer("  Real GDP!! ")).toBe("real gdp");
+  // Seeded Topic 3 cards (front = prompt, back = model answer)
+  const gdp = {
+    front: "Gross domestic product (GDP)",
+    back: "The market value of final goods and services produced within a country during a given period.",
+  };
+  const perCapita = {
+    front: "GDP per capita",
+    back: "GDP divided by the population, indicating the average value of output per person.",
+  };
+  const realGdp = {
+    front: "Real GDP",
+    back: "The value of goods and services produced in an economy, adjusted to remove the effects of price changes.",
+  };
+
+  it("normalises case, punctuation, articles and parentheses", () => {
+    expect(normaliseAnswer("  The GDP (real)! ")).toContain("gdp");
+    expect(normaliseAnswer("The market value")).toBe(
+      normaliseAnswer("market value"),
+    );
   });
-  it("marks exact and near flashcard answers without AI", () => {
-    expect(matchFlashcardAnswer("Real GDP", "Real GDP")?.mark).toBe(1);
+
+  it.each([
+    [gdp.back, gdp.front],
+    [gdp.back.replace(/\.$/, ""), gdp.front],
+    [
+      "market value of final goods and services produced within a country during a given period",
+      gdp.front,
+    ],
+    [
+      "The market value of final goods and services produced within a country during a given period",
+      gdp.front,
+    ],
+    [perCapita.back, perCapita.front],
+    [
+      "GDP divided by the population indicating the average value of output per person",
+      perCapita.front,
+    ],
+    ["gdp divided by population average output per person", perCapita.front],
+    [realGdp.back, realGdp.front],
+    [
+      "value of goods and services produced in an economy adjusted to remove effects of price changes",
+      realGdp.front,
+    ],
+  ] as const)("accepts correct definition %#", (answer, front) => {
+    const back =
+      front === gdp.front
+        ? gdp.back
+        : front === perCapita.front
+          ? perCapita.back
+          : realGdp.back;
+    expect(matchFlashcardAnswer(answer, back, front)?.mark).toBe(1);
+  });
+
+  it("accepts acronym-only and expanded forms for short model answers", () => {
+    const term = "Gross domestic product (GDP)";
+    expect(matchFlashcardAnswer("GDP", term)?.mark).toBe(1);
+    expect(matchFlashcardAnswer("gdp", term)?.mark).toBe(1);
+    expect(matchFlashcardAnswer("gross domestic product", term)?.mark).toBe(1);
+    expect(
+      matchFlashcardAnswer("Gross Domestic Product (GDP)", term)?.mark,
+    ).toBe(1);
+    expect(matchFlashcardAnswer("domestic product gross", term)?.mark).toBe(1);
+    const short = "GDP per capita";
+    expect(matchFlashcardAnswer("GDP per capita", short)?.mark).toBe(1);
+    expect(matchFlashcardAnswer("gdp per capita", short)?.mark).toBe(1);
+    expect(matchFlashcardAnswer("per capita GDP", short)?.mark).toBe(1);
+    expect(matchFlashcardAnswer("GDP per-capita", short)?.mark).toBe(1);
+  });
+
+  it("does not auto-pass wrong or thin answers", () => {
+    expect(matchFlashcardAnswer("banana", gdp.back, gdp.front)).toBeNull();
+    expect(matchFlashcardAnswer("GDP", gdp.back, gdp.front)).toBeNull();
     expect(
       matchFlashcardAnswer(
-        "The market value of all final goods and services produced in an economy in a year, adjusted for inflation",
-        "The market value of all final goods and services produced in an economy over a period of time, adjusted for inflation (real).",
-      )?.mark,
-    ).toBeGreaterThanOrEqual(0.5);
-    expect(matchFlashcardAnswer("banana", "Real GDP")).toBeNull();
+        "something about inflation",
+        perCapita.back,
+        perCapita.front,
+      ),
+    ).toBeNull();
+    // acronym-only / term-only should defer when the model answer is the definition
+    expect(
+      matchFlashcardAnswer("Gross domestic product", gdp.back, gdp.front),
+    ).toBeNull();
+    expect(
+      matchFlashcardAnswer("GDP per capita", perCapita.back, perCapita.front),
+    ).toBeNull();
+    // thin substring of a short term must not pass
+    expect(matchFlashcardAnswer("GDP", "GDP per capita")).toBeNull();
+    expect(matchFlashcardAnswer("per capita", "GDP per capita")).toBeNull();
+    expect(
+      matchFlashcardAnswer("market value of goods", gdp.back, gdp.front),
+    ).toBeNull();
+  });
+
+  it("does not return Nearly there from the deterministic path", () => {
+    const partial = "market value of goods";
+    const result = matchFlashcardAnswer(partial, gdp.back, gdp.front);
+    expect(result === null || result.mark === 1).toBe(true);
+    expect(result?.mark).not.toBe(0.5);
   });
 });

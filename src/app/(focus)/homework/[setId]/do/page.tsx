@@ -10,7 +10,14 @@ export default async function Run({
 }: {
   params: Promise<{ setId: string }>;
 }) {
-  const { set, session, profile } = await loadHomework((await params).setId);
+  const setId = (await params).setId;
+  let loaded;
+  try {
+    loaded = await loadHomework(setId);
+  } catch {
+    redirect(`/homework/${setId}`);
+  }
+  const { set, session, profile } = loaded;
   if (!session) redirect(`/homework/${set.id}`);
   if (session.finished_at) redirect(`/practice/${session.id}/results`);
   const ids = cardIds(set);

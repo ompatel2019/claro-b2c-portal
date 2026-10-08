@@ -206,3 +206,109 @@ test.describe("Student homework", () => {
     ).toContainText("Submitted");
   });
 });
+
+test.describe("Homework written draft isolation", () => {
+  test.skip(
+    !process.env.STUDENT_EMAIL ||
+      !process.env.STUDENT_PASSWORD ||
+      !process.env.SUPABASE_SECRET_KEY,
+    "Requires a student account and service-role seed credentials",
+  );
+  test.describe.configure({ mode: "serial" });
+  const title = `E2E draft isolation ${Date.now()}`;
+  let setId = "";
+  const db = adminClient();
+  test.beforeAll(async () => {
+    if (!db) throw new Error("Supabase seed configuration is missing.");
+    const [card, shorts] = await Promise.all([
+      db
+        .from("flashcards")
+        .select("id")
+        .eq("kind", "term")
+        .order("id")
+        .limit(1)
+        .throwOnError(),
+      db
+        .from("questions")
+        .select("id")
+        .eq("type", "short")
+        .order("id")
+        .limit(2)
+        .throwOnError(),
+    ]);
+    expect(card.data).toHaveLength(1);
+    expect(shorts.data).toHaveLength(2);
+    const { data: set } = await db
+      .from("homework_sets")
+      .insert({
+        title,
+        due_at: new Date(Date.now() + 3 * 86400000).toISOString(),
+        published_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single()
+      .throwOnError();
+    setId = set!.id;
+    await db
+      .from("homework_items")
+      .insert([
+        { set_id: setId, position: 1, flashcard_id: card.data![0].id },
+        { set_id: setId, position: 2, question_id: shorts.data![0].id },
+        { set_id: setId, position: 3, question_id: shorts.data![1].id },
+      ])
+      .throwOnError();
+  });
+  test.afterAll(async () => {
+    if (!db || !setId) return;
+    // Clean only rows this test created (by set id).
+    await db
+      .from("sessions")
+      .delete()
+      .eq("homework_set_id", setId)
+      .throwOnError();
+    await db.from("homework_sets").delete().eq("id", setId).throwOnError();
+  });
+  test("keeps typed answers on the question they were typed into", async ({
+    page,
+  }) => {
+    test.setTimeout(180000);
+    await signIn(page);
+    await page.goto("/homework", { waitUntil: "domcontentloaded" });
+    const card = page
+      .locator("article")
+      .filter({ has: page.getByRole("heading", { name: title, exact: true }) })
+      .last();
+    await card
+      .getByRole("link", { name: "Begin homework", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Begin homework", exact: true })
+      .click();
+    await expect(page).toHaveURL(new RegExp(`/homework/${setId}/do`));
+    await page.getByRole("button", { name: "Flip and rate myself" }).click();
+    await page.getByRole("button", { name: "Knew it", exact: true }).click();
+    const continueBtn = page.getByRole("button", {
+      name: "Continue to questions",
+      exact: true,
+    });
+    if (await continueBtn.isVisible().catch(() => false))
+      await continueBtn.click();
+    await expect(page.getByLabel("Your answer")).toBeVisible({
+      timeout: 60000,
+    });
+    const q3 = "UNIQUE_DRAFT_Q3_" + Date.now();
+    await page.getByLabel("Your answer").fill(q3);
+    await page
+      .getByRole("button", { name: "Next question", exact: true })
+      .click();
+    await expect(page.getByLabel("Your answer")).toHaveValue("", {
+      timeout: 15000,
+    });
+    await page
+      .getByRole("button", { name: "Previous question", exact: true })
+      .click();
+    await expect(page.getByLabel("Your answer")).toHaveValue(q3, {
+      timeout: 15000,
+    });
+  });
+});

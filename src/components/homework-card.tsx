@@ -52,6 +52,7 @@ export function HomeworkCard({
       </div>
       {session && !session.finished_at && <p>{stageText}</p>}
       <Link
+        prefetch={false}
         className="button-link"
         href={
           session?.finished_at
