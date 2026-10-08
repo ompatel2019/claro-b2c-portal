@@ -132,6 +132,7 @@ export async function markWritten(
   return {
     mark: final.mark,
     band: final.criterion?.descriptor ?? "NO BAND SATISFIED",
+    check,
     feedback: {
       analysis: grade.analysis,
       justification: final.grade.justification,
@@ -142,7 +143,6 @@ export async function markWritten(
       next_band: grade.next_band,
       better_answer_outline: grade.better_answer_outline,
       validated: first.validated,
-      check,
     },
   };
 }
@@ -248,6 +248,7 @@ export async function markAttempt(attemptId: string) {
       result = {
         mark: scoreMcq(q.correct_index, attempt.choice_index),
         max_marks: 1,
+        marked_by_model: "deterministic",
         band: null,
         feedback: {
           correct_index: q.correct_index,
@@ -262,6 +263,7 @@ export async function markAttempt(attemptId: string) {
           max_marks: q.marks,
           band: null,
           feedback: { note: "No answer" },
+          marked_by_model: "deterministic",
         };
       } else {
         const stale = new Date(Date.now() - STALE_CLAIM_MS).toISOString();
@@ -275,9 +277,31 @@ export async function markAttempt(attemptId: string) {
           .select("id")
           .throwOnError();
         if (!claimed?.length) throw new AlreadyMarking();
+        const { check, ...marked } = await markWritten(
+          q,
+          answer,
+          attempt.user_id,
+        );
+        if (check.status === "in_review") {
+          const { error } = await admin()
+            .from("mark_reviews")
+            .insert({
+              attempt_id: attemptId,
+              user_id: attempt.user_id,
+              reason: "check_disagreed",
+              ai_mark: check.marks[0],
+              ai_model: MARKER.model,
+              check_mark: check.marks[1],
+              check_model: MARKER.model,
+              check_notes: `Reconciling pass: ${check.marks[2]}`,
+            });
+          if (error && error.code !== "23505") throw error;
+        }
         result = {
-          ...(await markWritten(q, answer, attempt.user_id)),
+          ...marked,
           max_marks: q.marks,
+          check_status: check.status,
+          marked_by_model: MARKER.model,
         };
       }
     }

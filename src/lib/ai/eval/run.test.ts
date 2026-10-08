@@ -33,6 +33,7 @@ vi.mock("./report", () => ({ writeResults: mocks.report }));
 const argv = process.argv;
 const exitCode = process.exitCode;
 const run = () => import("./run.mts" as string);
+const check = { status: "second_pass", marks: [1, 3, 3] };
 const feedback = {
   justification: "Clear mechanism",
   comments: [
@@ -48,7 +49,6 @@ const feedback = {
   why_not_higher: "Limited judgement",
   better_answer_outline: ["Define", "Explain", "Assess"],
   validated: true,
-  check: { status: "second_pass", marks: [1, 3, 3] },
 };
 
 beforeEach(() => {
@@ -87,6 +87,7 @@ beforeEach(() => {
   mocks.mark.mockResolvedValue({
     mark: 3,
     band: "Some understanding",
+    check,
     feedback,
   });
   mocks.judge.mockResolvedValue({
@@ -149,7 +150,7 @@ it("runs sequentially with eval labels, separate costs and a clamped judge score
     '1. [Strength · Analysis] "trade" — Clear',
   );
   expect(rows[0]).toMatchObject({
-    check: feedback.check,
+    check,
     firstScore: expect.objectContaining({
       exact: expect.any(Boolean),
       within1: expect.any(Boolean),
@@ -164,7 +165,7 @@ it("runs sequentially with eval labels, separate costs and a clamped judge score
   expect(rows[0].firstScore.exact).toBe(rows[0].expected === 1);
   expect(rows[0].firstScore.within1).toBe(Math.abs(1 - rows[0].expected) <= 1);
   expect(rows[1]).toMatchObject({
-    check: feedback.check,
+    check,
     usd: 0.02,
     judgeUsd: 0,
     verdict: null,

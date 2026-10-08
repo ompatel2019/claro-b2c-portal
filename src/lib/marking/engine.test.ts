@@ -13,6 +13,7 @@ import { callJson } from "@/lib/ai/openai";
 import { admin } from "@/utils/supabase/admin";
 import {
   AlreadyMarking,
+  MARKER,
   finishSession,
   markAttempt,
   rescoreSession,
@@ -107,6 +108,7 @@ it("returns validated grade on the first reply and anchors quotes", async () => 
     band: q.criteria[0].descriptor,
     feedback: { validated: true, comments: [{ start: 4 }, { start: null }] },
   });
+  expect(result.feedback).not.toHaveProperty("check");
   expect(mockedCall).toHaveBeenCalledTimes(2);
   expect(mockedCall).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -245,7 +247,7 @@ it("starts both blind passes before either resolves", async () => {
   resolveFirst(grade);
   expect(await marking).toMatchObject({
     mark: 4,
-    feedback: { check: { status: "agreed", marks: [4, 3] } },
+    check: { status: "agreed", marks: [4, 3] },
   });
 });
 
@@ -260,10 +262,10 @@ it.each([undefined, "eval"])(
     expect(result).toMatchObject({
       mark: 1,
       band: q.criteria[1].descriptor,
+      check: { status: "second_pass", marks: [4, 2, 1] },
       feedback: {
         justification: "Reconciler evidence",
         validated: true,
-        check: { status: "second_pass", marks: [4, 2, 1] },
         earned: grade.earned,
         missing_points: grade.missing_points,
         next_band: grade.next_band,
@@ -305,9 +307,9 @@ it("keeps the first assessment when the reconciler agrees with neither", async (
   expect(await markWritten(q, "prices rise", null)).toMatchObject({
     mark: 4,
     band: q.criteria[0].descriptor,
+    check: { status: "in_review", marks: [4, 2, 0] },
     feedback: {
       justification: grade.justification,
-      check: { status: "in_review", marks: [4, 2, 0] },
     },
   });
 });
@@ -319,7 +321,8 @@ it("retries and clamps check passes independently without requiring feedback", a
     .mockResolvedValueOnce({ ...checkGrade(), mark: 99 });
   expect(await markWritten(q, "prices rise", null, "eval")).toMatchObject({
     mark: 4,
-    feedback: { validated: true, check: { status: "agreed", marks: [4, 4] } },
+    check: { status: "agreed", marks: [4, 4] },
+    feedback: { validated: true },
   });
   expect(mockedCall).toHaveBeenCalledTimes(3);
   for (const [options] of mockedCall.mock.calls)
@@ -431,6 +434,7 @@ it("marks MCQ deterministically and stores the answer key", async () => {
     expect.objectContaining({
       mark: 1,
       max_marks: 1,
+      marked_by_model: "deterministic",
       band: null,
       feedback: { correct_index: 2, chosen_index: 2 },
       marked_at: expect.any(String),
@@ -457,10 +461,67 @@ it("uses an empty confirmed transcript in preference to answer_text", async () =
       mark: 0,
       max_marks: 4,
       feedback: { note: "No answer" },
+      marked_by_model: "deterministic",
     }),
   );
   expect(mockedCall).not.toHaveBeenCalled();
 });
+
+it.each([null, "23505", "42501"])(
+  "queues a disagreement before saving, tolerating only duplicate reviews (%s)",
+  async (code) => {
+    const load = query({
+      id: "attempt",
+      user_id: "user",
+      status: "pending",
+      answer_text: "The prices rise rapidly",
+      question: q,
+    });
+    const error = code ? { code, message: "Review insert failed" } : null;
+    const review = { insert: vi.fn().mockResolvedValue({ error }) };
+    const save = query({ id: "attempt", mark: 4, status: "marked" });
+    vi.mocked(admin().from)
+      .mockReturnValueOnce(load as never)
+      .mockReturnValueOnce(query([{ id: "attempt" }]) as never)
+      .mockReturnValueOnce(review as never)
+      .mockReturnValueOnce(save as never);
+    mockedCall
+      .mockResolvedValueOnce(grade)
+      .mockResolvedValueOnce(checkGrade(2))
+      .mockResolvedValueOnce(checkGrade(0));
+
+    if (code === "42501") {
+      await expect(markAttempt("attempt")).rejects.toBe(error);
+      expect(save.update).toHaveBeenCalledExactlyOnceWith({ status: "failed" });
+    } else {
+      await expect(markAttempt("attempt")).resolves.toMatchObject({ mark: 4 });
+      expect(save.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mark: 4,
+          status: "marked",
+          check_status: "in_review",
+          marked_by_model: MARKER.model,
+        }),
+      );
+      expect(save.update.mock.calls[0][0]).not.toHaveProperty("check");
+      expect(save.update.mock.calls[0][0].feedback).not.toHaveProperty("check");
+    }
+    expect(admin().from).toHaveBeenNthCalledWith(3, "mark_reviews");
+    expect(review.insert).toHaveBeenCalledExactlyOnceWith({
+      attempt_id: "attempt",
+      user_id: "user",
+      reason: "check_disagreed",
+      ai_mark: 4,
+      ai_model: MARKER.model,
+      check_mark: 2,
+      check_model: MARKER.model,
+      check_notes: "Reconciling pass: 0",
+    });
+    expect(review.insert.mock.invocationCallOrder[0]).toBeLessThan(
+      save.update.mock.invocationCallOrder[0],
+    );
+  },
+);
 
 it("sets failed and rethrows when grading fails", async () => {
   const load = query({
@@ -584,6 +645,8 @@ it("persists a written grade and skips grading an already marked attempt", async
       max_marks: 4,
       band: q.criteria[0].descriptor,
       status: "marked",
+      check_status: "agreed",
+      marked_by_model: MARKER.model,
       feedback: expect.objectContaining({ validated: true }),
     }),
   );
@@ -764,6 +827,7 @@ it("waits for fresh in-flight marking and uses a deterministic topic summary", a
       status: "marked",
       mark: 1,
       max_marks: 1,
+      marked_by_model: "deterministic",
       feedback: { correct_index: 0 },
     };
     const save = query({ score: 1, max_score: 1 });

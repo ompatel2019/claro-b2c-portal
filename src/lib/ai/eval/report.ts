@@ -12,7 +12,7 @@ export type Row = {
   expected: number | number[];
   mark: number | null;
   band: string | null;
-  check: Awaited<ReturnType<typeof markWritten>>["feedback"]["check"] | null;
+  check: Awaited<ReturnType<typeof markWritten>>["check"] | null;
   delta: number | null;
   flags: {
     excluded?: string;
