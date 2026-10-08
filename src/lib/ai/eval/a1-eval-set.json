@@ -1,0 +1,122 @@
+[
+  {
+    "questionId": "ge-4",
+    "studentResponse": "International organisations such as the International Monetary Fund (IMF), World Bank, and World Trade Organization play a significant role in promoting global economic stability, growth, and integration.\nOn one hand, these organisations enhance economic performance. The IMF provides financial assistance and policy advice to countries facing balance of payments crises, helping stabilise exchange rates and prevent global financial contagion. The World Bank promotes long-term growth by funding infrastructure and development projects in developing economies, improving productivity and living standards. The WTO facilitates global trade by reducing tariffs and enforcing trade rules, increasing efficiency through comparative advantage and expanding global output.\nHowever, their impact is not entirely positive. IMF loans often come with strict conditions such as austerity measures, which can reduce economic growth and worsen unemployment in the short term. Similarly, WTO policies promoting free trade may disadvantage developing nations that struggle to compete with advanced economies, leading to unequal distribution of gains from trade. Additionally, World Bank projects have sometimes been criticised for environmental damage and insufficient local benefits.\nOverall, international organisations have had a substantial positive impact on the global economy by promoting stability, trade, and development, but their policies can also create short-term economic costs and inequality, meaning their impact is mixed.",
+    "karanExpectedMark": 3,
+    "karanFeedback": "Pros: Good feedback that more statistics that are specific is required, depth is needed and requires more judgement. Cons: Requires more specific guidance on answering the directive verb (Assess) - telling the student exactly which sections they should add it. Want to see more assessment by using the words such as 'a key limitation can be seen through...'. The definitions can be a bit more clear for WTO and IMF."
+  },
+  {
+    "questionId": "ge-1",
+    "studentResponse": "A trading bloc is a group of countries that agree to reduce or eliminate trade barriers such as tariffs and quotas between members to promote trade (e.g. European Union single market features).\nA monetary union goes further, where member countries share a common currency and central monetary policy, meaning they lose control over individual interest rates (e.g. the euro used by some EU members under the European Central Bank).",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: It is a 2/2. Good feedback. Cons: Want the AI to recommend adding a structure of: Distinguishing factor, Define term A, Define term B."
+  },
+  {
+    "questionId": "ep-1",
+    "studentResponse": "One strategy used by China to promote environmental sustainability is the implementation of a national emissions trading scheme (ETS).\nThis policy places a cap on carbon emissions and allows firms to buy and sell permits, creating a financial incentive to reduce pollution. Firms that lower emissions can sell excess permits, while high polluters face higher costs. This encourages cleaner production methods and investment in renewable energy, helping reduce overall carbon emissions and improve environmental outcomes.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: It is a 2/3 - I agree with the mark. Agreed with it requires a specific statistic. Agreed with definition of environmental sustainability being required as well. Great feedback overall. Perfect. Not much to add here."
+  },
+  {
+    "questionId": "ge-5",
+    "studentResponse": "Australia’s trade flows have experienced significant changes in both composition and direction. In terms of composition, exports have shifted toward resource-based and service exports, with minerals such as iron ore and LNG dominating due to strong global demand, alongside growing service exports like education and tourism, reflecting Australia’s comparative advantage and boosting export earnings. In terms of direction, trade has increasingly shifted toward the Asia-Pacific region, particularly China, Japan, and South Korea, driven by rapid industrialisation and rising incomes in these economies. This has strengthened Australia’s integration with Asia but also increased vulnerability to economic fluctuations in the region.",
+    "karanExpectedMark": 3,
+    "karanFeedback": "Pros: It is a 3/4 - I agree with the mark. I agree, more stats required. Specific ones. And agreed with rest of feedback. Cons: Don’t quite like the sample as much - it’s a bit off (not like my sample that I provided for this question). The first sentence in the response (my one) is useless. But the AI did not point that out."
+  },
+  {
+    "questionId": "ge-2",
+    "studentResponse": "The capital account records one-off transfers of assets and liabilities, such as debt forgiveness and transfers of ownership of non-produced assets (e.g. patents). The financial account records transactions involving the buying and selling of financial assets, such as foreign investment, loans, and equity flows, which directly affect Australia’s net foreign liabilities.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: It is a 2/2. REALLY good feedback for what to improve for distinguish question with 'Could strengthen the distinction with explicit contrasting connectors like whereas or in contrast to make the difference more obvious'. Also like the other, what to improve feedback, for don't talk about Australia if it's not mentioned - really solid. Cons: I would like feedback to point out the definitions are okay - but can be more straightforward."
+  },
+  {
+    "questionId": "ge-3",
+    "studentResponse": "An appreciation of the Australian dollar makes Australian exports more expensive for foreign buyers and imports cheaper for domestic consumers. This reduces the international competitiveness of exports, leading to a fall in export volumes, while cheaper imports increase import demand. As a result, export revenue decreases and import expenditure rises, causing a deterioration in the balance on goods and services (BOGS), potentially moving it toward a deficit or reducing a surplus.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: Sample is decent and answers the question well. Agreed with the comments - all are relevant. Cons: I would say this is more of a 2/4 if im being specific and harsh. Reason being, it does not state any short term or long term impact (where that is SUPER important to mention in the question.) - altho AI identified this was an issue in the what to improve section, it still gave a 3."
+  },
+  {
+    "questionId": "ei-1",
+    "studentResponse": "Cyclical unemployment arises from downturns or upswings in the business cycle as labour is a derived demand from GDP. Structural unemployment refers to whereby workers no longer have skills which are required within the economy and hence become jobless.",
+    "karanExpectedMark": 1,
+    "karanFeedback": "Pros: Good what to improve comment by AI for adding 'whereas' or 'on the other hand' sections. Cons: This is a 1 out of 2 response, not 2/2. On purpose, I added the word 'upswing' in my response but that is very wrong. Cyclical unemployment only occurs through downswings. For structural, I was very much looking for the word 'mismatch' between skills labour possesses and skills required by the economy."
+  },
+  {
+    "questionId": "ei-2",
+    "studentResponse": "High inflation increases domestic production costs, making exports more expensive relative to foreign goods. This reduces international competitiveness as demand for exports falls and imports become relatively cheaper, worsening trade performance.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: It is a 2/2 - I agree. Cons: I’d want the answer to directly say 'export prices rise -> hence IC falls' - because this is the main factor."
+  },
+  {
+    "questionId": "ei-3",
+    "studentResponse": "Income inequality in Australia can be analysed through its dimensions (extent and distribution of income) and trends over time, both of which have important economic impacts. A higher level of inequality means income is concentrated among higher earners, reducing the spending power of low-income households who have a higher marginal propensity to consume. This can weaken aggregate demand and slow economic growth. Over time, if inequality is rising, it can lead to reduced access to education and healthcare for lower-income groups, lowering human capital and productivity. However, some inequality can provide incentives for work, investment, and innovation. Overall, excessive or rising inequality can negatively affect economic stability and long-term growth, while moderate inequality may support economic efficiency.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: It is a 2/4 - I agree. Good what to improve section. Cons: Name specific dimensions - One step further than this though is saying the exact ones listed under syllabus - ie, Gender, Age, Occupation, Ethnic background. Sample response has 'palma ratio' - this is not required for HSC."
+  },
+  {
+    "questionId": "ep-3",
+    "studentResponse": "A carbon tax is a market-based policy that places a price on pollution, directly targeting the negative externality from production. Firms that emit carbon face higher costs per unit of output, which shifts their private cost closer to the true social cost of production. This incentivises firms to reduce emissions, adopt cleaner technologies, or switch to renewable energy sources. As a result, production falls toward the socially optimal level where social cost equals social benefit, reducing overallocation of resources and correcting the market failure.",
+    "karanExpectedMark": 3,
+    "karanFeedback": "Pros: It is a 3/4 - I agree. Link to market failure needs to be a bit more in depth I agree. Cons: I don’t agree with the feedback of the first sentence, which says 'don’t add the definition of carbon tax' - it is required. No statistic is required - unlike what the 'what to improve' section states."
+  },
+  {
+    "questionId": "ei-5",
+    "studentResponse": "A common conflict exists between low inflation and low unemployment. Policies used to reduce inflation, such as contractionary monetary or fiscal policy, can slow economic growth and reduce aggregate demand, leading to higher unemployment. Conversely, policies aimed at lowering unemployment by stimulating demand can increase inflationary pressures, creating a trade-off between these objectives.",
+    "karanExpectedMark": 1.5,
+    "karanFeedback": "Pros: Good 'what to improve section' - both comments are perfect. Cons: Although given 2/2 - I would maybe give 1.5 / 2 if possible. It ticks all the boxes but doesn’t do the major specific things I’d like to see (labour is a derived demand, specific types of inflation)."
+  },
+  {
+    "questionId": "ei-4",
+    "studentResponse": "Governments in Australia often face trade-offs when pursuing multiple macroeconomic objectives, as achieving one goal can undermine another. For example, there is a conflict between low inflation and low unemployment. Contractionary policies used to reduce inflation, such as higher interest rates, decrease aggregate demand and can lead to higher unemployment. Conversely, expansionary policies aimed at reducing unemployment can increase demand-pull inflation. A second conflict exists between economic growth and external stability. Strong economic growth increases incomes and spending, often leading to higher import demand and a deterioration in the current account balance. This can worsen external stability, particularly if it increases reliance on foreign borrowing. A third conflict arises between economic growth and environmental sustainability. Policies that promote growth, such as increased production and resource extraction, can lead to environmental degradation and higher carbon emissions, undermining sustainability objectives. Overall, these conflicts highlight that governments must prioritise and carefully balance objectives, as achieving all simultaneously is difficult.",
+    "karanExpectedMark": 3.5,
+    "karanFeedback": "Pros: Agree with the what to improve section. Agree with 4/6 mark (maybe 3 if pushing it). Cons: First sentence was waffle - should’ve been called out in feedback."
+  },
+  {
+    "questionId": "fm-2",
+    "studentResponse": "The crowding-out effect occurs when increased government spending, often funded by borrowing, leads to higher interest rates as the government competes with the private sector for available funds. This rise in interest rates discourages private investment and consumption, as borrowing becomes more expensive. As a result, the effectiveness of expansionary fiscal policy is reduced, since some of the increase in aggregate demand is offset by a fall in private sector spending.",
+    "karanExpectedMark": 2.5,
+    "karanFeedback": "Pros: Identifies correct what to improve section (other than statistics). Cons: Can potentially be a 2/4 instead. Needs much more depth. No need for statistics (feedback is wrong)."
+  },
+  {
+    "questionId": "fm-4",
+    "studentResponse": "Automatic stabilisers are components of fiscal policy that operate automatically to smooth economic fluctuations, such as progressive income taxes and welfare payments, which increase or decrease without government intervention. Discretionary fiscal policy involves deliberate government decisions to change spending or taxation levels, such as stimulus packages or tax cuts, to influence economic activity.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: Good feedback for what to improve section. Cons: No need for a statistic in this question (feedback wrong). I would say it could be a 2/2 - although I agree with feedback."
+  },
+  {
+    "questionId": "fm-5",
+    "studentResponse": "An expansionary fiscal stance involves the government increasing spending and/or reducing taxation to stimulate aggregate demand (AD). This leads to a rightward shift in AD, increasing real GDP and economic growth as consumption (C) and investment (I) rise. As output expands, firms increase production, leading to higher labour demand and a reduction in unemployment. However, increased AD can also generate demand-pull inflation if the economy is near full capacity, reducing price stability. Additionally, higher government spending may worsen the budget balance, leading to a larger deficit and increased public debt.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: Correctly identifies the mechanism of expansionary fiscal policy. Explains the AD shift. Acknowledges potential negative effects. Really solid Feedback for what to improve - AI identified that stats were needed in this question. Cons: Flow of the sample is a bit off."
+  },
+  {
+    "questionId": "fm-1",
+    "studentResponse": "An expansionary fiscal stance involves the government increasing spending and/or reducing taxation to stimulate aggregate demand (AD). This leads to a rightward shift in AD, increasing real GDP and economic growth as consumption (C) and investment (I) rise. As output expands, firms increase production, leading to higher labour demand and a reduction in unemployment. However, increased AD can also generate demand-pull inflation if the economy is near full capacity, reducing price stability. Additionally, higher government spending may worsen the budget balance, leading to a larger deficit and increased public debt.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: It is a 2/3 - Agreed. Cons: However not the same reasons as AI. I think it’s because it’s very vague. Does not NEED statistics in this response. Would’ve provided feedback that they don’t need to write too much more but AI said to add extra things."
+  },
+  {
+    "questionId": "mp-2",
+    "studentResponse": "Microeconomic policies aim to improve the efficiency and flexibility of markets, leading to structural changes in the Australian economy. One key change is the shift of resources towards more productive and competitive industries. Policies such as deregulation and trade liberalisation reduce protection, causing inefficient firms to exit and allowing more efficient firms to expand. Additionally, labour market reforms increase flexibility, leading to changes in employment patterns. This includes a shift towards part-time, casual, and service-based employment as firms adapt to market conditions. Finally, microeconomic reform often results in a more internationally competitive economy, with greater integration into global markets and a move away from manufacturing towards services and export-oriented industries.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: It is 2/3 - Agreed. Cons: Not enough stats. I would’ve provided feedback that they’re writing too much. Sample response was also a bit too long."
+  },
+  {
+    "questionId": "mp-4",
+    "studentResponse": "Centralised wage determination involves wages being set at a national or industry-wide level, typically through government bodies or tribunals such as the Fair Work Commission. This results in standardised wages and conditions across firms and industries. In contrast, decentralised wage determination occurs at the firm or individual level, where wages are negotiated between employers and employees through enterprise bargaining or individual contracts. This leads to greater flexibility, with wages more closely linked to productivity and firm-specific conditions. Thus, centralised systems promote equity and consistency, while decentralised systems promote flexibility and efficiency.",
+    "karanExpectedMark": 3,
+    "karanFeedback": "Pros: It is a 3/3 agreed. Cons: I would’ve provided feedback that they’re writing too much (you don’t need that much writing in a 3 marker)."
+  },
+  {
+    "questionId": "ep-5",
+    "studentResponse": "International agreements play a significant role in shaping Australia’s environmental policy by setting targets, influencing domestic regulation, and encouraging coordinated global action. Firstly, agreements such as the Paris Agreement establish emissions reduction targets, which Australia incorporates into national policy. This has led to commitments such as net zero emissions by 2050 and policies aimed at reducing greenhouse gas emissions. Secondly, international agreements encourage the implementation of domestic policies to meet these obligations. For example, Australia has adopted measures such as renewable energy investment, emissions reduction funds, and regulatory frameworks to align with global standards. Additionally, these agreements promote cooperation and accountability. Participation enhances Australia’s international reputation and ensures it contributes to global environmental sustainability efforts, while also allowing access to global knowledge, technology, and climate finance. However, the effectiveness of these agreements can be limited by their non-binding nature and domestic political constraints, which may reduce the extent or speed of policy implementation. Overall, international agreements strongly influence Australia’s environmental policy direction, though their impact depends on domestic commitment and enforcement.",
+    "karanExpectedMark": 3,
+    "karanFeedback": "Pros: It is a 3/5 agreed. Cons: For the what to improve part - the sample says it’s discuss - good. But we need it to directly say discuss means show Positive and Negatives or Advantages and Disadvantages etc.."
+  },
+  {
+    "questionId": "ep-4",
+    "studentResponse": "One limitation is the presence of time lags. Environmental policies, such as emissions reduction or renewable energy investment, take significant time to implement and for their effects to be realised, delaying improvements in environmental outcomes. Another limitation is global influences. Environmental issues like climate change are global in nature, so Australia’s policies alone have limited impact if other countries do not take similar action, reducing overall effectiveness.",
+    "karanExpectedMark": 2,
+    "karanFeedback": "Pros: It is 2/3 agreed. Good feedback. Cons: The theory part of the sample is non-existent. It’s just straight into stats."
+  }
+]

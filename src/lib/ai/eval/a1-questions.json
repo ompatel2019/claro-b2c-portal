@@ -1,0 +1,577 @@
+[
+  {
+    "id": "ge-4",
+    "type": "short",
+    "marks": 5,
+    "stem": "Assess the impact of international organisations on the global economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Comprehensive judgement integrating examples and analysis from multiple organisations"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Sound explanation with some analysis and limited judgement"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Demonstrates some understanding with partial analysis"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Sketches or lists impacts"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The WTO and IMF have significant positive and negative impacts. The WTO reduces trade barriers, encouraging specialisation and trade — global trade reached $32.2 trillion in 2024. However, the DOHA round's failure shows limits in protecting developing nations. The IMF provides emergency loans stabilising BOP crises, seen in its $58 billion rescue package to South Korea during the AFC. However, conditional loans requiring structural reforms can worsen inequality — Greece's GDP contracted ~25% under IMF conditions. Overall, international organisations prevent systemic collapse but their policy prescriptions often prioritise stability over social development.",
+    "source": "A1 ge-4"
+  },
+  {
+    "id": "ge-1",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between a trading bloc and a monetary union.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Clearly distinguishes both concepts using correct terminology and an example"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information, may describe only one concept or confuse definitions"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "A trading bloc is a formal preferential trading arrangement between countries, such as NAFTA. A monetary union goes further by adopting a shared currency and monetary policy, such as the Eurozone. The key distinction is currency: trading blocs retain national currencies while monetary unions adopt a common one.",
+    "source": "A1 ge-1"
+  },
+  {
+    "id": "ep-1",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain ONE strategy used to promote environmental sustainability in an economy other than Australia.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Clear explanation of one strategy with example, linking to environmental sustainability"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Sketches one strategy with limited detail"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information, vague or inaccurate"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "China implemented the National Renewable Energy Plan, investing in solar, wind, and hydro power. Environmental sustainability means using resources to meet current needs without compromising intergenerational equity. China became the world's largest solar panel producer — over 75% of global production in 2023 — expanding renewable capacity to reduce coal dependence. This reduces greenhouse gas emissions and air pollution, improving long-term environmental quality while meeting energy demands sustainably.",
+    "source": "A1 ep-1"
+  },
+  {
+    "id": "ge-5",
+    "type": "short",
+    "marks": 4,
+    "stem": "Discuss TWO changes in the composition and direction of Australia's trade flows.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Discusses two clear changes with reference to both composition and direction, supported by examples or data"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Discusses changes with some examples but limited depth"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Sketches changes in general terms"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Composition: historically exports were dominated by agriculture (wool, wheat). Today they are resource-based — iron ore, coal, and LNG account for the majority, with mineral exports valued at A$415 billion in 2023-24 and iron ore alone contributing ~22% of export revenue. Direction: before the 1970s Australia traded primarily with the UK and Europe due to colonial ties. Trade has since shifted strongly to Asia — China (32%), Japan (16%), and South Korea (7%) now account for over 80% of exports, driven by Asian industrialisation and demand for resources.",
+    "source": "A1 ge-5"
+  },
+  {
+    "id": "ge-2",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between the capital account and the financial account.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Clearly distinguishes both accounts with correct terminology/examples"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information, incomplete or unclear distinction"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The capital account records the purchase and sale of intellectual property and capital transfers (non-financial assets). The financial account records the purchase and sale of financial investments, loans and borrowings. While both are reversible, the capital account deals with small non-financial transfers, whereas the financial account captures substantial investment and borrowing flows.",
+    "source": "A1 ge-2"
+  },
+  {
+    "id": "ge-3",
+    "type": "short",
+    "marks": 4,
+    "stem": "Explain how an appreciation of the Australian dollar could influence the balance on goods and services.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Sound explanation linking appreciation to both exports and imports, showing clear impact on BOGS"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Provides some explanation of effects, but lacks full causal link"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Sketches in general terms the effect of appreciation on trade"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "An appreciation increases the value of the AUD against other currencies. In the short term, an appreciation can improve the BOGS through the inverse J-curve: import contracts are locked in so the same import volume costs less (lower M), while export contracts remain inelastic so X is unchanged, improving X-M. However in the long term once contracts expire and the Marshall-Lerner condition applies, more expensive exports lose international competitiveness reducing foreign demand, while Australians substitute to cheaper imports, deteriorating the BOGS.",
+    "source": "A1 ge-3"
+  },
+  {
+    "id": "ei-1",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between cyclical and structural unemployment.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Clearly distinguishes between both types with accurate features/examples"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information but incomplete or unclear distinction"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Cyclical unemployment arises during downturns in the business cycle when demand falls and firms reduce labour — during COVID-19 a GDP fall of -6.7% pushed unemployment to 7.5%. Structural unemployment occurs when workers' skills don't match industry needs due to technological change or industry shifts, such as after the closure of Australia's passenger-motor-vehicle industry.",
+    "source": "A1 ei-1"
+  },
+  {
+    "id": "ei-2",
+    "type": "short",
+    "marks": 2,
+    "stem": "Describe the impact of high inflation on international competitiveness.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Provides a clear description linking inflation to reduced competitiveness"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Provides some relevant information, limited link to competitiveness"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "International competitiveness is the ability of an economy to sell exports relative to others. High inflation raises domestic production costs, leading Australian exporters to increase final prices to maintain profit margins. This makes Australian goods more expensive for foreign buyers, reducing export demand and Australia's international competitiveness.",
+    "source": "A1 ei-2"
+  },
+  {
+    "id": "ei-3",
+    "type": "short",
+    "marks": 4,
+    "stem": "Explain how the dimensions and trends of income inequality affect the Australian economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Clear explanation of dimensions AND trends, linked to economic effects with examples"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains either dimensions or trends with some link to effects"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Sketches inequality and its effects"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Income inequality is measured via the Gini coefficient (~0.32 in Australia) and Palma ratio. Dimensions include high-to-low income gaps, gender pay gaps (~13%), and Indigenous disadvantage. Trends show widening inequality due to asset price inflation (housing) and labour market structural change. High inequality reduces aggregate demand as lower-income earners have higher MPC, slowing growth and creating intergenerational poverty. Government redistribution via progressive tax and welfare transfers (JobSeeker, Family Tax Benefit) reduces the post-tax Gini, partially mitigating these effects.",
+    "source": "A1 ei-3"
+  },
+  {
+    "id": "ep-3",
+    "type": "short",
+    "marks": 4,
+    "stem": "Explain how a carbon tax can correct the market failure of negative externalities from production.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Sound explanation linking carbon tax to internalising externalities, referencing MSC/MPC and market failure"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains the concept with some link to market failure but missing depth"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Sketches in general terms"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Negative externalities from production arise when marginal social cost (MSC) exceeds marginal private cost (MPC), leading to overproduction — market failure. Coal-fired electricity generates carbon emissions imposing costs on third parties (climate change, health) not reflected in market prices. A carbon tax equal to the marginal external cost shifts the supply curve left, raising the market price and reducing quantity produced, aligning private cost with social cost and achieving allocative efficiency. Australia's Carbon Pricing Mechanism (2012-14) priced carbon at A$23/tonne, producing a 1.4% reduction in electricity sector emissions before repeal.",
+    "source": "A1 ep-3"
+  },
+  {
+    "id": "ei-5",
+    "type": "short",
+    "marks": 2,
+    "stem": "Outline a potential conflict between macroeconomic objectives.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Clearly outlines a conflict between two objectives with definitions"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Outlines one objective or provides some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "A conflict exists between full employment (4-5% unemployment) and price stability (2-3% inflation). When unemployment falls due to higher demand, firms face higher wage costs leading to demand-pull and cost-push inflation. Conversely, contractionary policies to lower inflation typically increase unemployment.",
+    "source": "A1 ei-5"
+  },
+  {
+    "id": "ei-4",
+    "type": "short",
+    "marks": 6,
+    "stem": "Analyse the conflicts for government that may arise in pursuing Australia's economic objectives. Refer to THREE separate objectives.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 6,
+        "max": 6,
+        "descriptor": "Comprehensive analysis of conflicts between THREE economic objectives with clear examples and trade-offs"
+      },
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Sound analysis covering three objectives with minor gaps"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Explains conflicts with reasonable understanding but limited depth"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Basic explanation; may only properly cover two objectives"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Generalised statements with minimal analysis"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information; vague or inaccurate"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Conflict 1 — Full employment vs price stability: when unemployment falls, higher wage costs cause demand-pull and cost-push inflation. The RBA's hikes from 0.10% to 4.35% (2022-23) tackled inflation but pushed unemployment from 3.5% to 4.1%. Conflict 2 — Growth vs environmental sustainability: higher GDP relies on emissions-intensive industries; Australia's A$66 billion in coal exports (2023) contradicts net-zero commitments. Conflict 3 — Growth vs equity: rapid growth disproportionately benefits capital owners, widening the wealth gap. Asset price inflation has decimated housing affordability while CEO salaries grew 25× faster than median wages. Government must balance these through a coordinated policy mix.",
+    "source": "A1 ei-4"
+  },
+  {
+    "id": "fm-2",
+    "type": "short",
+    "marks": 4,
+    "stem": "Explain the crowding-out effect and its implications for fiscal policy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Clear explanation with link to fiscal policy implications and loanable funds"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Sound explanation missing some causal link or implications"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Sketches the concept in general terms"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The crowding-out effect is the decrease in private investment caused by higher interest rates from increased government borrowing. When the government runs a deficit financed through debt, it competes with private borrowers in the loanable funds market, shifting demand for funds right and raising the real interest rate. Higher borrowing costs reduce private investment (I) in AD = C+I+G+X-M. This partially offsets expansionary fiscal policy's multiplier effect. Post-COVID, Australian government debt exceeding A$900 billion raised crowding-out concerns, though initially mitigated by historically low interest rates.",
+    "source": "A1 fm-2"
+  },
+  {
+    "id": "fm-4",
+    "type": "short",
+    "marks": 2,
+    "stem": "Distinguish between automatic stabilisers and discretionary fiscal policy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Clearly distinguishes both with correct terminology and examples"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information, may describe only one concept"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Automatic stabilisers are non-discretionary budget components that respond automatically to the business cycle — progressive income tax falls in downturns and unemployment benefits rise, providing stimulus without government action. Discretionary fiscal policy involves deliberate decisions to change spending or taxation, such as the $90 billion JobKeeper program during COVID-19. The key distinction is that automatic stabilisers operate without policy lag, while discretionary policy requires legislative approval and faces implementation delays.",
+    "source": "A1 fm-4"
+  },
+  {
+    "id": "fm-5",
+    "type": "short",
+    "marks": 4,
+    "stem": "Explain the effects of an expansionary fiscal stance on the Australian economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Sound explanation with effects on AD, employment, and growth using examples"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains effects with some examples but limited depth"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "General explanation of expansionary fiscal policy"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "An expansionary fiscal stance involves increased government spending and/or tax cuts, typically running a budget deficit to stimulate AD = C+I+G+X-M. During COVID-19, Australia deployed A$311 billion in stimulus (JobKeeper, HomeBuilder, JobSeeker). Higher G raised AD directly; tax cuts boosted disposable income (C). The multiplier effect (k=1/(1-MPC)) amplified the initial injection, helping GDP recover from -6.7% to +4.5% by 2021 and reducing unemployment from 7.5% to 3.5% by 2023. However, it caused government debt to exceed A$900 billion and contributed to inflation peaking at 7.8% in 2022.",
+    "source": "A1 fm-5"
+  },
+  {
+    "id": "fm-1",
+    "type": "short",
+    "marks": 3,
+    "stem": "Compare the limitations of fiscal policy relative to monetary policy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Compares key limitations of both policy types using examples"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Identifies some limitations with limited comparison"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Minimal/vague explanation"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Fiscal policy faces longer implementation and political lags because budget measures require parliamentary approval and are subject to election cycles. Monetary policy is set by the independent RBA without political negotiation — it raised the cash rate from 0.10% to 4.35% in 2022-23 responding rapidly to inflation. Fiscal policy is also a blunter tool affecting the whole economy, while monetary policy can act more precisely and quickly through the cash market.",
+    "source": "A1 fm-1"
+  },
+  {
+    "id": "mp-2",
+    "type": "short",
+    "marks": 3,
+    "stem": "Explain the structural changes that occur as a result of microeconomic policies in the Australian economy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Clear explanation of how microeconomic policies drive structural change with example"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "General explanation with limited detail/example"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information, little link to structural change"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Structural change refers to long-term shifts in patterns of consumption and production. Microeconomic policies improve efficiency, productivity and competitiveness to increase aggregate supply. In Australia, tariff reductions, privatisation, and deregulation reallocated resources toward more competitive industries while less efficient ones declined. This produced the decline of manufacturing, PMV, and TCF industries as employers, and the growth of mining, services, and high-skilled industries — reflecting a more efficient, internationally competitive economy.",
+    "source": "A1 mp-2"
+  },
+  {
+    "id": "mp-4",
+    "type": "short",
+    "marks": 3,
+    "stem": "Distinguish between centralised and decentralised wage determination.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Clearly distinguishes both systems with examples and key features"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "General distinction with limited detail"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information, unclear distinction"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "Centralised wage determination sets wages uniformly through a central authority, such as industry-wide awards or national wage cases determined by the Fair Work Commission — Australia's dominant system pre-1990s. Decentralised wage determination sets wages at the enterprise or individual level through enterprise bargaining agreements (EBAs) or individual contracts, covering most Australian workers today. The key distinction is the level of negotiation: centralised systems prioritise equity and consistency, while decentralised systems link wages to firm-level productivity allowing greater flexibility but potentially widening wage dispersion.",
+    "source": "A1 mp-4"
+  },
+  {
+    "id": "ep-5",
+    "type": "short",
+    "marks": 5,
+    "stem": "Discuss the role of international agreements in shaping Australia's environmental policy.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 5,
+        "max": 5,
+        "descriptor": "Comprehensive discussion referencing specific agreements, their influence, and limitations"
+      },
+      {
+        "min": 4,
+        "max": 4,
+        "descriptor": "Sound discussion with examples but limited evaluation"
+      },
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Explains the role with limited examples"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "General statements about agreements"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "The Paris Agreement (2015) significantly shaped Australia's environmental policy by committing Australia to reduce emissions 43% below 2005 levels by 2030 and reach net-zero by 2050. This drove the Safeguard Mechanism (covering 215 large industrial emitters), A$20 billion Rewiring the Nation investment, and A$2 billion Hydrogen Headstart program. EU CBAM carbon border adjustments create economic pressure for Australian exporters to decarbonise. However, the non-binding nature of commitments and political instability — Australia withdrew from earlier targets — limits effectiveness. Global free riders (China, India) also reduce the global impact. International agreements provide direction, but domestic political will ultimately determines outcomes.",
+    "source": "A1 ep-5"
+  },
+  {
+    "id": "ep-4",
+    "type": "short",
+    "marks": 3,
+    "stem": "Outline TWO limitations to the effectiveness of Australia's environmental policies.",
+    "stimulus": null,
+    "criteria": [
+      {
+        "min": 3,
+        "max": 3,
+        "descriptor": "Outlines two clear limitations with examples or context"
+      },
+      {
+        "min": 2,
+        "max": 2,
+        "descriptor": "Outlines one limitation in detail or two with limited detail"
+      },
+      {
+        "min": 1,
+        "max": 1,
+        "descriptor": "Some relevant information"
+      }
+    ],
+    "guideline_notes": null,
+    "sample_answer": "First, global free riders and carbon leakage: even if Australia reduces emissions, production may shift to countries without emissions costs. Australia's 1.1% share of global emissions also limits the global impact of unilateral action. Second, political instability and policy reversals: the Carbon Pricing Mechanism was repealed in 2014 after just two years despite reducing electricity sector emissions by 1.4%, creating business uncertainty and undermining long-term investment in low-emissions technology.",
+    "source": "A1 ep-4"
+  }
+]

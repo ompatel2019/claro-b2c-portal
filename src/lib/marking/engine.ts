@@ -27,17 +27,19 @@ import {
   TranscriptSchema,
 } from "./schemas";
 
+export const MARKER = { model: MODELS.strong, effort: "low" } as const;
+
 export async function markWritten(
   q: MarkableQuestion,
   answer: string,
   userId: string | null,
+  task = "mark_written",
 ) {
   const messages = gradeMessages(q, answer);
   const options = {
-    task: "mark_written",
-    model: MODELS.strong,
+    task,
+    ...MARKER,
     schema: GradeSchema,
-    effort: "low" as const,
     fast: true,
     userId,
   };

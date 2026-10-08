@@ -1,6 +1,7 @@
-// USD per 1M tokens, OpenAI standard tier (platform.openai.com/docs/pricing, checked 8 Oct 2026).
+// USD per 1M tokens, OpenAI standard tier (developers.openai.com/api/docs/pricing, checked 9 Oct 2026).
 // Fast (priority) processing costs 2x standard.
 export const PRICES = {
+  "gpt-6-astra": { input: 10, cachedInput: 1, cacheWrite: 12.5, output: 50 },
   "gpt-6.1-sol": { input: 2, cachedInput: 0.1, cacheWrite: 2.5, output: 10 },
   "gpt-6-luna": {
     input: 0.1,
@@ -19,6 +20,7 @@ export const MODELS = {
 } as const satisfies Record<string, Model>;
 
 export const BUDGET_USD = 90;
+export const EVAL_BLOCK_USD = 80;
 
 export type Usage = {
   prompt_tokens: number;

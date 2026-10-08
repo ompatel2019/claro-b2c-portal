@@ -80,6 +80,16 @@ const mockedCall = vi.mocked(callJson);
 
 beforeEach(() => vi.resetAllMocks());
 
+it("labels both marking attempts as eval when requested", async () => {
+  mockedCall
+    .mockResolvedValueOnce({ ...grade, mark: 2 })
+    .mockResolvedValueOnce(grade);
+  await markWritten(q, "The prices rise rapidly", null, "eval");
+  expect(mockedCall).toHaveBeenCalledTimes(2);
+  for (const [options] of mockedCall.mock.calls)
+    expect(options.task).toBe("eval");
+});
+
 it("returns validated grade on the first reply and anchors quotes", async () => {
   mockedCall.mockResolvedValue(grade);
   const result = await markWritten(q, "The prices rise rapidly", "user");
@@ -91,6 +101,7 @@ it("returns validated grade on the first reply and anchors quotes", async () => 
   expect(mockedCall).toHaveBeenCalledTimes(1);
   expect(mockedCall).toHaveBeenCalledWith(
     expect.objectContaining({
+      task: "mark_written",
       model: MODELS.strong,
       effort: "low",
       schema: GradeSchema,

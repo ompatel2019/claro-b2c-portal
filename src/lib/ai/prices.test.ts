@@ -50,3 +50,13 @@ it("doubles the price for fast (priority) processing", () => {
     ),
   ).toBe(0.006);
 });
+
+it("prices the pinned eval judge including cached and written input", () => {
+  expect(
+    costUsd("gpt-6-astra", {
+      prompt_tokens: 1000,
+      completion_tokens: 100,
+      prompt_tokens_details: { cached_tokens: 200, cache_write_tokens: 300 },
+    }),
+  ).toBe(0.01395);
+});
