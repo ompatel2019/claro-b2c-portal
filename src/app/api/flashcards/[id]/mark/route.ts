@@ -2,6 +2,10 @@ import { z } from "zod";
 import { updateFlashcardProgress } from "@/lib/flashcard-progress";
 import { matchFlashcardAnswer } from "@/lib/flashcards";
 import { markFlashcard } from "@/lib/marking/engine";
+import {
+  assertStudentAiRateLimit,
+  rateLimitedResponse,
+} from "@/lib/ai/rate-limit";
 import { admin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
@@ -78,13 +82,16 @@ export async function POST(
   }
   try {
     const local = matchFlashcardAnswer(answer, card.back, card.front);
-    const result =
-      local ??
-      (await markFlashcard(
+    let result = local;
+    if (!result) {
+      const limited = await assertStudentAiRateLimit({ userId: user.id });
+      if (!limited.ok) return rateLimitedResponse(limited);
+      result = await markFlashcard(
         { ...card, kind: card.kind as "term" | "stat" },
         answer,
         user.id,
-      ));
+      );
+    }
     const db = admin();
     const { data: review } = await db
       .from("flashcard_reviews")

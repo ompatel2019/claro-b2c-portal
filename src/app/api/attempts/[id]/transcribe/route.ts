@@ -1,5 +1,9 @@
 import { transcribeImage } from "@/lib/marking/engine";
 import { admin } from "@/utils/supabase/admin";
+import {
+  assertStudentAiRateLimit,
+  rateLimitedResponse,
+} from "@/lib/ai/rate-limit";
 import { createClient } from "@/utils/supabase/server";
 
 export const maxDuration = 120;
@@ -29,6 +33,8 @@ export async function POST(
     );
   if (!attempt.image_path || !attempt.image_path.startsWith(`${user.id}/`))
     return Response.json({ error: "No answer image" }, { status: 400 });
+  const limited = await assertStudentAiRateLimit({ userId: user.id });
+  if (!limited.ok) return rateLimitedResponse(limited);
   try {
     const { data: question } = await supabase
       .from("questions")

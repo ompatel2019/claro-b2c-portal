@@ -115,7 +115,9 @@ export function FlashcardRunner({
     const result = await response.json().catch(() => ({}));
     if (!response.ok)
       throw new Error(
-        result.error ?? "Something went wrong. Please try again.",
+        response.status === 429
+          ? (result.error ?? "You're going a bit fast, try again in a minute")
+          : (result.error ?? "Something went wrong. Please try again."),
       );
     return result;
   }

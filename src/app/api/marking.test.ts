@@ -7,6 +7,18 @@ vi.mock("@/utils/supabase/admin", () => {
   const client = { from: vi.fn(), storage: { from: vi.fn() } };
   return { admin: () => client };
 });
+vi.mock("@/lib/ai/rate-limit", () => ({
+  assertStudentAiRateLimit: vi.fn(async () => ({ ok: true })),
+  rateLimitedResponse: (result: { error: string; retryAfterSec: number }) =>
+    Response.json(
+      { error: result.error },
+      {
+        status: 429,
+        headers: { "Retry-After": String(result.retryAfterSec) },
+      },
+    ),
+  AI_RATE_LIMIT_MESSAGE: "You're going a bit fast, try again in a minute",
+}));
 vi.mock("@/lib/marking/engine", () => ({
   AlreadyMarking: class extends Error {
     message = "This answer is already being marked.";
@@ -32,6 +44,7 @@ import { POST as mark } from "./attempts/[id]/mark/route";
 import { POST as transcribe } from "./attempts/[id]/transcribe/route";
 import { POST as flashcard } from "./flashcards/[id]/mark/route";
 import { POST as finish } from "./sessions/[id]/finish/route";
+import { assertStudentAiRateLimit } from "@/lib/ai/rate-limit";
 
 const userId = "d0d38222-b9bb-4089-81d5-383878dd9d9d";
 const sessionId = "75f2a40b-3e20-4a56-9e14-1b237cfc8396";
@@ -530,4 +543,26 @@ it("stores typed homework checks only after confirming set membership", async ()
       source: "ai",
     }),
   );
+});
+
+it("returns 429 when the student AI rate limit is hit on mark", async () => {
+  client([
+    {
+      id: "id",
+      session_id: sessionId,
+      session: { finished_at: null },
+      question: { type: "short" },
+    },
+  ]);
+  vi.mocked(assertStudentAiRateLimit).mockResolvedValueOnce({
+    ok: false,
+    error: "You're going a bit fast, try again in a minute",
+    retryAfterSec: 60,
+  });
+  const response = await mark(request(), ctx);
+  expect(response.status).toBe(429);
+  expect(await response.json()).toEqual({
+    error: "You're going a bit fast, try again in a minute",
+  });
+  expect(markAttempt).not.toHaveBeenCalled();
 });

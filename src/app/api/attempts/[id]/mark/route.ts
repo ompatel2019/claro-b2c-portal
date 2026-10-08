@@ -3,6 +3,10 @@ import {
   markAttempt,
   rescoreSession,
 } from "@/lib/marking/engine";
+import {
+  assertStudentAiRateLimit,
+  rateLimitedResponse,
+} from "@/lib/ai/rate-limit";
 import { createClient } from "@/utils/supabase/server";
 
 export const maxDuration = 240;
@@ -38,6 +42,8 @@ export async function POST(
       { error: "Multiple-choice answers are marked when you finish" },
       { status: 409 },
     );
+  const limited = await assertStudentAiRateLimit({ userId: user.id });
+  if (!limited.ok) return rateLimitedResponse(limited);
   try {
     const { mark, max_marks, band, feedback, status } = await markAttempt(id);
     if (finished) await rescoreSession(attempt.session_id);

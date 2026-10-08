@@ -98,7 +98,9 @@ export function WrittenAnswer({
     const result = await response.json();
     if (!response.ok)
       throw new Error(
-        result.error ?? "Could not read your photo. Please try again.",
+        response.status === 429
+          ? (result.error ?? "You're going a bit fast, try again in a minute")
+          : (result.error ?? "Could not read your photo. Please try again."),
       );
     local({ transcript: result.transcript, status: "transcribed" });
     setLines(result.lines ?? []);
@@ -133,8 +135,10 @@ export function WrittenAnswer({
         const result = await response.json().catch(() => ({}));
         local({ status: "failed" });
         setError(
-          result.error ??
-            "Could not mark your answer. You can retry on the results page.",
+          response.status === 429
+            ? (result.error ?? "You're going a bit fast, try again in a minute")
+            : (result.error ??
+                "Could not mark your answer. You can retry on the results page."),
         );
       })
       .catch(() => {
@@ -230,7 +234,14 @@ export function WrittenAnswer({
                     method: "POST",
                   });
                   const v = await r.json();
-                  if (!r.ok) throw new Error(v.error);
+                  if (!r.ok)
+                    throw new Error(
+                      r.status === 429
+                        ? (v.error ??
+                            "You're going a bit fast, try again in a minute")
+                        : (v.error ??
+                            "Could not read your photo. Please try again."),
+                    );
                   local({ transcript: v.transcript, status: "transcribed" });
                   setLines(v.lines);
                   setConfirm(true);
