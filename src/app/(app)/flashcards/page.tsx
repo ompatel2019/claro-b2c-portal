@@ -6,7 +6,7 @@ import {
   type Flashcard,
   type FlashcardProgress,
 } from "@/lib/flashcards";
-import { dateLabel, type Topic } from "@/lib/practice";
+import { dateLabel, plural, type Topic } from "@/lib/practice";
 import { FlashcardStart } from "@/components/flashcard-start";
 import { PageHeader } from "@/components/page-header";
 export default async function Flashcards({
@@ -68,11 +68,11 @@ export default async function Flashcards({
         title="Your flashcards."
       />
       <section className="panel space-y-3">
-        <h2>Due for review today: {due} cards</h2>
+        <h2>Due for review today: {plural(due, "card")}</h2>
         {due ? (
           <>
             <p>Review up to 20 cards in a focused study session.</p>
-            <FlashcardStart due label={`Review ${due} cards`} />
+            <FlashcardStart due label={`Review ${plural(due, "card")}`} />
           </>
         ) : (
           <p>
@@ -117,14 +117,14 @@ export default async function Flashcards({
           </Link>
           {topics
             .filter((t) => !t.parent_id)
-            .map((t, i) => (
+            .map((t) => (
               <Link
                 key={t.id}
                 className={`${pill} ${parent === t.id ? active : idle}`}
                 href={`/flashcards?filter=${t.id}&topic=${t.id}`}
                 aria-current={parent === t.id ? "page" : undefined}
               >
-                Topic {i + 1}
+                {t.name}
               </Link>
             ))}
         </nav>
@@ -152,8 +152,15 @@ export default async function Flashcards({
                 >
                   <p className="font-semibold">{t.name}</p>
                   <p className="text-sm">
-                    {deck.filter((c) => c.kind === "term").length} terms ·{" "}
-                    {deck.filter((c) => c.kind === "stat").length} stats
+                    {plural(
+                      deck.filter((c) => c.kind === "term").length,
+                      "term",
+                    )}{" "}
+                    ·{" "}
+                    {plural(
+                      deck.filter((c) => c.kind === "stat").length,
+                      "statistics card",
+                    )}
                   </p>
                   <p className="text-sm">{mastery}% mastery</p>
                   <div

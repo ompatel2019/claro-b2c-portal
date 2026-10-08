@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  plural,
   highlightSegments,
   timer,
   answered,
@@ -103,4 +104,13 @@ it.each([
 ] as const)("score %s%% uses the %s tone", async (pct, tone) => {
   const { scoreTone } = await import("./practice");
   expect(scoreTone(pct)).toBe(tone);
+});
+
+describe("plural", () => {
+  it("pluralises counts", () => {
+    expect(plural(1, "term")).toBe("1 term");
+    expect(plural(0, "statistics card")).toBe("0 statistics cards");
+    expect(plural(2, "student")).toBe("2 students");
+    expect(plural(3, "category", "categories")).toBe("3 categories");
+  });
 });

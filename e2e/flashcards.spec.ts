@@ -59,6 +59,24 @@ test.describe("Student flashcards", () => {
     reviewedCards.add(id!);
     return id!;
   }
+  test("deck chips use topic names and counts are pluralised", async ({
+    page,
+  }) => {
+    await page.goto("/flashcards");
+    const chips = page.getByRole("navigation", {
+      name: "Filter flashcard topics",
+    });
+    await expect(
+      chips.getByRole("link", { name: "The Global Economy", exact: true }),
+    ).toBeVisible();
+    await expect(chips.getByRole("link", { name: /^Topic \d$/ })).toHaveCount(
+      0,
+    );
+    const counts = page.getByText(/^\d+ terms? · \d+ statistics cards?$/);
+    expect(await counts.count()).toBeGreaterThan(0);
+    for (const text of await counts.allTextContents())
+      expect(text).not.toMatch(/(^|· )1 (terms|statistics cards)/);
+  });
   test("dashboard shows cards due today", async ({ page }) => {
     await expect(
       page.getByRole("link", { name: "Due today", exact: true }),

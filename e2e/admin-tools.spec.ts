@@ -25,6 +25,8 @@ test.describe("Admin tools", () => {
       .click();
     await expect(page).toHaveURL(/\/admin\/students$/);
     await expect(page.getByRole("heading", { name: "Students" })).toBeVisible();
+    const count = await page.getByText(/^\d+ students?$/).textContent();
+    expect(count).toMatch(/^(1 student|([02-9]|\d{2,}) students)$/);
     await page.goto("/admin/submissions");
     await expect(
       page.getByRole("heading", { name: "Submissions" }),
@@ -34,9 +36,19 @@ test.describe("Admin tools", () => {
         /Recent AI-marked short and extended|No marked written answers yet/,
       ),
     ).toBeVisible();
-    await page.goto("/admin/questions");
+    await page.goto("/admin/questions?type=mcq");
     await expect(
       page.getByRole("heading", { name: "Questions" }),
+    ).toBeVisible();
+    // Pagination reaches row 101 onwards (there are more than 100 MC questions).
+    const pages = page.getByRole("navigation", { name: "Question pages" });
+    await expect(pages.first()).toContainText(/Showing 1–100 of \d{3,}/);
+    await pages.first().getByRole("link", { name: "Next" }).click();
+    await expect(page).toHaveURL(/type=mcq&page=2/);
+    await expect(pages.first()).toContainText(/Showing 101–\d+ of \d+/);
+    expect(await page.locator("li[id]").count()).toBeGreaterThan(0);
+    await expect(
+      pages.first().getByRole("link", { name: "Previous" }),
     ).toBeVisible();
     await page.goto("/admin/spend");
     await expect(page.getByRole("heading", { name: "AI spend" })).toBeVisible();

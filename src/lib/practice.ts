@@ -169,3 +169,7 @@ export function highlightSegments(
       .map((c) => c.index),
   }));
 }
+
+/** "1 term", "3 terms"; pass the plural when it isn't word + "s". */
+export const plural = (n: number, word: string, many = `${word}s`) =>
+  `${n} ${n === 1 ? word : many}`;

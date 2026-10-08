@@ -2,7 +2,9 @@ import { FileQuestion } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { FilterBar } from "@/components/filter-bar";
-import { loadQuestions } from "@/lib/admin-data";
+import Link from "next/link";
+import { loadQuestions, QUESTION_PAGE } from "@/lib/admin-data";
+import { buttonVariants } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/server";
 import { requireAdmin } from "@/lib/auth";
 
@@ -13,12 +15,14 @@ export default async function QuestionsBrowser({
 }) {
   await requireAdmin();
   const f = await searchParams;
-  const [questions, topics] = await Promise.all([
+  const page = Math.max(1, Math.floor(Number(f.page)) || 1);
+  const [{ questions, total }, topics] = await Promise.all([
     loadQuestions({
       topic: f.topic,
       type: f.type,
       year: f.year,
       q: f.q,
+      page,
     }),
     (await createClient())
       .from("topics")
@@ -27,6 +31,42 @@ export default async function QuestionsBrowser({
   ]);
   const topicName = new Map(
     (topics.data ?? []).map((t) => [t.id, t.name] as const),
+  );
+  const first = (page - 1) * QUESTION_PAGE;
+  const href = (n: number) =>
+    `?${new URLSearchParams({
+      ...Object.fromEntries(Object.entries(f).filter(([, v]) => v)),
+      page: String(n),
+    })}`;
+  const pager = (
+    <nav
+      aria-label="Question pages"
+      className="text-muted-foreground flex items-center justify-between gap-3 text-sm"
+    >
+      <span>
+        {questions.length
+          ? `Showing ${first + 1}–${first + questions.length} of ${total}`
+          : `${total} ${total === 1 ? "question" : "questions"}`}
+      </span>
+      <span className="flex gap-2">
+        {page > 1 && (
+          <Link
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+            href={href(page - 1)}
+          >
+            Previous
+          </Link>
+        )}
+        {first + questions.length < total && (
+          <Link
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+            href={href(page + 1)}
+          >
+            Next
+          </Link>
+        )}
+      </span>
+    </nav>
   );
   return (
     <div className="space-y-4">
@@ -62,9 +102,7 @@ export default async function QuestionsBrowser({
           { name: "q", label: "Search", placeholder: "Stem or source" },
         ]}
       />
-      <p className="text-muted-foreground text-sm">
-        {questions.length} shown (max 100)
-      </p>
+      {pager}
       <ul className="space-y-3">
         {questions.map((q) => (
           <li key={q.id} className="panel space-y-3" id={q.id}>
@@ -102,6 +140,7 @@ export default async function QuestionsBrowser({
           </li>
         ))}
       </ul>
+      {questions.length > 0 && pager}
       {!questions.length && (
         <EmptyState
           icon={FileQuestion}

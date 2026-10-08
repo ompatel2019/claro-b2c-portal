@@ -13,6 +13,13 @@ test.describe("Homework is removed", () => {
     await expect(page.getByRole("link", { name: /homework/i })).toHaveCount(0);
     for (const path of ["/homework", "/homework/x", "/homework/x/do"])
       expect((await page.goto(path))?.status()).toBe(404);
+    await expect(page.getByText("Page not found")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Go home" })).toBeVisible();
+    expect(
+      await page
+        .getByText("Page not found")
+        .evaluate((el) => getComputedStyle(el).fontFamily),
+    ).toMatch(/Bricolage/);
   });
   test("admin homework routes 404", async ({ page }) => {
     await page.goto("/sign-in");

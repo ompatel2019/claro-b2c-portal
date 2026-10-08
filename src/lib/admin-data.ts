@@ -117,17 +117,20 @@ export async function loadSubmissions() {
   });
 }
 
+export const QUESTION_PAGE = 100;
 export async function loadQuestions(filters: {
   topic?: string;
   type?: string;
   year?: string;
   q?: string;
+  page?: number;
 }) {
   await requireAdmin();
   let query = admin()
     .from("questions")
     .select(
       "id,type,topic_id,marks,stem,stimulus,options,correct_index,criteria,guideline_notes,sample_answer,source,year",
+      { count: "exact" },
     )
     .order("year", { ascending: false })
     .order("id");
@@ -143,9 +146,13 @@ export async function loadQuestions(filters: {
     query = query.or(
       `stem.ilike.%${filters.q.slice(0, 100)}%,source.ilike.%${filters.q.slice(0, 100)}%`,
     );
-  const { data, error } = await query.limit(100);
+  const from = ((filters.page ?? 1) - 1) * QUESTION_PAGE;
+  const { data, count, error } = await query.range(
+    from,
+    from + QUESTION_PAGE - 1,
+  );
   if (error) throw new Error("Could not load questions.");
-  return data ?? [];
+  return { questions: data ?? [], total: count ?? 0 };
 }
 
 export async function loadSpend() {
