@@ -20,7 +20,21 @@ export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: error.message };
   const next = String(form.get("next") ?? "/");
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");
+  const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  if (safe === "/") {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile?.role === "admin") redirect("/admin");
+    }
+  }
+  redirect(safe);
 }
 
 export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {

@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { loadHomework } from "@/lib/homework-data";
+import { cardIds } from "@/lib/homework";
 import { redirect } from "next/navigation";
 import { loadSprint } from "@/lib/practice-data";
 import { createClient } from "@/utils/supabase/server";
@@ -18,7 +21,14 @@ export default async function Results({
 }) {
   const { id } = await params;
   const { session: s, attempts } = await loadSprint(id);
-  if (!s.finished_at) redirect(`/practice/${id}`);
+  if (!s.finished_at)
+    redirect(
+      s.kind === "homework"
+        ? `/homework/${s.homework_set_id}/do`
+        : `/practice/${id}`,
+    );
+  const homework =
+    s.kind === "homework" ? await loadHomework(s.homework_set_id!) : null;
   const db = await createClient();
   const { data, error } = await db
     .from("topics")
@@ -28,6 +38,14 @@ export default async function Results({
     <div className="space-y-8">
       <div>
         <p className="eyebrow">Every answer gives you a next step</p>
+        {homework && (
+          <>
+            <p className="text-xl font-semibold">{homework.set.title}</p>
+            <Link href="/homework" className="underline">
+              Back to homework
+            </Link>
+          </>
+        )}
         <h1>
           Your <em>results.</em>
         </h1>
@@ -38,8 +56,15 @@ export default async function Results({
           {s.score}/{s.max_score}{" "}
           <span className="text-2xl">({percentage(s.score, s.max_score)})</span>
         </p>
+        {homework && (
+          <p>
+            Flashcards: {cardIds(homework.set).length} cards ·{" "}
+            {homework.session?.reviews.filter((r) => r.mark < 1).length ?? 0}{" "}
+            retries
+          </p>
+        )}
         <p>
-          {modeLabel(s.config.mode)} ·{" "}
+          {homework ? "Homework" : modeLabel(s.config.mode)} ·{" "}
           {topicNames(s.config.topics, (data ?? []) as Topic[])}
         </p>
         <p className="mt-2">

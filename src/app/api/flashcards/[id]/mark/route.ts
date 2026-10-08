@@ -34,7 +34,7 @@ export async function POST(
   if (sessionId) {
     const { data: session } = await supabase
       .from("sessions")
-      .select("finished_at,kind,config")
+      .select("finished_at,kind,config,homework_set_id")
       .eq("id", sessionId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -45,13 +45,27 @@ export async function POST(
         { error: "Session already finished" },
         { status: 409 },
       );
-    if (
-      session.kind !== "flashcards" ||
-      session.config?.mode !== "test" ||
-      !session.config.card_ids?.includes(id)
-    )
+    let valid =
+      session.kind === "flashcards" &&
+      session.config?.mode === "test" &&
+      session.config.card_ids?.includes(id);
+    if (session.kind === "homework") {
+      const { data: item, error } = await supabase
+        .from("homework_items")
+        .select("position")
+        .eq("set_id", session.homework_set_id)
+        .eq("flashcard_id", id)
+        .maybeSingle();
+      if (error)
+        return Response.json(
+          { error: "Could not check this homework card. Please try again." },
+          { status: 500 },
+        );
+      valid = Boolean(item);
+    }
+    if (!valid)
       return Response.json(
-        { error: "Card is not in this test session" },
+        { error: "Card is not in this active session" },
         { status: 400 },
       );
   }

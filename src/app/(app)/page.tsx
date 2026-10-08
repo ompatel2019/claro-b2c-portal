@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { loadHomeworkList } from "@/lib/homework-data";
+import { HomeworkCard } from "@/components/homework-card";
 import { sydneyToday } from "@/lib/flashcards";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
@@ -63,6 +65,13 @@ export default async function Dashboard() {
     streak_days: number;
     weakest: { id: string; name: string; pct: number; answered: number }[];
   };
+  const homework = await loadHomeworkList();
+  const nearest = homework.sets.find(
+    (set) =>
+      !homework.sessions.some(
+        (s) => s.homework_set_id === set.id && s.finished_at,
+      ),
+  );
   const continuing = unfinished.data?.[0];
   const topics = (topicResult.data ?? []).filter((t) => !t.parent_id);
   const questionCount = (id: string) =>
@@ -103,6 +112,17 @@ export default async function Dashboard() {
           <p className="mt-2 text-sm">Flashcards for review</p>
         </div>
       </dl>
+      {nearest && (
+        <section className="space-y-4">
+          <h2>Homework</h2>
+          <HomeworkCard
+            set={nearest}
+            session={homework.sessions.find(
+              (s) => s.homework_set_id === nearest.id,
+            )}
+          />
+        </section>
+      )}
       {continuing && (
         <section className="panel bg-peach-soft p-6">
           <p className="font-hand text-2xl">Pick up where you left off</p>

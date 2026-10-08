@@ -9,10 +9,17 @@ const items = [
   ["Dashboard", "/"],
   ["Practice", "/practice"],
   ["Flashcards", "/flashcards"],
+  ["Homework", "/homework"],
   ["Activity", "/activity"],
   ["Profile", "/profile"],
 ];
-export function StudentNav({ name }: { name: string | null }) {
+export function StudentNav({
+  name,
+  homeworkCount = 0,
+}: {
+  name: string | null;
+  homeworkCount?: number;
+}) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const links = (
@@ -28,6 +35,14 @@ export function StudentNav({ name }: { name: string | null }) {
             className={`rounded-full px-5 py-3 font-semibold ${active ? "bg-peach text-ink" : "hover:bg-paper"}`}
           >
             {label}
+            {href === "/homework" && homeworkCount > 0 && (
+              <span
+                className="chip ml-2"
+                aria-label={`${homeworkCount} homework sets to do`}
+              >
+                {homeworkCount}
+              </span>
+            )}
           </Link>
         );
       })}

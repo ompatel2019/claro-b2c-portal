@@ -52,11 +52,12 @@ function client(rows: unknown[], signedIn = true) {
     const chain = {
       select: vi.fn(),
       eq: vi.fn(),
+      order: vi.fn(),
       single: vi.fn(),
       maybeSingle: vi.fn().mockResolvedValue({ data }),
       throwOnError: vi.fn().mockResolvedValue({ data }),
     };
-    for (const key of ["select", "eq", "single"] as const)
+    for (const key of ["select", "eq", "order", "single"] as const)
       chain[key].mockReturnValue(chain);
     return chain;
   });
@@ -461,3 +462,71 @@ it.each([
     expect(markFlashcard).not.toHaveBeenCalled();
   },
 );
+
+it("rejects homework submission before every latest flashcard review is right", async () => {
+  client([
+    { id: "id", kind: "homework", homework_set_id: "set", finished_at: null },
+    [{ flashcard_id: "a" }, { flashcard_id: "b" }, { flashcard_id: null }],
+    [
+      { flashcard_id: "a", mark: 1, created_at: "2026-10-01" },
+      { flashcard_id: "b", mark: 0.5, created_at: "2026-10-01" },
+    ],
+  ]);
+  const response = await finish(request(), ctx);
+  expect(response.status).toBe(409);
+  expect((await response.json()).error).toMatch(/every flashcard right/);
+  expect(finishSession).not.toHaveBeenCalled();
+});
+it("finishes homework after a missed card has been corrected", async () => {
+  client([
+    { id: "id", kind: "homework", homework_set_id: "set" },
+    [{ flashcard_id: "a" }],
+    [
+      { flashcard_id: "a", mark: 0, created_at: "2026-10-01" },
+      { flashcard_id: "a", mark: 1, created_at: "2026-10-02" },
+    ],
+  ]);
+  vi.mocked(finishSession).mockResolvedValue({
+    score: 1,
+    max_score: 1,
+    summary: null,
+  } as never);
+  expect((await finish(request(), ctx)).status).toBe(200);
+  expect(finishSession).toHaveBeenCalledExactlyOnceWith("id");
+});
+
+it("rejects typed checks for cards outside the student's homework set", async () => {
+  client([
+    { kind: "term", front: "Front", back: "Back" },
+    { kind: "homework", homework_set_id: "set", config: {}, finished_at: null },
+    null,
+  ]);
+  expect(
+    (await flashcard(request({ answer: "Answer", sessionId }), ctx)).status,
+  ).toBe(400);
+  expect(markFlashcard).not.toHaveBeenCalled();
+});
+it("stores typed homework checks only after confirming set membership", async () => {
+  const { chains } = client([
+    { kind: "term", front: "Front", back: "Back" },
+    { kind: "homework", homework_set_id: "set", config: {}, finished_at: null },
+    { position: 1 },
+  ]);
+  vi.mocked(markFlashcard).mockResolvedValue({ mark: 1, reason: "Correct" });
+  const insert = adminQuery({ id: "repeat" });
+  vi.mocked(admin().from)
+    .mockReturnValueOnce(insert as never)
+    .mockReturnValueOnce(adminQuery({ id: "first" }) as never);
+  expect(
+    (await flashcard(request({ answer: "Answer", sessionId }), ctx)).status,
+  ).toBe(200);
+  expect(chains[2].eq).toHaveBeenCalledWith("set_id", "set");
+  expect(chains[2].eq).toHaveBeenCalledWith("flashcard_id", "id");
+  expect(insert.insert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      user_id: userId,
+      session_id: sessionId,
+      source: "ai",
+    }),
+  );
+});

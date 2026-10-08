@@ -15,6 +15,8 @@ import {
   type FlashcardMark,
   type FlashcardReview,
 } from "@/lib/flashcards";
+import { stageOneQueue } from "@/lib/homework";
+import { HomeworkStages } from "./homework-stages";
 import type { FlashcardSession } from "@/lib/flashcard-data";
 import { Button } from "./ui/button";
 import { Logo } from "./logo";
@@ -23,16 +25,20 @@ export function FlashcardRunner({
   cards,
   reviews,
   deckName,
+  homework,
 }: {
   session: FlashcardSession;
   cards: Flashcard[];
   reviews: FlashcardReview[];
   deckName: string;
+  homework?: { setId: string; answered: number; questions: number };
 }) {
   const router = useRouter();
   const [db] = useState(createClient);
   const [queue, setQueue] = useState(() =>
-    resumeQueue(session.config.card_ids, reviews),
+    homework
+      ? stageOneQueue(session.config.card_ids, reviews)
+      : resumeQueue(session.config.card_ids, reviews),
   );
   const [marks, setMarks] = useState(
     () => new Map(reviews.map((r) => [r.flashcard_id, r.mark])),
@@ -109,6 +115,11 @@ export function FlashcardRunner({
   }
   async function finish() {
     await saveTime();
+    if (homework) {
+      router.push(`/homework/${homework.setId}/do?stage=questions`);
+      router.refresh();
+      return;
+    }
     await post(`/api/sessions/${session.id}/finish`);
     window.location.assign(`/flashcards/${session.id}/results`);
   }
@@ -140,30 +151,50 @@ export function FlashcardRunner({
   }
   return (
     <main className="mx-auto min-h-screen max-w-4xl space-y-6 px-5 py-6 sm:px-10">
+      {homework && (
+        <HomeworkStages
+          setId={homework.setId}
+          title={deckName}
+          stage={1}
+          right={done}
+          cards={session.config.card_ids.length}
+          answered={homework.answered}
+          questions={homework.questions}
+        />
+      )}
       <header className="flex flex-wrap items-center justify-between gap-4">
-        <Link href="/flashcards" aria-label="Claro flashcards">
+        <Link
+          href={homework ? "/homework" : "/flashcards"}
+          aria-label={homework ? "Claro homework" : "Claro flashcards"}
+        >
           <Logo />
         </Link>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" disabled={busy} onClick={() => act(finish)}>
-            Finish now
-          </Button>
+          {!homework && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => act(finish)}
+            >
+              Finish now
+            </Button>
+          )}
           <Button
             variant="ghost"
             disabled={busy}
             onClick={() =>
               act(async () => {
                 await saveTime();
-                router.push("/flashcards");
+                router.push(homework ? "/homework" : "/flashcards");
               })
             }
           >
-            Exit
+            {homework ? "Save and exit" : "Exit"}
           </Button>
         </div>
       </header>
       <div className="space-y-3">
-        <h1 className="text-2xl sm:text-3xl">{deckName}</h1>
+        {!homework && <h1 className="text-2xl sm:text-3xl">{deckName}</h1>}
         <p aria-live="polite">
           {card
             ? `Card ${session.config.card_ids.indexOf(card.id) + 1} of ${session.config.card_ids.length}`
@@ -221,7 +252,7 @@ export function FlashcardRunner({
               {card.front}
             </h2>
           </div>
-          {session.config.mode === "study" ? (
+          {session.config.mode === "study" && (!homework || flipped) ? (
             flipped ? (
               <>
                 <div className="bg-peach-soft rounded-2xl p-5 whitespace-pre-wrap">
@@ -294,6 +325,15 @@ export function FlashcardRunner({
                   onChange={(e) => setAnswer(e.target.value)}
                 />
               </label>
+              {homework && (
+                <Button
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => setFlipped(true)}
+                >
+                  Flip and rate myself
+                </Button>
+              )}
               <Button type="submit" disabled={busy || !answer.trim()}>
                 Check answer
               </Button>
@@ -302,15 +342,22 @@ export function FlashcardRunner({
         </article>
       ) : (
         <section className="panel space-y-4 p-6">
-          <h2>All cards reviewed</h2>
+          <h2>{homework ? "Flashcards complete" : "All cards reviewed"}</h2>
           <p>
-            Finish your session to see your first-try score and next review
-            dates.
+            {homework
+              ? "Every card is right. You are ready for the questions."
+              : "Finish your session to see your first-try score and next review dates."}
           </p>
           <Button disabled={busy} onClick={() => act(finish)}>
-            See results
+            {homework ? "Continue to questions" : "See results"}
           </Button>
         </section>
+      )}
+      {homework && (
+        <p>
+          Every card needs to be right to finish. Cards you miss come back at
+          the end of the deck.
+        </p>
       )}
       {busy && <p role="status">Saving or checking your review…</p>}
       {error && (

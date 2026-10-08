@@ -8,7 +8,9 @@ import {
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { FlashcardSession } from "@/lib/flashcard-data";
 import type { Flashcard, FlashcardReview } from "@/lib/flashcards";
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, refresh: vi.fn() }),
+}));
 vi.mock("@/utils/supabase/client", () => ({ createClient: () => ({}) }));
 vi.mock("@/lib/auth-client", () => ({ ensureSession: async () => {} }));
 vi.mock("@/app/(app)/flashcards/actions", () => ({
@@ -180,5 +182,47 @@ it("keeps a failed study rating on the current card for retry", async () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Could not save"),
   );
   expect(screen.getByText("Card 1 of 2 · Study")).toBeVisible();
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it("homework offers typing and self ratings, resumes unseen first and moves to questions without finishing", async () => {
+  render(
+    <FlashcardRunner
+      session={session}
+      cards={cards}
+      reviews={[
+        {
+          flashcard_id: "a",
+          mark: 0,
+          created_at: "2026-10-08",
+        } as FlashcardReview,
+      ]}
+      deckName="Homework"
+      homework={{ setId: "set", answered: 0, questions: 2 }}
+    />,
+  );
+  expect(screen.getByRole("heading", { name: "Deflation" })).toBeVisible();
+  expect(screen.getByRole("textbox", { name: "Your answer" })).toBeVisible();
+  expect(
+    screen.queryByRole("button", { name: "Finish now" }),
+  ).not.toBeInTheDocument();
+  for (let i = 0; i < 2; i++) {
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Flip and rate myself" }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Flip and rate myself" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Knew it" }));
+    if (i === 0)
+      await waitFor(() =>
+        expect(screen.getByText("Card 1 of 2 · Study")).toBeVisible(),
+      );
+  }
+  await waitFor(() =>
+    expect(push).toHaveBeenCalledWith("/homework/set/do?stage=questions"),
+  );
   expect(fetchMock).not.toHaveBeenCalled();
 });

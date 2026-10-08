@@ -13,9 +13,9 @@ export default async function Activity({
   const db = await createClient();
   let query = db
     .from("sessions")
-    .select("*")
+    .select("*,homework_set:homework_sets(title)")
     .eq("user_id", profile.id)
-    .in("kind", ["sprint", "flashcards"])
+    .in("kind", ["sprint", "flashcards", "homework"])
     .order("started_at", { ascending: false });
   if (
     filters.mode &&

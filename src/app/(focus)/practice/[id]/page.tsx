@@ -8,6 +8,8 @@ export default async function Sprint({
 }) {
   const { id } = await params;
   const { session, attempts, profile } = await loadSprint(id);
+  if (session.kind === "homework")
+    redirect(`/homework/${session.homework_set_id}/do`);
   if (session.finished_at) redirect(`/practice/${id}/results`);
   return (
     <SprintRunner session={session} initial={attempts} userId={profile.id} />

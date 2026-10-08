@@ -9,10 +9,10 @@ export async function loadSprint(id: string) {
   const db = await createClient();
   const { data: session, error } = await db
     .from("sessions")
-    .select("*")
+    .select("*,homework_set:homework_sets(title)")
     .eq("id", id)
     .eq("user_id", profile.id)
-    .eq("kind", "sprint")
+    .in("kind", ["sprint", "homework"])
     .maybeSingle();
   if (error) throw new Error("Could not load your session.");
   if (!session) notFound();

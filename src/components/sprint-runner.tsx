@@ -8,15 +8,18 @@ import { answered, timer, type Attempt, type Session } from "@/lib/practice";
 import { Button } from "./ui/button";
 import { Logo } from "./logo";
 import { RichText } from "./rich-text";
+import { HomeworkStages } from "./homework-stages";
 import { WrittenAnswer } from "./written-answer";
 export function SprintRunner({
   session,
   initial,
   userId,
+  homework,
 }: {
   session: Session;
   initial: Attempt[];
   userId: string;
+  homework?: { setId: string; title: string; cards: number; retries: number };
 }) {
   const router = useRouter();
   const [db] = useState(createClient);
@@ -28,6 +31,7 @@ export function SprintRunner({
   const seconds = useRef(session.elapsed_s ?? 0);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [review, setReview] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const queue = useRef<Promise<void>>(Promise.resolve());
@@ -190,7 +194,7 @@ export function SprintRunner({
   const a = attempts[index];
   const remaining = Math.max(0, session.config.time_limit_min * 60 - elapsed);
   const unanswered = attempts.filter((a) => !answered(a)).length;
-  if (!a)
+  if (!a && !homework)
     return (
       <main className="mx-auto max-w-3xl p-6">
         <h1>No questions in this sprint</h1>
@@ -210,8 +214,127 @@ export function SprintRunner({
         </div>
       </main>
     );
+  async function openReview() {
+    await flush();
+    await persistTime();
+    const photo = rows.current.findIndex(
+      (row) =>
+        row.image_path && ["pending", "transcribed"].includes(row.status),
+    );
+    if (homework && photo >= 0) {
+      setIndex(photo);
+      throw new Error(
+        `Check and confirm the photo transcript, then submit your answer for question ${photo + 1} before reviewing your homework.`,
+      );
+    }
+    setReview(true);
+  }
+  if (homework && (review || !a))
+    return (
+      <main className="mx-auto max-w-3xl space-y-6 px-5 py-8">
+        <HomeworkStages
+          {...homework}
+          stage={3}
+          right={homework.cards}
+          answered={attempts.filter(answered).length}
+          questions={attempts.length}
+          disabled={busy}
+          onQuestions={() => setReview(false)}
+          onReview={() => void act(openReview)}
+        />
+        <Button
+          variant="outline"
+          disabled={busy}
+          onClick={() =>
+            void act(async () => {
+              await flush();
+              await persistTime();
+              router.push("/homework");
+            })
+          }
+        >
+          Save and exit
+        </Button>
+        <section className="panel space-y-5 p-6">
+          <h2>Ready to submit?</h2>
+          <p>
+            Flashcards {homework.cards} of {homework.cards} right ·{" "}
+            {homework.retries} retries
+          </p>
+          <ul className="space-y-3">
+            {attempts.map((row, i) => (
+              <li
+                className="border-line flex flex-wrap justify-between gap-3 border-b pb-3"
+                key={row.id}
+              >
+                <span>
+                  Question {i + 1} ·{" "}
+                  {row.question.type === "mcq"
+                    ? "Multiple choice"
+                    : "Short answer"}{" "}
+                  · {row.question.marks} marks
+                </span>
+                <strong>{answered(row) ? "Answered" : "Not answered"}</strong>
+              </li>
+            ))}
+          </ul>
+          {unanswered > 0 && (
+            <div className="bg-peach-soft space-y-3 rounded-2xl p-4">
+              <p>
+                {unanswered}{" "}
+                {unanswered === 1
+                  ? "question not answered"
+                  : "questions not answered"}
+                . Once submitted, your answers are final.
+              </p>
+              {attempts.map(
+                (row, i) =>
+                  !answered(row) && (
+                    <Button
+                      variant="outline"
+                      key={row.id}
+                      disabled={busy}
+                      onClick={() => {
+                        setIndex(i);
+                        setReview(false);
+                      }}
+                    >
+                      Answer question {i + 1}
+                    </Button>
+                  ),
+              )}
+            </div>
+          )}
+          {error && <p role="alert">{error}</p>}
+          <Button disabled={busy} onClick={() => void act(finish)}>
+            Submit homework
+          </Button>
+          {attempts.length > 0 && (
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setReview(false)}
+            >
+              Back to questions
+            </Button>
+          )}
+        </section>
+      </main>
+    );
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-5 sm:px-8">
+      {homework && (
+        <HomeworkStages
+          {...homework}
+          stage={2}
+          right={homework.cards}
+          answered={attempts.filter(answered).length}
+          questions={attempts.length}
+          disabled={busy}
+          onQuestions={() => setReview(false)}
+          onReview={() => void act(openReview)}
+        />
+      )}
       <header className="panel flex flex-wrap items-center justify-between gap-4 p-4">
         <Logo />
         <Button
@@ -221,20 +344,22 @@ export function SprintRunner({
             void act(async () => {
               await flush();
               await persistTime();
-              router.push("/");
+              router.push(homework ? "/homework" : "/");
             })
           }
         >
-          Exit
+          {homework ? "Save and exit" : "Exit"}
         </Button>
         <p>
           Question {index + 1} of {attempts.length} · {a.question.marks} marks
         </p>
-        <p aria-label="Time remaining" className="font-mono text-lg">
-          {timer(remaining)}
-        </p>
+        {!homework && (
+          <p aria-label="Time remaining" className="font-mono text-lg">
+            {timer(remaining)}
+          </p>
+        )}
       </header>
-      {remaining === 0 && (
+      {!homework && remaining === 0 && (
         <div role="status" className="panel bg-peach p-5">
           <strong>Time’s up</strong>
           <p>You can check your answers and submit when you’re ready.</p>
@@ -252,7 +377,7 @@ export function SprintRunner({
           {error.includes("sign-in expired") && (
             <a
               className="button-link"
-              href={`/sign-in?next=/practice/${session.id}`}
+              href={`/sign-in?next=${homework ? `/homework/${homework.setId}/do` : `/practice/${session.id}`}`}
             >
               Sign in again
             </a>
@@ -369,8 +494,24 @@ export function SprintRunner({
             Next question
           </Button>
         )}
-        <Button disabled={busy} onClick={() => setConfirm(true)}>
-          Submit sprint
+        {homework && (
+          <Button
+            variant="outline"
+            disabled={busy}
+            onClick={() =>
+              void act(async () => {
+                await change(Math.min(index + 1, attempts.length - 1));
+              })
+            }
+          >
+            Skip for now
+          </Button>
+        )}
+        <Button
+          disabled={busy}
+          onClick={() => (homework ? void act(openReview) : setConfirm(true))}
+        >
+          {homework ? "Review and submit" : "Submit sprint"}
         </Button>
       </div>
       {busy && (
