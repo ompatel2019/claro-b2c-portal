@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
-export function RetryAnswer({ id, marking }: { id: string; marking: boolean }) {
+export function RetryAnswer({ id }: { id: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -20,16 +20,11 @@ export function RetryAnswer({ id, marking }: { id: string; marking: boolean }) {
     }
   }
   return (
-    <div className="space-y-3">
-      <p>{marking ? "Still marking" : "Couldn’t mark this answer"}</p>
-      <Button
-        variant="outline"
-        disabled={busy}
-        onClick={() => (marking ? router.refresh() : void retry())}
-      >
-        {busy ? "Marking…" : marking ? "Refresh" : "Retry"}
+    <div className="space-y-2">
+      <Button variant="outline" size="sm" disabled={busy} onClick={retry}>
+        {busy ? "Marking…" : "Retry"}
       </Button>
-      {error && <p role="alert">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
     </div>
   );
 }

@@ -1,0 +1,140 @@
+import { expect, test } from "@playwright/test";
+import { adminClient, cleanupSessions, signIn, start } from "./helpers";
+
+const answer =
+  "Inflation rose because demand grew faster than supply. Wages lagg[?] behind prices.";
+const comments = [
+  {
+    quote: "Inflation rose",
+    start: 0,
+    kind: "fix",
+    tag: "Evidence",
+    body: "Give a CPI figure.",
+    next_mark: "Quote the latest CPI rate.",
+  },
+  {
+    quote: "demand grew faster than supply",
+    start: 23,
+    kind: "strength",
+    tag: "Knowledge",
+    body: "Correct cause of demand-pull inflation.",
+    next_mark: null,
+  },
+  {
+    quote: "",
+    start: null,
+    kind: "fix",
+    tag: "Structure",
+    body: "End with a one-line judgement.",
+    next_mark: null,
+  },
+];
+
+test.describe("annotated written feedback", () => {
+  test.skip(
+    !process.env.STUDENT_EMAIL || !adminClient(),
+    "Needs a student account and the service key to seed a marked answer",
+  );
+  test.describe.configure({ mode: "serial" });
+  const ids: string[] = [];
+  let results = "";
+  test.afterAll(async () => {
+    await cleanupSessions(ids);
+  });
+
+  test("seed a finished sprint with a marked written answer", async ({
+    page,
+  }) => {
+    await signIn(page);
+    const id = await start(page, "Short answer", ids);
+    // Seed the marking directly so nothing calls OpenAI: the first answer
+    // is marked, the rest skipped, and the session is finished in the DB.
+    const db = adminClient()!;
+    const { data: attempts } = await db
+      .from("attempts")
+      .select("id,position")
+      .eq("session_id", id)
+      .order("position");
+    const [first, ...rest] = attempts!;
+    const skipped = await db
+      .from("attempts")
+      .update({ status: "skipped" })
+      .in(
+        "id",
+        rest.map((a) => a.id),
+      );
+    const marked = await db
+      .from("attempts")
+      .update({
+        status: "marked",
+        check_status: "skipped",
+        answer_text: answer,
+        mark: 2,
+        max_marks: 4,
+        feedback: { comments, better_answer_outline: ["State a cause."] },
+      })
+      .eq("id", first.id);
+    const finished = await db
+      .from("sessions")
+      .update({ finished_at: new Date().toISOString(), score: 2, max_score: 4 })
+      .eq("id", id);
+    expect([skipped.error, marked.error, finished.error]).toEqual([
+      null,
+      null,
+      null,
+    ]);
+    results = `/practice/${id}/results`;
+  });
+
+  test("highlights and margin cards link both ways on wide screens", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1700, height: 1000 });
+    await signIn(page);
+    await page.goto(results);
+    await page.locator("summary").first().click();
+    await expect(page.getByText("2 / 4")).toBeVisible();
+    await expect(
+      page.getByText("Marked", { exact: true }).last(),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Quote the latest CPI rate.").first(),
+    ).toBeVisible();
+    const fix = page.getByRole("button", {
+      name: "Fix 1, Evidence: Give a CPI figure.",
+    });
+    await expect(fix).toHaveText("Inflation rose");
+    await fix.click();
+    await expect(page.locator('[data-card="0"]')).toBeFocused();
+    await expect(page.getByText("Overall")).toBeVisible();
+    await expect(
+      page.getByTitle("Hard to read. Not counted against you."),
+    ).toHaveText("lagg[?]");
+    // The margin card sits level with its highlight.
+    const [h, c] = await Promise.all([
+      fix.boundingBox(),
+      page.locator('[data-card="0"]').boundingBox(),
+    ]);
+    expect(Math.abs(h!.y - c!.y)).toBeLessThan(40);
+    expect(c!.x).toBeGreaterThan(h!.x + 300);
+    await page.getByRole("button", { name: "Fixes (2)" }).click();
+    await expect(page.getByRole("button", { name: /^Strength 2/ })).toHaveCount(
+      0,
+    );
+  });
+
+  test("tapping a highlight opens its comment on phones", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page);
+    await page.goto(results);
+    await page.locator("summary").first().click();
+    await page.getByRole("button", { name: /^Strength 2/ }).click();
+    await expect(
+      page
+        .getByRole("dialog")
+        .getByText("Correct cause of demand-pull inflation."),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+});

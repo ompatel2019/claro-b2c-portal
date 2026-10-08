@@ -51,9 +51,11 @@ test.describe("Student practice", () => {
     await expect(page.getByText("Score", { exact: true })).toBeVisible();
     await page.locator("summary").first().click();
     await expect(
-      page.getByText("Your answer: A", { exact: true }).first(),
+      page.getByText(/^Your answer: A · Correct: [ABCD]$/).first(),
     ).toBeVisible();
-    await expect(page.getByText(/^Correct: [ABCD]$/).first()).toBeVisible();
+    await expect(
+      page.getByText("Your answer", { exact: true }).first(),
+    ).toBeVisible();
   });
   test("exit and resume at the first unanswered question", async ({ page }) => {
     const id = await start(page, "Multiple choice", ids);
@@ -110,11 +112,9 @@ test.describe("AI backed written practice", () => {
     ).toBeVisible();
     await finish(page);
     await page.locator("summary").first().click();
-    await expect(page.getByText(/^Band:/)).toBeVisible();
+    await expect(page.getByText(/^Band:/)).toBeVisible({ timeout: 90000 });
     await expect(page.locator("mark").first()).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Better-answer outline" }),
-    ).toBeVisible();
+    await expect(page.getByText("How to reach full marks")).toBeVisible();
   });
   test("photo transcription can be edited and confirmed without grading", async ({
     page,
