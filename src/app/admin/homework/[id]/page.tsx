@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { homeworkColumns } from "@/lib/homework-data";
 import type { HomeworkSet } from "@/lib/homework";
@@ -16,6 +17,7 @@ export default async function EditHomework({
 }) {
   const { id } = await params;
   const f = await searchParams;
+  await requireAdmin();
   const db = await createClient();
   const [setResult, topics, started] = await Promise.all([
     db

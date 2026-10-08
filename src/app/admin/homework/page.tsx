@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { homeworkColumns } from "@/lib/homework-data";
 import { homeworkCounts, dueLabel, type HomeworkSet } from "@/lib/homework";
 import { NewHomework } from "@/components/homework-builder";
 import type { Topic } from "@/lib/practice";
 export default async function AdminHomework() {
+  await requireAdmin();
   const db = await createClient();
   const [sets, topics, students, sessions] = await Promise.all([
     db

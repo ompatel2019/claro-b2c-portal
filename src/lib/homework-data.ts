@@ -57,12 +57,21 @@ export async function loadHomework(id: string) {
     .maybeSingle()
     .throwOnError();
   const typed = set as unknown as HomeworkSet;
-  typed.items.sort((a, b) => a.position - b.position);
-  const run = session as unknown as HomeworkSession | null;
-  run?.attempts.sort((a, b) => a.position - b.position);
-  run?.reviews.sort(
-    (a, b) =>
-      a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id),
+  typed.items = [...(typed.items ?? [])].sort(
+    (a, b) => a.position - b.position,
   );
+  const run = session
+    ? ({
+        ...(session as unknown as HomeworkSession),
+        attempts: [...((session as HomeworkSession).attempts ?? [])].sort(
+          (a, b) => a.position - b.position,
+        ),
+        reviews: [...((session as HomeworkSession).reviews ?? [])].sort(
+          (a, b) =>
+            a.created_at.localeCompare(b.created_at) ||
+            a.id.localeCompare(b.id),
+        ),
+      } satisfies HomeworkSession)
+    : null;
   return { set: typed, session: run, profile };
 }

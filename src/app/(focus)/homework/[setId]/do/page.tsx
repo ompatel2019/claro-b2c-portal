@@ -14,7 +14,9 @@ export default async function Run({
   if (!session) redirect(`/homework/${set.id}`);
   if (session.finished_at) redirect(`/practice/${session.id}/results`);
   const ids = cardIds(set);
-  if (!stageOneComplete(ids, session.reviews))
+  const reviews = session.reviews ?? [];
+  const attempts = session.attempts ?? [];
+  if (!stageOneComplete(ids, reviews))
     return (
       <FlashcardRunner
         key={session.id}
@@ -30,12 +32,12 @@ export default async function Run({
           },
         }}
         cards={set.items.flatMap((i) => (i.card ? [i.card as Flashcard] : []))}
-        reviews={session.reviews}
+        reviews={reviews}
         deckName={set.title}
         homework={{
           setId: set.id,
-          answered: session.attempts.filter(answered).length,
-          questions: session.attempts.length,
+          answered: attempts.filter(answered).length,
+          questions: attempts.length,
         }}
       />
     );
@@ -50,13 +52,13 @@ export default async function Run({
           time_limit_min: 0,
         },
       }}
-      initial={session.attempts}
+      initial={attempts}
       userId={profile.id}
       homework={{
         setId: set.id,
         title: set.title,
         cards: ids.length,
-        retries: session.reviews.filter(
+        retries: reviews.filter(
           (r) => ids.includes(r.flashcard_id) && r.mark < 1,
         ).length,
       }}

@@ -88,3 +88,43 @@ export function resumeQueue(
   const latest = new Map(reviews.map((r) => [r.flashcard_id, r.mark]));
   return ids.filter((id) => latest.get(id) !== 1);
 }
+
+/** Normalise for exact/near flashcard matching (lowercase, strip punctuation/extra space). */
+export function normaliseAnswer(text: string) {
+  return text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s.%$]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Deterministic flashcard mark before calling AI.
+ * Exact / containment → 1; high token overlap → 0.5; else null (use AI).
+ */
+export function matchFlashcardAnswer(
+  answer: string,
+  back: string,
+): { mark: FlashcardMark; reason: string } | null {
+  const a = normaliseAnswer(answer);
+  const b = normaliseAnswer(back);
+  if (!a || !b) return null;
+  if (a === b) return { mark: 1, reason: "Exact match with the model answer." };
+  if (
+    a.includes(b) ||
+    (b.length <= 80 && b.includes(a) && a.length >= b.length * 0.6)
+  )
+    return { mark: 1, reason: "Matches the model answer." };
+  const aTokens = new Set(a.split(" ").filter((t) => t.length > 2));
+  const bTokens = b.split(" ").filter((t) => t.length > 2);
+  if (!bTokens.length) return null;
+  const hit = bTokens.filter((t) => aTokens.has(t)).length;
+  const ratio = hit / bTokens.length;
+  if (ratio >= 0.85)
+    return { mark: 1, reason: "Covers the key points of the model answer." };
+  if (ratio >= 0.5)
+    return { mark: 0.5, reason: "Partly covers the model answer." };
+  return null;
+}

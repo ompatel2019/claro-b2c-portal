@@ -8,6 +8,13 @@ export async function beginHomework(form: FormData) {
   const profile = await requireProfile();
   if (profile.role !== "student") redirect("/admin");
   const db = await createClient();
-  await db.rpc("start_homework", { p_set: id }).throwOnError();
+  // Returns existing session id when one is already in progress (unique per set).
+  const { error } = await db.rpc("start_homework", { p_set: id });
+  if (error)
+    throw new Error(
+      error.message.includes("not found")
+        ? "This homework is not available."
+        : "Could not open this homework. Please try again.",
+    );
   redirect(`/homework/${id}/do`);
 }

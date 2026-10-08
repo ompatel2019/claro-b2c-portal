@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   firstReviews,
+  matchFlashcardAnswer,
   nextQueue,
+  normaliseAnswer,
   resumeQueue,
   schedule,
   shuffle,
@@ -76,4 +78,19 @@ it("uses first reviews for scoring and latest reviews for ordered resume", () =>
     0, 1, 0.5,
   ]);
   expect(resumeQueue(["a", "b", "c", "d"], reviews)).toEqual(["c", "d"]);
+});
+describe("flashcard answer matching", () => {
+  it("normalises answers for matching", () => {
+    expect(normaliseAnswer("  Real GDP!! ")).toBe("real gdp");
+  });
+  it("marks exact and near flashcard answers without AI", () => {
+    expect(matchFlashcardAnswer("Real GDP", "Real GDP")?.mark).toBe(1);
+    expect(
+      matchFlashcardAnswer(
+        "The market value of all final goods and services produced in an economy in a year, adjusted for inflation",
+        "The market value of all final goods and services produced in an economy over a period of time, adjusted for inflation (real).",
+      )?.mark,
+    ).toBeGreaterThanOrEqual(0.5);
+    expect(matchFlashcardAnswer("banana", "Real GDP")).toBeNull();
+  });
 });

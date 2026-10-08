@@ -127,6 +127,19 @@ it("can restart just the selected missed cards in study mode", async () => {
 it.each([
   null,
   { finished_at: "2026-10-08", config: { mode: "study", card_ids: ["c"] } },
+])(
+  "rejects missing or finished sessions before inserting reviews %#",
+  async (session) => {
+    const owned = query(session);
+    const db = client(owned);
+    await expect(rateFlashcard(sessionId, "c", 1)).rejects.toThrow(
+      /reset or expired|already finished|not available/i,
+    );
+    expect(owned.eq).toHaveBeenCalledWith("user_id", "user");
+    expect(db.from).toHaveBeenCalledTimes(1);
+  },
+);
+it.each([
   { finished_at: null, config: { mode: "test", card_ids: ["c"] } },
   { finished_at: null, config: { mode: "study", card_ids: ["other"] } },
 ])(

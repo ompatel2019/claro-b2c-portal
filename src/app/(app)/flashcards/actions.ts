@@ -120,16 +120,16 @@ export async function rateFlashcard(
       .throwOnError();
     homeworkCard = Boolean(item);
   }
-  if (
-    !session ||
-    session.finished_at ||
-    !(
-      homeworkCard ||
-      (session.kind === "flashcards" &&
-        session.config.mode === "study" &&
-        session.config.card_ids?.includes(cardId))
-    )
-  )
+  if (!session || session.finished_at)
+    throw new Error(
+      "This homework session was reset or expired. Open Homework and continue again.",
+    );
+  if (!(
+    homeworkCard ||
+    (session.kind === "flashcards" &&
+      session.config.mode === "study" &&
+      session.config.card_ids?.includes(cardId))
+  ))
     throw new Error("This card is not available in an active study session.");
   const { data: review } = await db
     .from("flashcard_reviews")

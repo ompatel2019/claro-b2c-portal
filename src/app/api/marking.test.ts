@@ -199,6 +199,7 @@ it("stores an AI review against the caller and returns the card back", async () 
     mark: 1,
     reason: "Correct",
     back: "Back",
+    local: false,
   });
   expect(progress.upsert).toHaveBeenCalledWith(
     expect.objectContaining({

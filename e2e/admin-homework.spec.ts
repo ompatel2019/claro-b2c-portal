@@ -50,7 +50,7 @@ test.describe("Admin homework builder", () => {
     await page
       .getByLabel("Due date and time (Sydney)")
       .fill(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 16));
-    await page.getByRole("button", { name: "Create draft" }).click();
+    await page.getByRole("button", { name: /Create draft/ }).click();
     await expect(page).toHaveURL(/\/admin\/homework\/[^/]+$/);
     setId = page.url().split("/").at(-1)!;
     await page
@@ -78,5 +78,63 @@ test.describe("Admin homework builder", () => {
         has: page.getByRole("heading", { name: title, exact: true }),
       }),
     ).toContainText("Published");
+  });
+
+  test("Apply filters does not change started count on a published set", async ({
+    page,
+  }) => {
+    test.skip(!setId, "Needs the published set from the prior test");
+    // Simulate one student having started without finishing.
+    const studentId = (
+      await db!
+        .from("profiles")
+        .select("id")
+        .eq("role", "student")
+        .limit(1)
+        .single()
+        .throwOnError()
+    ).data!.id;
+    const existing = await db!
+      .from("sessions")
+      .select("id")
+      .eq("homework_set_id", setId)
+      .eq("user_id", studentId)
+      .maybeSingle();
+    if (!existing.data)
+      await db!
+        .from("sessions")
+        .insert({
+          user_id: studentId,
+          kind: "homework",
+          homework_set_id: setId,
+          config: {},
+        })
+        .throwOnError();
+    await page.goto("/sign-in");
+    await page.getByLabel("Email").fill(process.env.ADMIN_EMAIL!);
+    await page.getByLabel("Password").fill(process.env.ADMIN_PASSWORD!);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page.waitForURL(/\/(admin)?$/, { timeout: 30000 });
+    await page.goto(`/admin/homework/${setId}`);
+    await expect(page.getByText(/1 students? started/)).toBeVisible({
+      timeout: 30000,
+    });
+    await page
+      .getByRole("button", { name: "Apply filters", exact: true })
+      .click();
+    await expect(page).toHaveURL(new RegExp(`/admin/homework/${setId}`));
+    await expect(page.getByText(/1 students? started/)).toBeVisible();
+    const { count } = await db!
+      .from("sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("homework_set_id", setId)
+      .throwOnError();
+    expect(count).toBe(1);
+    const { count: items } = await db!
+      .from("homework_items")
+      .select("position", { count: "exact", head: true })
+      .eq("set_id", setId)
+      .throwOnError();
+    expect(items).toBeGreaterThan(0);
   });
 });

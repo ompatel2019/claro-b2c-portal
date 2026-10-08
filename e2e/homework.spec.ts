@@ -150,7 +150,11 @@ test.describe("Student homework", () => {
       "data-card-id",
       first!,
     );
+    // Mid Stage 1 reload must resume with the missed card still pending (not Card 1 at 0/2).
     await page.reload();
+    await expect(page).toHaveURL(new RegExp(`/homework/${setId}/do`));
+    await expect(page.getByText(/Card \d+ of 2/)).toBeVisible();
+    await expect(page.locator("article[data-card-id]")).toBeVisible();
     await page.getByRole("button", { name: "Flip and rate myself" }).click();
     await page.getByRole("button", { name: "Knew it", exact: true }).click();
     await expect(page.locator("article[data-card-id]")).toHaveAttribute(

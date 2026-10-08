@@ -135,9 +135,31 @@ export function FlashcardRunner({
   }
   async function rate(mark: FlashcardMark) {
     if (!card) return;
-    await rateFlashcard(session.id, card.id, mark);
-    await saveTime();
-    await advance(mark);
+    const cardId = card.id;
+    const sessionId = session.id;
+    // Optimistic: advance immediately. Persist in the background (ratings are not AI).
+    const next = nextQueue(queue, cardId, mark);
+    setMarks((prev) => new Map(prev).set(cardId, mark));
+    setQueue(next);
+    setFlipped(false);
+    setAnswer("");
+    setVerdict(null);
+    const persist = async () => {
+      await rateFlashcard(sessionId, cardId, mark);
+      await saveTime();
+    };
+    if (!next.length) {
+      await persist();
+      await finish();
+      return;
+    }
+    void persist().catch((e) =>
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Could not save your rating. Please try again.",
+      ),
+    );
   }
   async function check() {
     if (!card) return;
@@ -359,7 +381,7 @@ export function FlashcardRunner({
           the end of the deck.
         </p>
       )}
-      {busy && <p role="status">Saving or checking your review…</p>}
+      {busy && !verdict && <p role="status">Checking your answer…</p>}
       {error && (
         <p role="alert" className="text-destructive">
           {error}

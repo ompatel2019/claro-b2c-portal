@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { updateFlashcardProgress } from "@/lib/flashcard-progress";
+import { matchFlashcardAnswer } from "@/lib/flashcards";
 import { markFlashcard } from "@/lib/marking/engine";
 import { admin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
-export const maxDuration = 120;
+export const maxDuration = 60;
 const Body = z.strictObject({
   answer: z.string().trim().min(1).max(2000),
   sessionId: z.uuid().nullable().optional(),
@@ -39,7 +40,13 @@ export async function POST(
       .eq("user_id", user.id)
       .maybeSingle();
     if (!session)
-      return Response.json({ error: "Session not found" }, { status: 404 });
+      return Response.json(
+        {
+          error:
+            "This homework session was reset or expired. Open Homework and continue again.",
+        },
+        { status: 404 },
+      );
     if (session.finished_at)
       return Response.json(
         { error: "Session already finished" },
@@ -70,11 +77,14 @@ export async function POST(
       );
   }
   try {
-    const result = await markFlashcard(
-      { ...card, kind: card.kind as "term" | "stat" },
-      answer,
-      user.id,
-    );
+    const local = matchFlashcardAnswer(answer, card.back);
+    const result =
+      local ??
+      (await markFlashcard(
+        { ...card, kind: card.kind as "term" | "stat" },
+        answer,
+        user.id,
+      ));
     const db = admin();
     const { data: review } = await db
       .from("flashcard_reviews")
@@ -83,7 +93,7 @@ export async function POST(
         user_id: user.id,
         session_id: sessionId ?? null,
         answer,
-        source: "ai",
+        source: local ? "self" : "ai",
         ...result,
       })
       .select("id")
@@ -98,7 +108,7 @@ export async function POST(
         review.id,
         result.mark,
       );
-    return Response.json({ ...result, back: card.back });
+    return Response.json({ ...result, back: card.back, local: Boolean(local) });
   } catch (error) {
     console.error(error);
     return Response.json(

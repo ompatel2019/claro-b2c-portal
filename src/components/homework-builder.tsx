@@ -54,7 +54,7 @@ export function NewHomework({ topics }: { topics: Topic[] }) {
       <Details topics={topics} />
       {state.error && <p role="alert">{state.error}</p>}
       <Button type="submit" disabled={pending}>
-        Create draft
+        Create draft and open
       </Button>
     </form>
   );
