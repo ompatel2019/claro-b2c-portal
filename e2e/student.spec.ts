@@ -58,7 +58,7 @@ test.describe("Student practice", () => {
     await page.getByRole("radio", { name: /^Option A:/ }).check();
     await page.getByRole("button", { name: "Exit", exact: true }).click();
     await expect(page).toHaveURL(/\/$/);
-    await page.getByRole("link", { name: "Continue", exact: true }).click();
+    await page.locator(`a[href="/practice/${id}"]`).click();
     await expect(page).toHaveURL(new RegExp(`/practice/${id}$`));
     await expect(page.getByText(/Question 2 of/)).toBeVisible();
     await page.getByRole("button", { name: "Previous question" }).click();

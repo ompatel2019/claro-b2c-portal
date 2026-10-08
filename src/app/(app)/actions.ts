@@ -50,3 +50,34 @@ export async function saveProfile(
   revalidatePath("/", "layout");
   return { message: "Your profile is saved." };
 }
+
+export async function changePassword(
+  _: FormState,
+  form: FormData,
+): Promise<FormState> {
+  await requireProfile();
+  const parsed = z
+    .object({
+      password: z.string().min(8, "Password must be at least 8 characters."),
+      confirm: z.string().min(8, "Confirm your new password."),
+    })
+    .safeParse({
+      password: form.get("password"),
+      confirm: form.get("confirm"),
+    });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (parsed.data.password !== parsed.data.confirm)
+    return { error: "Passwords do not match." };
+  const db = await createClient();
+  const { error } = await db.auth.updateUser({
+    password: parsed.data.password,
+  });
+  if (error) return { error: error.message };
+  return { message: "Your password is updated." };
+}
+
+export async function signOutEverywhere() {
+  const db = await createClient();
+  await db.auth.signOut({ scope: "global" });
+  redirect("/sign-in");
+}

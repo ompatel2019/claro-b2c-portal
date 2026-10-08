@@ -18,3 +18,10 @@ export async function requireProfile() {
   if (!profile) redirect("/sign-in");
   return profile;
 }
+
+/** Admin-only pages; students are sent home. */
+export async function requireAdmin() {
+  const profile = await requireProfile();
+  if (profile.role !== "admin") redirect("/");
+  return profile;
+}

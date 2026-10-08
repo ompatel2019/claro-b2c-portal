@@ -45,7 +45,10 @@ function query(data: unknown = null, count = 0) {
   return chain;
 }
 function client(...responses: ReturnType<typeof query>[]) {
-  const db = { from: vi.fn() };
+  const db = {
+    from: vi.fn(),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+  };
   for (const response of responses) db.from.mockReturnValueOnce(response);
   vi.mocked(createClient).mockResolvedValue(db as never);
   return db;
@@ -130,16 +133,13 @@ it.each([
   },
 );
 it("rewrites selected items as contiguous positions with flashcards first", async () => {
-  const inserted = query();
   const metadata = query();
-  client(
+  const db = client(
     query(set),
     query(null, 0),
     query([]),
     query([{ id: "c1" }, { id: "c2" }]),
     query([{ id: "q" }]),
-    query(),
-    inserted,
     metadata,
   );
   const f = form();
@@ -150,11 +150,11 @@ it("rewrites selected items as contiguous positions with flashcards first", asyn
   await expect(updateHomework({}, f)).rejects.toThrow(
     `redirect:/admin/homework/${id}?saved=1`,
   );
-  expect(inserted.insert).toHaveBeenCalledWith([
-    { set_id: id, position: 1, flashcard_id: "c1", question_id: null },
-    { set_id: id, position: 2, flashcard_id: "c2", question_id: null },
-    { set_id: id, position: 3, flashcard_id: null, question_id: "q" },
-  ]);
+  expect(db.rpc).toHaveBeenCalledWith("rewrite_homework_items", {
+    p_set: id,
+    p_flashcard_ids: ["c1", "c2"],
+    p_question_ids: ["q"],
+  });
   expect(metadata.update).toHaveBeenCalledWith(
     expect.objectContaining({ title: "Growth", topic_id: "t3-growth" }),
   );

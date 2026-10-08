@@ -4,6 +4,14 @@ import { requireProfile } from "@/lib/auth";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/app/(auth)/actions";
+const links = [
+  ["Admin", "/admin"],
+  ["Homework", "/admin/homework"],
+  ["Students", "/admin/students"],
+  ["Submissions", "/admin/submissions"],
+  ["Questions", "/admin/questions"],
+  ["Spend", "/admin/spend"],
+];
 export default async function AdminLayout({
   children,
 }: {
@@ -17,13 +25,15 @@ export default async function AdminLayout({
         <Link href="/admin" aria-label="Claro admin">
           <Logo />
         </Link>
-        <nav aria-label="Admin navigation" className="flex gap-5">
-          <Link href="/admin" className="underline">
-            Admin
-          </Link>
-          <Link href="/admin/homework" className="underline">
-            Homework
-          </Link>
+        <nav
+          aria-label="Admin navigation"
+          className="flex flex-wrap gap-x-5 gap-y-2"
+        >
+          {links.map(([label, href]) => (
+            <Link key={href} href={href} className="underline">
+              {label}
+            </Link>
+          ))}
         </nav>
         <form action={signOut}>
           <Button variant="outline" type="submit">

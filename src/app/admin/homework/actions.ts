@@ -176,25 +176,17 @@ export async function updateHomework(
               error: "An item is no longer available. Refresh and try again.",
             };
         }
-        await db
-          .from("homework_items")
-          .delete()
-          .eq("set_id", id)
-          .throwOnError();
-        if (items.length) {
-          const { error } = await db.from("homework_items").insert(items);
-          if (error) {
-            if (oldItems?.length)
-              await db
-                .from("homework_items")
-                .insert(oldItems.map((i) => ({ ...i, set_id: id })))
-                .throwOnError();
-            return {
-              error:
-                "Could not save the selection. Your previous items have been restored.",
-            };
-          }
-        }
+        const { error } = await db.rpc("rewrite_homework_items", {
+          p_set: id,
+          p_flashcard_ids: cards.data,
+          p_question_ids: questions.data,
+        });
+        if (error)
+          return {
+            error: error.message.includes("locked")
+              ? "Items are locked while published or after any student starts. Your changes were not saved."
+              : "Could not save the selection. Please try again.",
+          };
       }
       await db
         .from("homework_sets")
