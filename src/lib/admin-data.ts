@@ -106,10 +106,10 @@ export async function loadSubmissions() {
   const { data, error } = await admin()
     .from("attempts")
     .select(
-      "id,session_id,user_id,mark,max_marks,band,status,updated_at,question:questions(id,type,stem,source,marks,topic_id)",
+      "id,session_id,user_id,mark,max_marks,band,status,marked_at,created_at,question:questions(id,type,stem,source,marks,topic_id)",
     )
     .eq("status", "marked")
-    .order("updated_at", { ascending: false })
+    .order("marked_at", { ascending: false, nullsFirst: false })
     .limit(80);
   if (error) throw new Error("Could not load submissions.");
   return (data ?? []).filter((a) => {

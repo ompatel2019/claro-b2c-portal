@@ -45,7 +45,9 @@ export default async function SubmissionsPage() {
                     {a.mark}/{a.max_marks ?? q?.marks} · {a.band}
                   </p>
                 </div>
-                <p className="text-sm">{dateLabel(a.updated_at)}</p>
+                <p className="text-sm">
+                  {dateLabel(a.marked_at ?? a.created_at)}
+                </p>
                 <p className="line-clamp-3">{q?.stem}</p>
                 <Link
                   className="button-link"

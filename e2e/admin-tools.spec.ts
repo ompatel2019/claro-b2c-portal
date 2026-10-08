@@ -28,6 +28,11 @@ test.describe("Admin tools", () => {
     await page.goto("/admin/submissions");
     await expect(
       page.getByRole("heading", { name: "Submissions" }),
+    ).toBeVisible({ timeout: 30000 });
+    await expect(
+      page.getByText(
+        /Recent AI-marked short and extended|No marked written answers yet/,
+      ),
     ).toBeVisible();
     await page.goto("/admin/questions");
     await expect(
