@@ -195,17 +195,17 @@ export function SprintRunner({
   const unanswered = attempts.filter((a) => !answered(a)).length;
   if (!a)
     return (
-      <main className="mx-auto max-w-3xl p-6">
+      <main className="mx-auto max-w-3xl p-4 sm:p-6">
         <h1>No questions in this sprint</h1>
         <Button onClick={() => router.push("/")}>Return to dashboard</Button>
       </main>
     );
   if (finishing)
     return (
-      <main className="mx-auto max-w-xl p-6">
-        <div className="panel space-y-4 p-8" role="status">
+      <main className="mx-auto max-w-xl p-4 sm:p-6">
+        <div className="panel space-y-3" role="status">
           <Logo />
-          <h1 className="text-3xl">Marking your answers</h1>
+          <h1>Marking your answers</h1>
           <p>
             We’re checking your answers and preparing your feedback. This can
             take a little while.
@@ -214,7 +214,7 @@ export function SprintRunner({
       </main>
     );
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-4 py-5 sm:px-8">
+    <main className="mx-auto max-w-5xl space-y-4 px-4 py-4 sm:px-6">
       <header className="panel flex flex-wrap items-center justify-between gap-4 p-4">
         <Logo />
         <Button
@@ -281,7 +281,7 @@ export function SprintRunner({
           ))}
         </div>
       </nav>
-      <article className="panel space-y-5 p-5 sm:p-8">
+      <article className="panel space-y-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="chip">
             {a.question.source} {a.question.year ?? ""} · {a.question.marks}{" "}
@@ -303,12 +303,12 @@ export function SprintRunner({
           </Button>
         </div>
         <RichText
-          className="text-2xl leading-snug font-bold tracking-tight sm:text-3xl"
+          className="text-base leading-6 font-medium"
           text={a.question.stem}
         />
         {a.question.stimulus && (
           <RichText
-            className="bg-paper space-y-3 rounded-2xl p-5"
+            className="bg-paper space-y-3 rounded-xl p-4"
             text={a.question.stimulus}
           />
         )}
@@ -318,7 +318,7 @@ export function SprintRunner({
             {a.question.options?.map((option, i) => (
               <label
                 key={i}
-                className={`flex cursor-pointer items-start gap-4 rounded-2xl border p-4 ${a.choice_index === i ? "border-brand bg-peach-soft" : "border-line"}`}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${a.choice_index === i ? "border-brand bg-peach-soft" : "border-line"}`}
               >
                 <input
                   type="radio"
@@ -384,8 +384,8 @@ export function SprintRunner({
       <Dialog.Root open={confirm} onOpenChange={setConfirm}>
         <Dialog.Portal>
           <Dialog.Backdrop className="bg-ink/40 fixed inset-0" />
-          <Dialog.Popup className="panel fixed top-1/2 left-1/2 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-5 p-6">
-            <Dialog.Title className="text-2xl font-semibold">
+          <Dialog.Popup className="panel fixed top-1/2 left-1/2 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-4">
+            <Dialog.Title className="text-lg font-semibold">
               Submit your sprint?
             </Dialog.Title>
             <Dialog.Description>

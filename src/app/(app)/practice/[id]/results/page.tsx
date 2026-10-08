@@ -11,6 +11,8 @@ import {
 } from "@/lib/practice";
 import { RichText } from "@/components/rich-text";
 import { AnswerFeedback } from "@/components/answer-feedback";
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
 export default async function Results({
   params,
 }: {
@@ -25,27 +27,21 @@ export default async function Results({
     .select("id,parent_id,name,sort");
   if (error) throw new Error("Could not load topics.");
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="eyebrow">Every answer gives you a next step</p>
-        <h1>
-          Your <em>results.</em>
-        </h1>
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow="Every answer gives you a next step"
+        title="Your results."
+        description={`${modeLabel(s.config.mode)} · ${topicNames(s.config.topics, (data ?? []) as Topic[])}`}
+      />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <StatCard
+          label="Score"
+          value={`${s.score}/${s.max_score}`}
+          caption={percentage(s.score, s.max_score)}
+        />
+        <StatCard label="Time used" value={timer(s.elapsed_s ?? 0)} />
+        <StatCard label="Finished" value={dateLabel(s.finished_at)} />
       </div>
-      <section className="panel bg-peach-soft p-6">
-        <h2>Score</h2>
-        <p className="my-4 font-serif text-5xl">
-          {s.score}/{s.max_score}{" "}
-          <span className="text-2xl">({percentage(s.score, s.max_score)})</span>
-        </p>
-        <p>
-          {modeLabel(s.config.mode)} ·{" "}
-          {topicNames(s.config.topics, (data ?? []) as Topic[])}
-        </p>
-        <p className="mt-2">
-          {timer(s.elapsed_s ?? 0)} used · {dateLabel(s.finished_at)}
-        </p>
-      </section>
       <div className="grid gap-4 md:grid-cols-3">
         {(
           [
@@ -54,16 +50,16 @@ export default async function Results({
             ["Next Study Moves", "next_steps"],
           ] as const
         ).map(([label, key]) => (
-          <section key={key} className="panel p-5">
-            <h2 className="text-xl">{label}</h2>
+          <section key={key} className="panel">
+            <h2>{label}</h2>
             {s.summary?.[key]?.length ? (
-              <ul className="mt-4 list-disc space-y-3 pl-5">
+              <ul className="mt-3 list-disc space-y-2 pl-5">
                 {s.summary[key].map((text, i) => (
                   <li key={i}>{text}</li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-4">
+              <p className="text-muted-foreground mt-3">
                 A summary isn’t available for this session. Review your answers
                 below.
               </p>
@@ -71,10 +67,10 @@ export default async function Results({
           </section>
         ))}
       </div>
-      <section className="space-y-4">
+      <section className="space-y-3">
         <h2>Your answers</h2>
         {attempts.map((a, i) => (
-          <details className="panel p-5 sm:p-6" key={a.id}>
+          <details className="panel" key={a.id}>
             <summary className="cursor-pointer space-y-2">
               <span className="font-semibold">
                 Question {i + 1} · {a.question.source} {a.question.year ?? ""}
@@ -88,11 +84,11 @@ export default async function Results({
               </span>
               <RichText className="mt-2 block" text={a.question.stem} />
             </summary>
-            <div className="mt-6 space-y-5">
+            <div className="mt-4 space-y-4">
               <p className="chip">Status: {a.status}</p>
               {a.question.stimulus && (
                 <RichText
-                  className="bg-paper space-y-3 rounded-2xl p-4"
+                  className="bg-paper space-y-3 rounded-xl p-4"
                   text={a.question.stimulus}
                 />
               )}

@@ -25,7 +25,8 @@ test.describe("Student practice", () => {
     await expect(
       page.getByRole("button", { name: "Multiple choice", exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/sign-in(\?|$)/);
   });
   test("multiple choice sprint, flag and results", async ({ page }) => {
@@ -45,8 +46,9 @@ test.describe("Student practice", () => {
     }
     await finish(page);
     await expect(
-      page.getByRole("heading", { name: "Score", exact: true }),
+      page.getByRole("heading", { name: "Your results." }),
     ).toBeVisible();
+    await expect(page.getByText("Score", { exact: true })).toBeVisible();
     await page.locator("summary").first().click();
     await expect(
       page.getByText("Your answer: A", { exact: true }).first(),
@@ -69,7 +71,6 @@ test.describe("Student practice", () => {
   }) => {
     await page.goto("/activity");
     await page.getByRole("combobox", { name: /^Mode/ }).selectOption("mcq");
-    await page.getByRole("button", { name: "Apply filters" }).click();
     await expect(page).toHaveURL(/mode=mcq/);
     await page.locator(`a[href="/practice/${finishedId}/results"]`).click();
     await expect(

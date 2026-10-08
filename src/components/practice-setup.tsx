@@ -27,14 +27,16 @@ export function PracticeSetup({
     );
   }
   return (
-    <form action={action} className="space-y-8">
+    <form action={action} className="panel space-y-6">
       <fieldset>
-        <legend className="mb-4 text-xl font-semibold">Choose your mode</legend>
+        <legend className="mb-3 text-base font-semibold">
+          Choose your mode
+        </legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {Object.entries(modes).map(([id, m]) => (
             <label
               key={id}
-              className="panel has-checked:border-brand has-checked:bg-peach-soft flex cursor-pointer items-center gap-4 p-5"
+              className="has-checked:border-brand has-checked:bg-peach-soft flex cursor-pointer items-center gap-3 rounded-xl border p-4"
             >
               <input
                 type="radio"
@@ -53,7 +55,7 @@ export function PracticeSetup({
         </div>
       </fieldset>
       <fieldset>
-        <legend className="text-xl font-semibold">
+        <legend className="text-base font-semibold">
           Choose up to two topics
         </legend>
         <p className="mt-2 mb-4 text-sm">
@@ -64,7 +66,7 @@ export function PracticeSetup({
           {topics
             .filter((t) => !t.parent_id)
             .map((parent) => (
-              <div key={parent.id} className="panel space-y-3 p-5">
+              <div key={parent.id} className="space-y-3 rounded-xl border p-4">
                 {[
                   parent,
                   ...topics.filter((t) => t.parent_id === parent.id),

@@ -48,7 +48,7 @@ export function AnswerFeedback({ attempt: a }: { attempt: Attempt }) {
           {a.question.options?.map((option, i) => (
             <li
               key={i}
-              className={`rounded-2xl border p-4 ${f?.correct_index === i ? "border-green-700 bg-green-50" : f?.chosen_index === i ? "border-brand bg-peach" : "border-line"}`}
+              className={`rounded-xl border p-3 ${f?.correct_index === i ? "border-green-700 bg-green-50" : f?.chosen_index === i ? "border-brand bg-peach" : "border-line"}`}
             >
               {"ABCD"[i]}. {option}
               {f?.correct_index === i
@@ -63,9 +63,9 @@ export function AnswerFeedback({ attempt: a }: { attempt: Attempt }) {
     );
   if (!text.trim() || f?.note === "No answer") return <p>Not answered</p>;
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <p className="font-semibold">Band: {a.band ?? "No band available"}</p>
-      <div className="bg-surface rounded-2xl p-5 leading-loose whitespace-pre-wrap">
+      <div className="bg-surface rounded-xl p-4 leading-loose whitespace-pre-wrap">
         {highlightSegments(text, comments).map((s) =>
           s.comments.length ? (
             <span key={s.start}>

@@ -1,4 +1,7 @@
-import Link from "next/link";
+import { FileQuestion } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
+import { FilterBar } from "@/components/filter-bar";
 import { loadQuestions } from "@/lib/admin-data";
 import { createClient } from "@/utils/supabase/server";
 import { requireAdmin } from "@/lib/auth";
@@ -26,63 +29,52 @@ export default async function QuestionsBrowser({
     (topics.data ?? []).map((t) => [t.id, t.name] as const),
   );
   return (
-    <main className="mx-auto max-w-5xl space-y-6 px-5 py-8">
-      <h1>Questions</h1>
-      <form method="get" className="panel grid gap-4 p-5 sm:grid-cols-4">
-        <label className="grid gap-2">
-          Topic
-          <select className="field" name="topic" defaultValue={f.topic ?? ""}>
-            <option value="">All</option>
-            {(topics.data ?? []).map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-2">
-          Type
-          <select className="field" name="type" defaultValue={f.type ?? ""}>
-            <option value="">All</option>
-            <option value="mcq">Multiple choice</option>
-            <option value="short">Short answer</option>
-            <option value="extended">Extended</option>
-          </select>
-        </label>
-        <label className="grid gap-2">
-          Year
-          <input
-            className="field"
-            name="year"
-            inputMode="numeric"
-            placeholder="2024"
-            defaultValue={f.year ?? ""}
-          />
-        </label>
-        <label className="grid gap-2">
-          Search
-          <input
-            className="field"
-            name="q"
-            defaultValue={f.q ?? ""}
-            placeholder="Stem or source"
-          />
-        </label>
-        <button className="button-link sm:col-span-4" type="submit">
-          Apply filters
-        </button>
-      </form>
-      <p>{questions.length} shown (max 100)</p>
-      <ul className="space-y-4">
+    <div className="space-y-4">
+      <PageHeader title="Questions" />
+      <FilterBar
+        values={f}
+        filters={[
+          {
+            name: "topic",
+            label: "Topic",
+            all: "All",
+            options: (topics.data ?? []).map((t) => ({
+              value: t.id,
+              label: t.name,
+            })),
+          },
+          {
+            name: "type",
+            label: "Type",
+            all: "All",
+            options: [
+              { value: "mcq", label: "Multiple choice" },
+              { value: "short", label: "Short answer" },
+              { value: "extended", label: "Extended" },
+            ],
+          },
+          {
+            name: "year",
+            label: "Year",
+            placeholder: "2024",
+            inputMode: "numeric",
+          },
+          { name: "q", label: "Search", placeholder: "Stem or source" },
+        ]}
+      />
+      <p className="text-muted-foreground text-sm">
+        {questions.length} shown (max 100)
+      </p>
+      <ul className="space-y-3">
         {questions.map((q) => (
-          <li key={q.id} className="panel space-y-3 p-5" id={q.id}>
+          <li key={q.id} className="panel space-y-3" id={q.id}>
             <p className="eyebrow">
               {q.source} · {topicName.get(q.topic_id) ?? q.topic_id} · {q.type}{" "}
               · {q.marks} marks
             </p>
             <p className="whitespace-pre-wrap">{q.stem}</p>
             {q.guideline_notes && (
-              <div className="bg-peach-soft rounded-2xl p-4">
+              <div className="bg-peach-soft rounded-xl p-4">
                 <h3 className="font-semibold">Marking guideline</h3>
                 <p className="mt-2 text-sm whitespace-pre-wrap">
                   {q.guideline_notes}
@@ -110,10 +102,13 @@ export default async function QuestionsBrowser({
           </li>
         ))}
       </ul>
-      {!questions.length && <p className="panel p-6">No questions match.</p>}
-      <Link href="/admin" className="underline">
-        Back to admin
-      </Link>
-    </main>
+      {!questions.length && (
+        <EmptyState
+          icon={FileQuestion}
+          title="No questions match"
+          description="Try a different topic, type, year or search."
+        />
+      )}
+    </div>
   );
 }

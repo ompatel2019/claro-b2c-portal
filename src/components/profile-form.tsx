@@ -15,7 +15,7 @@ export function ProfileForm({
 }) {
   const [state, action, pending] = useActionState(saveProfile, {});
   return (
-    <form action={action} className="panel max-w-xl space-y-5 p-6">
+    <form action={action} className="panel max-w-xl space-y-4">
       <label className="grid gap-2">
         Email
         <input className="field" value={email} readOnly type="email" />

@@ -1,12 +1,19 @@
 import Link from "next/link";
+import { Target } from "lucide-react";
 import { sydneyToday } from "@/lib/flashcards";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { QuickStarts } from "@/components/practice-setup";
 import { SessionList } from "@/components/session-list";
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
+import { EmptyState } from "@/components/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   answered,
   modeLabel,
+  scoreTone,
   timer,
   type Session,
   type Topic,
@@ -68,107 +75,120 @@ export default async function Dashboard() {
   const questionCount = (id: string) =>
     (questionResult.data ?? []).filter((q) => q.topic_id.startsWith(`${id}-`))
       .length;
+  const card = (title: string, body: React.ReactNode) => (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <h2>{title}</h2>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{body}</CardContent>
+    </Card>
+  );
   return (
-    <div className="space-y-9">
-      <div>
-        <p className="eyebrow">Your economics practice, made clearer</p>
-        <h1>
-          Hi <em>{profile.full_name?.trim().split(/\s+/)[0] || "there"}.</em>
-        </h1>
-        <p className="mt-3">One focused sprint. One useful next step.</p>
-      </div>
-      <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          ["Sessions this week", stats.sessions_this_week],
-          [
-            "Average score",
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow="Your economics practice, made clearer"
+        title={`Hi ${profile.full_name?.trim().split(/\s+/)[0] || "there"}.`}
+        description="One focused sprint. One useful next step."
+      />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <StatCard label="Sessions this week" value={stats.sessions_this_week} />
+        <StatCard
+          label="Average score"
+          value={
             stats.finished_total && stats.average_pct !== null
               ? `${Math.round(stats.average_pct)}%`
-              : "No scores yet",
-          ],
-          ["Streak days", stats.streak_days],
-        ].map(([label, value]) => (
-          <div className="panel p-6" key={label}>
-            <dt className="text-sm">{label}</dt>
-            <dd className="mt-3 font-serif text-4xl">{value}</dd>
-          </div>
-        ))}
-        <div className="panel p-6">
-          <dt className="text-sm">
+              : "No scores yet"
+          }
+        />
+        <StatCard label="Streak days" value={stats.streak_days} />
+        <StatCard
+          label={
             <Link href="/flashcards" className="underline">
               Due today
             </Link>
-          </dt>
-          <dd className="mt-3 font-serif text-4xl">{dueResult.count ?? 0}</dd>
-          <p className="mt-2 text-sm">Flashcards for review</p>
-        </div>
-      </dl>
-      {continuing && (
-        <section className="panel bg-peach-soft p-6">
-          <p className="font-hand text-2xl">Pick up where you left off</p>
-          <h2 className="mt-2">Continue your sprint</h2>
-          <p className="my-4">
-            {modeLabel((continuing as Session).config.mode)} ·{" "}
-            {continuing.attempts.filter(answered).length}/
-            {continuing.attempts.length} answered ·{" "}
-            {timer(continuing.elapsed_s ?? 0)} used
-          </p>
-          <Link className="button-link" href={`/practice/${continuing.id}`}>
-            Continue
-          </Link>
-        </section>
-      )}
-      <section className="space-y-4">
-        <h2>Quick start</h2>
-        <QuickStarts />
-      </section>
-      <section className="space-y-4">
-        <h2>Practise by topic</h2>
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {topics.map((t) => (
-            <li key={t.id}>
-              <Link
-                className="panel hover:border-brand flex h-full flex-col gap-2 p-5 transition-colors"
-                href={`/practice?topics=${t.id}`}
-              >
-                <span className="font-semibold">{t.name}</span>
-                <span className="text-muted-foreground text-sm">
-                  {questionCount(t.id)} past HSC questions · Set up a sprint
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <section className="space-y-4">
-        <h2>Focus for next time</h2>
-        {stats.weakest.length ? (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {stats.weakest.map((t) => (
-              <li key={t.id}>
-                <Link
-                  className="panel flex items-center justify-between gap-3 p-5"
-                  href={`/practice?topics=${encodeURIComponent(t.id)}`}
-                >
-                  <span>{t.name}</span>
-                  <span className="chip">{Math.round(t.pct)}%</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="panel p-6">
-            Your focus areas will appear after you finish a sprint.
-          </p>
-        )}
-      </section>
-      <section className="space-y-4">
-        <h2>Recent sessions</h2>
-        <SessionList
-          sessions={(recent.data ?? []) as Session[]}
-          topics={(topicResult.data ?? []) as Topic[]}
+          }
+          value={dueResult.count ?? 0}
+          caption="Flashcards for review"
         />
-      </section>
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="min-w-0 space-y-4">
+          {card("Quick start", <QuickStarts />)}
+          {card(
+            "Practise by topic",
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {topics.map((t) => (
+                <li key={t.id}>
+                  <Link
+                    className="hover:border-brand flex h-full flex-col gap-1 rounded-xl border p-4 transition-colors"
+                    href={`/practice?topics=${t.id}`}
+                  >
+                    <span className="font-semibold">{t.name}</span>
+                    <span className="text-muted-foreground text-[13px]">
+                      {questionCount(t.id)} past HSC questions · Set up a sprint
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>,
+          )}
+          <section className="space-y-3">
+            <h2>Recent sessions</h2>
+            <SessionList
+              sessions={(recent.data ?? []) as Session[]}
+              topics={(topicResult.data ?? []) as Topic[]}
+            />
+          </section>
+        </div>
+        <div className="min-w-0 space-y-4">
+          {continuing &&
+            card(
+              "Continue your sprint",
+              <>
+                <p className="text-muted-foreground mb-4 text-[13px]">
+                  {modeLabel((continuing as Session).config.mode)} ·{" "}
+                  {continuing.attempts.filter(answered).length}/
+                  {continuing.attempts.length} answered ·{" "}
+                  {timer(continuing.elapsed_s ?? 0)} used
+                </p>
+                <Link
+                  className="button-link"
+                  href={`/practice/${continuing.id}`}
+                >
+                  Continue
+                </Link>
+              </>,
+            )}
+          {stats.weakest.length ? (
+            card(
+              "Focus for next time",
+              <ul className="divide-y divide-dashed">
+                {stats.weakest.map((t) => (
+                  <li key={t.id}>
+                    <Link
+                      className="flex items-center justify-between gap-3 py-3"
+                      href={`/practice?topics=${encodeURIComponent(t.id)}`}
+                    >
+                      <span>{t.name}</span>
+                      <Badge variant={scoreTone(t.pct)}>
+                        {Math.round(t.pct)}%
+                      </Badge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>,
+            )
+          ) : (
+            <EmptyState
+              icon={Target}
+              title="Focus for next time"
+              description="Your focus areas will appear after you finish a sprint."
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

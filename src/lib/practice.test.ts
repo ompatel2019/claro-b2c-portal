@@ -88,3 +88,14 @@ it("orders comment numbers by appearance in the answer", () => {
   ];
   expect(orderedComments(comments).map((x) => x.index)).toEqual([1, 2, 0]);
 });
+it.each([
+  [100, "success"],
+  [75, "success"],
+  [74.9, "warning"],
+  [50, "warning"],
+  [49, "destructive"],
+  [0, "destructive"],
+] as const)("score %s%% uses the %s tone", async (pct, tone) => {
+  const { scoreTone } = await import("./practice");
+  expect(scoreTone(pct)).toBe(tone);
+});

@@ -190,7 +190,7 @@ export function FlashcardRunner({
     }
   }
   return (
-    <main className="mx-auto min-h-screen max-w-4xl space-y-6 px-5 py-6 sm:px-10">
+    <main className="mx-auto min-h-screen max-w-4xl space-y-4 px-4 py-4 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <Link href="/flashcards" aria-label="Claro flashcards">
           <Logo />
@@ -214,7 +214,7 @@ export function FlashcardRunner({
         </div>
       </header>
       <div className="space-y-3">
-        <h1 className="text-2xl sm:text-3xl">{deckName}</h1>
+        <h1>{deckName}</h1>
         <p aria-live="polite">
           {card
             ? `Card ${session.config.card_ids.indexOf(card.id) + 1} of ${session.config.card_ids.length}`
@@ -242,7 +242,7 @@ export function FlashcardRunner({
       {card ? (
         <article
           data-card-id={card.id}
-          className="panel space-y-6 p-6 sm:p-10"
+          className="panel space-y-4 sm:p-6"
           onKeyDown={(e) => {
             if (
               session.config.mode !== "study" ||
@@ -267,7 +267,7 @@ export function FlashcardRunner({
             <h2
               ref={heading}
               tabIndex={-1}
-              className="font-serif text-3xl break-words sm:text-4xl"
+              className="text-2xl leading-8 font-semibold tracking-[-0.02em] break-words sm:text-[28px] sm:leading-9"
             >
               {card.front}
             </h2>
@@ -275,7 +275,7 @@ export function FlashcardRunner({
           {session.config.mode === "study" ? (
             flipped ? (
               <>
-                <div className="bg-peach-soft rounded-2xl p-5 whitespace-pre-wrap">
+                <div className="bg-peach-soft rounded-xl p-4 whitespace-pre-wrap">
                   <h3 className="mb-2 font-semibold">Model answer</h3>
                   <p>{card.back}</p>
                 </div>
@@ -316,7 +316,7 @@ export function FlashcardRunner({
                     : "Not yet"}
               </p>
               <p>{verdict.reason}</p>
-              <div className="bg-peach-soft rounded-2xl p-5 whitespace-pre-wrap">
+              <div className="bg-peach-soft rounded-xl p-4 whitespace-pre-wrap">
                 <h3 className="mb-2 font-semibold">Model answer</h3>
                 <p>{verdict.back}</p>
               </div>
@@ -352,7 +352,7 @@ export function FlashcardRunner({
           )}
         </article>
       ) : (
-        <section className="panel space-y-4 p-6">
+        <section className="panel space-y-3">
           <h2>All cards reviewed</h2>
           <p>
             Finish your session to see your first-try score and next review

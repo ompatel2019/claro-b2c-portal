@@ -1,16 +1,7 @@
-import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import { Logo } from "@/components/logo";
-import { Button } from "@/components/ui/button";
-import { signOut } from "@/app/(auth)/actions";
-const links = [
-  ["Admin", "/admin"],
-  ["Students", "/admin/students"],
-  ["Submissions", "/admin/submissions"],
-  ["Questions", "/admin/questions"],
-  ["Spend", "/admin/spend"],
-];
+import { AppShell } from "@/components/app-shell";
 export default async function AdminLayout({
   children,
 }: {
@@ -18,29 +9,14 @@ export default async function AdminLayout({
 }) {
   const profile = await requireProfile();
   if (profile.role !== "admin") redirect("/");
+  const jar = await cookies();
   return (
-    <>
-      <header className="panel m-4 flex flex-wrap items-center justify-between gap-4 p-5">
-        <Link href="/admin" aria-label="Claro admin">
-          <Logo />
-        </Link>
-        <nav
-          aria-label="Admin navigation"
-          className="flex flex-wrap gap-x-5 gap-y-2"
-        >
-          {links.map(([label, href]) => (
-            <Link key={href} href={href} className="underline">
-              {label}
-            </Link>
-          ))}
-        </nav>
-        <form action={signOut}>
-          <Button variant="outline" type="submit">
-            Sign out
-          </Button>
-        </form>
-      </header>
+    <AppShell
+      kind="admin"
+      name={profile.full_name}
+      defaultOpen={jar.get("sidebar_state")?.value !== "false"}
+    >
       {children}
-    </>
+    </AppShell>
   );
 }

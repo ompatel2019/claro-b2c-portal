@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { loadSpend } from "@/lib/admin-data";
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
 
 export default async function AdminHome() {
   await requireAdmin();
@@ -15,7 +17,7 @@ export default async function AdminHome() {
       .eq("role", "student"),
     loadSpend(),
   ]);
-  const stats = [
+  const stats: [string, string | number | null | undefined][] = [
     ["Multiple choice", questions?.filter((q) => q.type === "mcq").length],
     ["Short answer", questions?.filter((q) => q.type === "short").length],
     [
@@ -49,24 +51,25 @@ export default async function AdminHome() {
     ],
   ] as const;
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 py-10">
-      <h1 className="text-4xl font-bold tracking-tight">Admin</h1>
-      <div className="mt-8 grid gap-4">
+    <div className="space-y-4">
+      <PageHeader title="Admin" description="Content, students and spend." />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+        {stats.map(([label, value]) => (
+          <StatCard key={label} label={label} value={value ?? 0} />
+        ))}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
         {cards.map(([title, text, href]) => (
-          <Link key={href} className="panel block space-y-2 p-6" href={href}>
+          <Link
+            key={href}
+            className="panel hover:border-brand block space-y-1"
+            href={href}
+          >
             <h2>{title}</h2>
-            <p>{text}</p>
+            <p className="text-muted-foreground text-[13px]">{text}</p>
           </Link>
         ))}
       </div>
-      <dl className="mt-8 grid gap-4 sm:grid-cols-3">
-        {stats.map(([label, value]) => (
-          <div key={label} className="panel p-6">
-            <dt className="text-muted-foreground text-sm">{label}</dt>
-            <dd className="mt-1 font-serif text-4xl">{value ?? 0}</dd>
-          </div>
-        ))}
-      </dl>
-    </main>
+    </div>
   );
 }

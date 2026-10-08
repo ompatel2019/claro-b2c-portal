@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { History } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { EmptyState } from "@/components/empty-state";
 import { notFound } from "next/navigation";
 import { loadStudent } from "@/lib/admin-data";
 import { dateLabel, modeLabel, percentage } from "@/lib/practice";
@@ -13,34 +16,38 @@ export default async function StudentDetail({
   if (!data) notFound();
   const { profile, email, sessions } = data;
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-5 py-8">
-      <Link href="/admin/students" className="underline">
+    <div className="space-y-4">
+      <Link href="/admin/students" className="text-sm underline">
         Back to students
       </Link>
-      <h1>{profile.full_name || "Student"}</h1>
-      <dl className="panel grid gap-3 p-6 sm:grid-cols-2">
+      <PageHeader title={profile.full_name || "Student"} />
+      <dl className="panel grid gap-3 sm:grid-cols-2">
         <div>
-          <dt className="text-sm">Email</dt>
-          <dd className="break-all">{email || "—"}</dd>
+          <dt className="text-muted-foreground text-[13px]">Email</dt>
+          <dd className="break-all">{email || "No email"}</dd>
         </div>
         <div>
-          <dt className="text-sm">Joined</dt>
+          <dt className="text-muted-foreground text-[13px]">Joined</dt>
           <dd>{dateLabel(profile.created_at)}</dd>
         </div>
         <div>
-          <dt className="text-sm">Year</dt>
-          <dd>{profile.year_level ?? "—"}</dd>
+          <dt className="text-muted-foreground text-[13px]">Year</dt>
+          <dd>{profile.year_level ?? "Not set"}</dd>
         </div>
         <div>
-          <dt className="text-sm">School</dt>
-          <dd>{profile.school || "—"}</dd>
+          <dt className="text-muted-foreground text-[13px]">School</dt>
+          <dd>{profile.school || "Not set"}</dd>
         </div>
       </dl>
       <h2>Recent sessions</h2>
       {!sessions.length ? (
-        <p className="panel p-6">No sessions yet.</p>
+        <EmptyState
+          icon={History}
+          title="No sessions yet"
+          description="This student hasn't started a session."
+        />
       ) : (
-        <ul className="space-y-3">
+        <ul className="panel divide-y divide-dashed py-0">
           {sessions.map((s) => {
             const href =
               s.kind === "flashcards"
@@ -59,7 +66,7 @@ export default async function StudentDetail({
             return (
               <li key={s.id}>
                 <Link
-                  className="panel hover:border-brand block p-5"
+                  className="hover:bg-surface -mx-5 block px-5 py-3"
                   href={href}
                 >
                   <p className="font-semibold">{label}</p>
@@ -75,6 +82,6 @@ export default async function StudentDetail({
           })}
         </ul>
       )}
-    </main>
+    </div>
   );
 }

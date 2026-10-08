@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 export function PasswordForm() {
   const [state, action, pending] = useActionState(changePassword, {});
   return (
-    <form action={action} className="panel max-w-xl space-y-5 p-6">
+    <form action={action} className="panel max-w-xl space-y-4">
       <h2>Change password</h2>
       <label className="grid gap-2">
         New password

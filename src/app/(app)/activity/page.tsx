@@ -2,7 +2,8 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { modes, type Session, type Topic } from "@/lib/practice";
 import { SessionList } from "@/components/session-list";
-import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
+import { FilterBar } from "@/components/filter-bar";
 export default async function Activity({
   searchParams,
 }: {
@@ -30,56 +31,40 @@ export default async function Activity({
   if (sessions.error || topics.error)
     throw new Error("Could not load your activity.");
   return (
-    <div className="space-y-7">
-      <h1>
-        Your <em>activity.</em>
-      </h1>
-      <form method="get" className="panel flex flex-wrap items-end gap-4 p-5">
-        <label className="grid gap-2">
-          Mode
-          <select
-            className="field"
-            name="mode"
-            defaultValue={filters.mode ?? ""}
-          >
-            <option value="">All modes</option>
-            {Object.entries(modes).map(([id, m]) => (
-              <option key={id} value={id}>
-                {m.label}
-              </option>
-            ))}
-            <option value="study">Flashcards: Study</option>
-            <option value="test">Flashcards: Test</option>
-          </select>
-        </label>
-        <label className="grid min-w-0 gap-2">
-          Topic
-          <select
-            className="field max-w-full"
-            name="topic"
-            defaultValue={filters.topic ?? ""}
-          >
-            <option value="">All topics</option>
-            {topics.data?.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Button type="submit">Apply filters</Button>
-      </form>
-      {sessions.data?.length ? (
-        <SessionList
-          sessions={sessions.data as Session[]}
-          topics={topics.data as Topic[]}
-        />
-      ) : (
-        <p className="panel p-6">
-          No sessions match these filters. Try another mode or start a new
-          session.
-        </p>
-      )}
+    <div className="space-y-4">
+      <PageHeader title="Your activity." />
+      <FilterBar
+        values={filters}
+        filters={[
+          {
+            name: "mode",
+            label: "Mode",
+            all: "All modes",
+            options: [
+              ...Object.entries(modes).map(([id, m]) => ({
+                value: id,
+                label: m.label,
+              })),
+              { value: "study", label: "Flashcards: Study" },
+              { value: "test", label: "Flashcards: Test" },
+            ],
+          },
+          {
+            name: "topic",
+            label: "Topic",
+            all: "All topics",
+            options: (topics.data ?? []).map((t) => ({
+              value: t.id,
+              label: t.name,
+            })),
+          },
+        ]}
+      />
+      <SessionList
+        sessions={(sessions.data ?? []) as Session[]}
+        topics={topics.data as Topic[]}
+        empty="No sessions match these filters. Try another mode or start a new session."
+      />
     </div>
   );
 }

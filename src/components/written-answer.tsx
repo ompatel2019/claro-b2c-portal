@@ -156,7 +156,7 @@ export function WrittenAnswer({
                 ? "Couldn’t mark this answer. Retry after finishing your sprint."
                 : "Submitted, marking in the background"}
           </p>
-          <div className="bg-paper rounded-2xl p-5 whitespace-pre-wrap">
+          <div className="bg-paper rounded-xl p-4 whitespace-pre-wrap">
             {a.transcript ?? a.answer_text ?? "Not answered"}
           </div>
         </>

@@ -1,37 +1,32 @@
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
 import { loadSpend } from "@/lib/admin-data";
 
 export default async function SpendPage() {
   const spend = await loadSpend();
   const pct = Math.min(100, Math.round((spend.all / spend.cap) * 100));
   return (
-    <main className="mx-auto max-w-3xl space-y-6 px-5 py-8">
-      <h1>AI spend</h1>
-      <p>
-        Cap ${spend.cap.toFixed(0)}. Stop work near $90; hard stop at the cap.
-      </p>
-      <dl className="grid gap-4 sm:grid-cols-3">
-        {[
-          ["Today (Sydney)", `$${spend.today.toFixed(2)}`],
-          ["All time", `$${spend.all.toFixed(2)}`],
-          ["Of cap", `${pct}%`],
-        ].map(([label, value]) => (
-          <div key={label} className="panel p-6">
-            <dt className="text-sm">{label}</dt>
-            <dd className="mt-2 font-serif text-4xl">{value}</dd>
-          </div>
-        ))}
-      </dl>
+    <div className="space-y-4">
+      <PageHeader
+        title="AI spend"
+        description={`Cap $${spend.cap.toFixed(0)}. Stop work near $90; hard stop at the cap.`}
+      />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+        <StatCard label="Today (Sydney)" value={`$${spend.today.toFixed(2)}`} />
+        <StatCard label="All time" value={`$${spend.all.toFixed(2)}`} />
+        <StatCard label="Of cap" value={`${pct}%`} />
+      </div>
       <div
         role="progressbar"
         aria-label="Spend against cap"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={pct}
-        className="bg-paper h-3 overflow-hidden rounded-full"
+        className="bg-chart-5 h-1.5 overflow-hidden rounded-full"
       >
         <div className="bg-brand h-full" style={{ width: `${pct}%` }} />
       </div>
-      <section className="panel space-y-3 p-6">
+      <section className="panel space-y-3">
         <h2>By model</h2>
         <ul className="space-y-2">
           {spend.byModel.map(([model, usd]) => (
@@ -42,7 +37,7 @@ export default async function SpendPage() {
           ))}
         </ul>
       </section>
-      <section className="panel space-y-3 p-6">
+      <section className="panel space-y-3">
         <h2>By feature</h2>
         <ul className="space-y-2">
           {spend.byTask.map(([task, usd]) => (
@@ -53,6 +48,6 @@ export default async function SpendPage() {
           ))}
         </ul>
       </section>
-    </main>
+    </div>
   );
 }

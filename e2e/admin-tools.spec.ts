@@ -20,8 +20,8 @@ test.describe("Admin tools", () => {
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Admin" })).toBeVisible();
     await page
-      .getByRole("link", { name: "Students", exact: true })
-      .first()
+      .getByRole("navigation", { name: "Admin navigation" })
+      .getByRole("link", { name: "All students" })
       .click();
     await expect(page).toHaveURL(/\/admin\/students$/);
     await expect(page.getByRole("heading", { name: "Students" })).toBeVisible();

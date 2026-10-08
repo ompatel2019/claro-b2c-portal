@@ -8,6 +8,7 @@ import {
 } from "@/lib/flashcards";
 import { dateLabel, type Topic } from "@/lib/practice";
 import { FlashcardStart } from "@/components/flashcard-start";
+import { PageHeader } from "@/components/page-header";
 export default async function Flashcards({
   searchParams,
 }: {
@@ -56,15 +57,17 @@ export default async function Flashcards({
   const decks = topics.filter(
     (t) => !parent || t.id === parent || t.parent_id === parent,
   );
+  const pill =
+    "inline-flex h-8 items-center rounded-full border px-3 text-[13px] font-medium";
+  const active = "border-ink bg-ink text-white";
+  const idle = "bg-white";
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="eyebrow">A little recall, a stronger foundation</p>
-        <h1>
-          Your <em>flashcards.</em>
-        </h1>
-      </div>
-      <section className="panel bg-peach-soft space-y-4 p-6">
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow="A little recall, a stronger foundation"
+        title="Your flashcards."
+      />
+      <section className="panel space-y-3">
         <h2>Due for review today: {due} cards</h2>
         {due ? (
           <>
@@ -87,7 +90,7 @@ export default async function Flashcards({
           Continue your flashcards
         </Link>
       )}
-      <section className="panel space-y-4 p-6" id="start-deck">
+      <section className="panel space-y-3" id="start-deck">
         <p className="eyebrow">Selected deck</p>
         <h2>{selected?.name ?? "All topics"}</h2>
         <p>
@@ -99,14 +102,14 @@ export default async function Flashcards({
           settings
         />
       </section>
-      <section className="space-y-5">
+      <section className="space-y-3">
         <h2>Choose a deck</h2>
         <nav
           aria-label="Filter flashcard topics"
           className="flex flex-wrap gap-2"
         >
           <Link
-            className={`chip ${!parent ? "bg-peach" : ""}`}
+            className={`${pill} ${!parent ? active : idle}`}
             href="/flashcards?filter="
             aria-current={!parent ? "page" : undefined}
           >
@@ -117,7 +120,7 @@ export default async function Flashcards({
             .map((t, i) => (
               <Link
                 key={t.id}
-                className={`chip ${parent === t.id ? "bg-peach" : ""}`}
+                className={`${pill} ${parent === t.id ? active : idle}`}
                 href={`/flashcards?filter=${t.id}&topic=${t.id}`}
                 aria-current={parent === t.id ? "page" : undefined}
               >
@@ -125,7 +128,7 @@ export default async function Flashcards({
               </Link>
             ))}
         </nav>
-        <ul className="grid gap-4 sm:grid-cols-2">
+        <ul className="grid gap-3 sm:grid-cols-2">
           {decks.map((t) => {
             const deck = cards.filter((c) =>
               t.parent_id
@@ -143,7 +146,7 @@ export default async function Flashcards({
             return (
               <li key={t.id}>
                 <Link
-                  className={`panel hover:border-brand block h-full space-y-3 p-5 ${selected?.id === t.id ? "border-brand bg-peach-soft" : ""}`}
+                  className={`panel hover:border-brand block h-full space-y-2 ${selected?.id === t.id ? "border-brand bg-peach-soft" : ""}`}
                   href={`/flashcards?topic=${t.id}&filter=${parent}#start-deck`}
                   aria-current={selected?.id === t.id ? "true" : undefined}
                 >
@@ -166,7 +169,7 @@ export default async function Flashcards({
                       style={{ width: `${mastery}%` }}
                     />
                   </div>
-                  <span className="text-brand text-sm font-semibold">
+                  <span className="text-sm font-semibold underline">
                     Choose this deck
                   </span>
                 </Link>

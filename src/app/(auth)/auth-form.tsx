@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { type AuthState, signIn, signUp } from "./actions";
 
 const field =
-  "h-12 w-full rounded-2xl border border-line bg-white px-4 text-base text-ink outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand/20";
+  "h-10 w-full rounded-[10px] border border-input bg-white px-3 text-base sm:text-sm text-ink outline-none focus-visible:border-brand focus-visible:ring-3 focus-visible:ring-brand/20";
 
 export function AuthForm({
   mode,

@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { PracticeSetup } from "@/components/practice-setup";
 import type { Topic } from "@/lib/practice";
+import { PageHeader } from "@/components/page-header";
 export default async function Practice({
   searchParams,
 }: {
@@ -22,16 +23,12 @@ export default async function Practice({
     )
     .slice(0, 2);
   return (
-    <div className="space-y-8">
-      <div>
-        <p className="eyebrow">A little practice, a clearer next step</p>
-        <h1>
-          Build your <em>sprint.</em>
-        </h1>
-        <p className="mt-3">
-          Choose a mode and focus on what you want to improve.
-        </p>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow="A little practice, a clearer next step"
+        title="Build your sprint."
+        description="Choose a mode and focus on what you want to improve."
+      />
       <PracticeSetup topics={topics} initial={initial} />
     </div>
   );

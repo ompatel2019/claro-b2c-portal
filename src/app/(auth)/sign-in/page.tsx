@@ -12,8 +12,8 @@ export default async function SignInPage({
   const { next } = await searchParams;
   return (
     <>
-      <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-      <p className="text-muted-foreground mt-1 mb-6 font-serif text-xl italic">
+      <h1>Welcome back</h1>
+      <p className="text-muted-foreground mt-1 mb-6 text-sm">
         Pick up where you left off.
       </p>
       <AuthForm

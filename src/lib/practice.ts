@@ -96,6 +96,10 @@ export function percentage(score: number | null, max: number | null) {
     ? `${Math.round((Number(score ?? 0) / max) * 100)}%`
     : "No score yet";
 }
+/** Score colour rule: ≥75% success, 50–74% warning, <50% destructive. */
+export function scoreTone(pct: number) {
+  return pct >= 75 ? "success" : pct >= 50 ? "warning" : "destructive";
+}
 export function dateLabel(date: string) {
   return new Date(date).toLocaleDateString("en-AU", {
     timeZone: "Australia/Sydney",

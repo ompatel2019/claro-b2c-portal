@@ -5,6 +5,10 @@ import { firstReviews, type FlashcardProgress } from "@/lib/flashcards";
 import { createClient } from "@/utils/supabase/server";
 import { dateLabel, timer, topicNames } from "@/lib/practice";
 import { FlashcardStart } from "@/components/flashcard-start";
+import { Layers } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { StatCard } from "@/components/stat-card";
+import { EmptyState } from "@/components/empty-state";
 export default async function Results({
   params,
 }: {
@@ -43,33 +47,22 @@ export default async function Results({
   const nextDue = progress.map((p) => p.due_on).sort()[0];
   const score = rows.reduce((sum, r) => sum + Number(r.review.mark), 0);
   return (
-    <div className="space-y-7">
-      <div>
-        <p className="eyebrow">
-          {topicNames(session.config.topics, topics)} · Flashcards:{" "}
-          {session.config.mode === "study" ? "Study" : "Test"}
-        </p>
-        <h1>
-          Your <em>flashcard results.</em>
-        </h1>
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow={`${topicNames(session.config.topics, topics)} · Flashcards: ${session.config.mode === "study" ? "Study" : "Test"}`}
+        title="Your flashcard results."
+      />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <StatCard
+          label="Score"
+          value={`${score}/${rows.length}`}
+          caption="First-try marks / cards reviewed"
+        />
+        <StatCard label="Knew first time" value={known.length} />
+        <StatCard label="Needed retries" value={missed.length} />
+        <StatCard label="Time" value={timer(session.elapsed_s ?? 0)} />
       </div>
-      <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          ["Score", `${score}/${rows.length}`],
-          ["Knew first time", known.length],
-          ["Needed retries", missed.length],
-          ["Time", timer(session.elapsed_s ?? 0)],
-        ].map(([label, value]) => (
-          <div key={label} className="panel p-6">
-            <dt className="font-semibold">{label}</dt>
-            <dd className="mt-3 font-serif text-4xl">{value}</dd>
-            {label === "Score" && (
-              <p className="mt-2 text-sm">First-try marks / cards reviewed</p>
-            )}
-          </div>
-        ))}
-      </dl>
-      <section className="panel space-y-4 p-6">
+      <section className="panel space-y-3">
         <h2>Your next step</h2>
         <div>
           <h3 className="font-semibold">Strengths</h3>
@@ -109,7 +102,7 @@ export default async function Results({
           Back to flashcards
         </Link>
       </div>
-      <section className="space-y-4">
+      <section className="space-y-3">
         <h2>Your cards</h2>
         {rows.length ? (
           <ul className="space-y-3">
@@ -119,7 +112,7 @@ export default async function Results({
                 (p) => p.flashcard_id === card.id,
               )?.due_on;
               return (
-                <li key={card.id} className="panel space-y-3 p-5">
+                <li key={card.id} className="panel space-y-2">
                   <h3 className="font-semibold break-words">{card.front}</h3>
                   <p className="whitespace-pre-wrap">{card.back}</p>
                   <p className="chip">
@@ -133,7 +126,11 @@ export default async function Results({
             })}
           </ul>
         ) : (
-          <p className="panel p-6">No cards were reviewed in this session.</p>
+          <EmptyState
+            icon={Layers}
+            title="No cards reviewed"
+            description="No cards were reviewed in this session."
+          />
         )}
       </section>
     </div>

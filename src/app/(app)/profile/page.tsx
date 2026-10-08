@@ -5,6 +5,7 @@ import { PasswordForm } from "@/components/password-form";
 import { signOut } from "@/app/(auth)/actions";
 import { signOutEverywhere } from "@/app/(app)/actions";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
 export default async function Profile() {
   const p = await requireProfile();
   const db = await createClient();
@@ -24,10 +25,8 @@ export default async function Profile() {
       ? claimsResult.data.claims.email
       : "");
   return (
-    <div className="space-y-7">
-      <h1>
-        Your <em>profile.</em>
-      </h1>
+    <div className="space-y-4">
+      <PageHeader title="Your profile." />
       <ProfileForm profile={data} email={email} />
       <PasswordForm />
       <div className="flex flex-wrap gap-3">

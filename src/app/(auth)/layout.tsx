@@ -6,12 +6,12 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-8 px-5 py-12">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-10">
       <Logo />
-      <div className="rounded-panel border-line w-full max-w-md border bg-white p-8 shadow-[0_18px_50px_-30px_#1e223d55] sm:p-10">
+      <div className="bg-card w-full max-w-md rounded-lg border p-6 sm:p-8">
         {children}
       </div>
-      <p className="font-hand text-muted-foreground text-xl">
+      <p className="text-muted-foreground text-sm">
         HSC Economics, marked in seconds.
       </p>
     </main>

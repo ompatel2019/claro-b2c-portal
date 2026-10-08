@@ -1,0 +1,74 @@
+"use client";
+import Form from "next/form";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Button, buttonVariants } from "@/components/ui/button";
+
+export type Filter =
+  | {
+      name: string;
+      label: string;
+      options: { value: string; label: string }[];
+      all: string;
+    }
+  | { name: string; label: string; placeholder: string; inputMode?: "numeric" };
+
+/** URL-synced filters: selects apply on change, text applies on Enter. */
+export function FilterBar({
+  filters,
+  values,
+}: {
+  filters: Filter[];
+  values: Record<string, string | undefined>;
+}) {
+  const path = usePathname();
+  const active = filters.filter((f) => values[f.name]).length;
+  return (
+    <Form
+      key={JSON.stringify(values)}
+      action={path}
+      className="flex flex-wrap items-end gap-3"
+    >
+      {filters.map((f) => (
+        <label
+          key={f.name}
+          className="text-muted-foreground grid min-w-0 gap-1 text-[13px] font-medium"
+        >
+          {f.label}
+          {"options" in f ? (
+            <select
+              className="field h-9 max-w-64 bg-white py-0"
+              name={f.name}
+              defaultValue={values[f.name] ?? ""}
+              onChange={(e) => e.currentTarget.form?.requestSubmit()}
+            >
+              <option value="">{f.all}</option>
+              {f.options.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Input
+              className="w-48"
+              name={f.name}
+              inputMode={f.inputMode}
+              placeholder={f.placeholder}
+              defaultValue={values[f.name] ?? ""}
+            />
+          )}
+        </label>
+      ))}
+      <Button type="submit" variant="outline">
+        Apply
+      </Button>
+      {active > 0 && (
+        <Link href={path} className={buttonVariants({ variant: "ghost" })}>
+          Clear ({active})
+        </Link>
+      )}
+    </Form>
+  );
+}
