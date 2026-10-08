@@ -20,10 +20,14 @@ export function SessionList({
         <li key={s.id}>
           <Link
             className="panel hover:border-brand flex flex-wrap items-center justify-between gap-4 p-5"
-            href={`/practice/${s.id}${s.finished_at ? "/results" : ""}`}
+            href={`/${s.kind === "flashcards" ? "flashcards" : "practice"}/${s.id}${s.finished_at ? "/results" : ""}`}
           >
             <div>
-              <p className="font-semibold">{modeLabel(s.config.mode)}</p>
+              <p className="font-semibold">
+                {s.kind === "flashcards"
+                  ? `Flashcards: ${String(s.config.mode) === "test" ? "Test" : "Study"}`
+                  : modeLabel(s.config.mode)}
+              </p>
               <p className="mt-1 text-sm">
                 {topicNames(s.config.topics, topics)}
               </p>

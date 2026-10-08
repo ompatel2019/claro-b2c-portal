@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sydneyToday } from "@/lib/flashcards";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { QuickStarts } from "@/components/practice-setup";
@@ -13,34 +14,46 @@ import {
 export default async function Dashboard() {
   const profile = await requireProfile();
   const db = await createClient();
-  const [statsResult, unfinished, recent, topicResult, questionResult] =
-    await Promise.all([
-      db.rpc("dashboard_stats"),
-      db
-        .from("sessions")
-        .select("*,attempts(choice_index,answer_text,transcript)")
-        .eq("user_id", profile.id)
-        .eq("kind", "sprint")
-        .is("finished_at", null)
-        .order("started_at", { ascending: false })
-        .limit(1),
-      db
-        .from("sessions")
-        .select("*")
-        .eq("user_id", profile.id)
-        .eq("kind", "sprint")
-        .not("finished_at", "is", null)
-        .order("finished_at", { ascending: false })
-        .limit(3),
-      db.from("topics").select("id,parent_id,name,sort").order("sort"),
-      db.from("questions").select("topic_id"),
-    ]);
+  const [
+    statsResult,
+    unfinished,
+    recent,
+    topicResult,
+    questionResult,
+    dueResult,
+  ] = await Promise.all([
+    db.rpc("dashboard_stats"),
+    db
+      .from("sessions")
+      .select("*,attempts(choice_index,answer_text,transcript)")
+      .eq("user_id", profile.id)
+      .eq("kind", "sprint")
+      .is("finished_at", null)
+      .order("started_at", { ascending: false })
+      .limit(1),
+    db
+      .from("sessions")
+      .select("*")
+      .eq("user_id", profile.id)
+      .eq("kind", "sprint")
+      .not("finished_at", "is", null)
+      .order("finished_at", { ascending: false })
+      .limit(3),
+    db.from("topics").select("id,parent_id,name,sort").order("sort"),
+    db.from("questions").select("topic_id"),
+    db
+      .from("flashcard_progress")
+      .select("flashcard_id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .lte("due_on", sydneyToday()),
+  ]);
   for (const result of [
     statsResult,
     unfinished,
     recent,
     topicResult,
     questionResult,
+    dueResult,
   ])
     if (result.error) throw new Error("Could not load your dashboard.");
   const stats = statsResult.data as {
@@ -64,7 +77,7 @@ export default async function Dashboard() {
         </h1>
         <p className="mt-3">One focused sprint. One useful next step.</p>
       </div>
-      <dl className="grid gap-4 sm:grid-cols-3">
+      <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["Sessions this week", stats.sessions_this_week],
           [
@@ -80,6 +93,15 @@ export default async function Dashboard() {
             <dd className="mt-3 font-serif text-4xl">{value}</dd>
           </div>
         ))}
+        <div className="panel p-6">
+          <dt className="text-sm">
+            <Link href="/flashcards" className="underline">
+              Due today
+            </Link>
+          </dt>
+          <dd className="mt-3 font-serif text-4xl">{dueResult.count ?? 0}</dd>
+          <p className="mt-2 text-sm">Flashcards for review</p>
+        </div>
       </dl>
       {continuing && (
         <section className="panel bg-peach-soft p-6">

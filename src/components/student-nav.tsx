@@ -8,6 +8,7 @@ import { signOut } from "@/app/(auth)/actions";
 const items = [
   ["Dashboard", "/"],
   ["Practice", "/practice"],
+  ["Flashcards", "/flashcards"],
   ["Activity", "/activity"],
   ["Profile", "/profile"],
 ];

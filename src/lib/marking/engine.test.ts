@@ -344,7 +344,13 @@ it("totals flashcard reviews without calling the model", async () => {
       }) as never,
     )
     .mockReturnValueOnce(
-      query([{ mark: 1 }, { mark: 0.5 }, { mark: 0 }]) as never,
+      query([
+        { flashcard_id: "a", mark: 1 },
+        { flashcard_id: "b", mark: 0.5 },
+        { flashcard_id: "c", mark: 0 },
+        { flashcard_id: "c", mark: 1 },
+        { flashcard_id: "b", mark: 1 },
+      ]) as never,
     )
     .mockReturnValueOnce(save as never);
   expect(await finishSession("session")).toMatchObject({

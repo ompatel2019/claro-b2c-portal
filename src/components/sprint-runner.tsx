@@ -146,9 +146,19 @@ export function SprintRunner({
     }
   }
   async function change(next: number) {
-    await flush();
-    await persistTime();
     setIndex(next);
+    try {
+      await flush();
+      await persistTime();
+    } catch (e) {
+      setError(
+        e instanceof Error && e.message.includes("sign-in expired")
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Could not save your timer. Check your connection.",
+      );
+    }
   }
   async function finish() {
     setConfirm(false);

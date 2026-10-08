@@ -1,0 +1,141 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { loadFlashcards } from "@/lib/flashcard-data";
+import { firstReviews, type FlashcardProgress } from "@/lib/flashcards";
+import { createClient } from "@/utils/supabase/server";
+import { dateLabel, timer, topicNames } from "@/lib/practice";
+import { FlashcardStart } from "@/components/flashcard-start";
+export default async function Results({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const { session, cards, reviews, topics, profile } = await loadFlashcards(id);
+  if (!session.finished_at) redirect(`/flashcards/${id}`);
+  const first = firstReviews(reviews);
+  const rows = session.config.card_ids.flatMap((cardId) => {
+    const card = cards.find((c) => c.id === cardId);
+    const review = first.get(cardId);
+    return card && review
+      ? [
+          {
+            card,
+            review,
+            attempts: reviews.filter((r) => r.flashcard_id === cardId),
+          },
+        ]
+      : [];
+  });
+  const missed = rows.filter((r) => r.review.mark < 1);
+  const known = rows.filter((r) => r.review.mark === 1);
+  const db = await createClient();
+  const { data } = await db
+    .from("flashcard_progress")
+    .select("flashcard_id,due_on")
+    .eq("user_id", profile.id)
+    .in("flashcard_id", [...first.keys()])
+    .throwOnError();
+  const progress = (data ?? []) as Pick<
+    FlashcardProgress,
+    "flashcard_id" | "due_on"
+  >[];
+  const nextDue = progress.map((p) => p.due_on).sort()[0];
+  const score = rows.reduce((sum, r) => sum + Number(r.review.mark), 0);
+  return (
+    <div className="space-y-7">
+      <div>
+        <p className="eyebrow">
+          {topicNames(session.config.topics, topics)} · Flashcards:{" "}
+          {session.config.mode === "study" ? "Study" : "Test"}
+        </p>
+        <h1>
+          Your <em>flashcard results.</em>
+        </h1>
+      </div>
+      <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          ["Score", `${score}/${rows.length}`],
+          ["Knew first time", known.length],
+          ["Needed retries", missed.length],
+          ["Time", timer(session.elapsed_s ?? 0)],
+        ].map(([label, value]) => (
+          <div key={label} className="panel p-6">
+            <dt className="font-semibold">{label}</dt>
+            <dd className="mt-3 font-serif text-4xl">{value}</dd>
+            {label === "Score" && (
+              <p className="mt-2 text-sm">First-try marks / cards reviewed</p>
+            )}
+          </div>
+        ))}
+      </dl>
+      <section className="panel space-y-4 p-6">
+        <h2>Your next step</h2>
+        <div>
+          <h3 className="font-semibold">Strengths</h3>
+          <p>
+            {known.length
+              ? `Known first time: ${known.map((r) => r.card.front).join(", ")}.`
+              : "Keep practising recall to build your first-time confidence."}
+          </p>
+        </div>
+        <div>
+          <h3 className="font-semibold">Priority</h3>
+          <p>
+            {missed.length
+              ? `Revisit ${missed.map((r) => r.card.front).join(", ")}.`
+              : rows.length
+                ? "You knew every reviewed card first time. Try another deck."
+                : "Start a deck and review a card to build your score."}
+          </p>
+        </div>
+        <div>
+          <h3 className="font-semibold">Next move</h3>
+          <p>
+            {nextDue
+              ? `Your next review is due ${dateLabel(nextDue)}. Each card's date is below.`
+              : "Choose a deck to start your review schedule."}
+          </p>
+        </div>
+      </section>
+      <div className="flex flex-wrap items-start gap-3">
+        {missed.length > 0 && (
+          <FlashcardStart
+            cardIds={missed.map((r) => r.card.id)}
+            label="Practise missed cards again"
+          />
+        )}
+        <Link className="button-link" href="/flashcards">
+          Back to flashcards
+        </Link>
+      </div>
+      <section className="space-y-4">
+        <h2>Your cards</h2>
+        {rows.length ? (
+          <ul className="space-y-3">
+            {rows.map(({ card, review, attempts }) => {
+              const reason = attempts.find((r) => r.reason)?.reason;
+              const due = progress.find(
+                (p) => p.flashcard_id === card.id,
+              )?.due_on;
+              return (
+                <li key={card.id} className="panel space-y-3 p-5">
+                  <h3 className="font-semibold break-words">{card.front}</h3>
+                  <p className="whitespace-pre-wrap">{card.back}</p>
+                  <p className="chip">
+                    First mark: {review.mark}/1 · {attempts.length}{" "}
+                    {attempts.length === 1 ? "attempt" : "attempts"}
+                  </p>
+                  {reason && <p>AI feedback: {reason}</p>}
+                  {due && <p className="text-sm">Next due: {dateLabel(due)}</p>}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="panel p-6">No cards were reviewed in this session.</p>
+        )}
+      </section>
+    </div>
+  );
+}

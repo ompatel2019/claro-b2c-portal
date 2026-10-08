@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { updateFlashcardProgress } from "@/lib/flashcard-progress";
 import { markFlashcard } from "@/lib/marking/engine";
 import { admin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -33,7 +34,7 @@ export async function POST(
   if (sessionId) {
     const { data: session } = await supabase
       .from("sessions")
-      .select("finished_at")
+      .select("finished_at,kind,config")
       .eq("id", sessionId)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -44,6 +45,15 @@ export async function POST(
         { error: "Session already finished" },
         { status: 409 },
       );
+    if (
+      session.kind !== "flashcards" ||
+      session.config?.mode !== "test" ||
+      !session.config.card_ids?.includes(id)
+    )
+      return Response.json(
+        { error: "Card is not in this test session" },
+        { status: 400 },
+      );
   }
   try {
     const result = await markFlashcard(
@@ -51,7 +61,8 @@ export async function POST(
       answer,
       user.id,
     );
-    await admin()
+    const db = admin();
+    const { data: review } = await db
       .from("flashcard_reviews")
       .insert({
         flashcard_id: id,
@@ -61,7 +72,18 @@ export async function POST(
         source: "ai",
         ...result,
       })
+      .select("id")
+      .single()
       .throwOnError();
+    if (sessionId)
+      await updateFlashcardProgress(
+        db,
+        user.id,
+        sessionId,
+        id,
+        review.id,
+        result.mark,
+      );
     return Response.json({ ...result, back: card.back });
   } catch (error) {
     console.error(error);

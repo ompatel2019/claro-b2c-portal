@@ -3,6 +3,7 @@ import "server-only";
 import { callJson } from "@/lib/ai/openai";
 import { MODELS } from "@/lib/ai/prices";
 import { admin } from "@/utils/supabase/admin";
+import { firstReviews, type FlashcardReview } from "@/lib/flashcards";
 import {
   anchorComments,
   clampMark,
@@ -241,15 +242,17 @@ export async function finishSession(sessionId: string) {
   if (session.kind === "flashcards") {
     const { data: reviews } = await admin()
       .from("flashcard_reviews")
-      .select("mark")
+      .select("flashcard_id,mark,created_at,id")
       .eq("session_id", sessionId)
       .eq("user_id", session.user_id)
+      .order("created_at")
+      .order("id")
       .throwOnError();
-    score = (reviews ?? []).reduce(
-      (sum, review) => sum + Number(review.mark),
-      0,
-    );
-    max = reviews?.length ?? 0;
+    const first = [
+      ...firstReviews((reviews ?? []) as FlashcardReview[]).values(),
+    ];
+    score = first.reduce((sum, review) => sum + Number(review.mark), 0);
+    max = first.length;
   } else {
     const rows = await markRemaining(sessionId, session.user_id);
     ({ score, max } = totals(rows));

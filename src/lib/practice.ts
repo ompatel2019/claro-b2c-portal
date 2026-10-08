@@ -14,6 +14,7 @@ export type Topic = {
   sort: number;
 };
 export type Session = {
+  kind?: string;
   id: string;
   user_id: string;
   config: {

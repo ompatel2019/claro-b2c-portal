@@ -15,9 +15,12 @@ export default async function Activity({
     .from("sessions")
     .select("*")
     .eq("user_id", profile.id)
-    .eq("kind", "sprint")
+    .in("kind", ["sprint", "flashcards"])
     .order("started_at", { ascending: false });
-  if (filters.mode && filters.mode in modes)
+  if (
+    filters.mode &&
+    (filters.mode in modes || ["study", "test"].includes(filters.mode))
+  )
     query = query.eq("config->>mode", filters.mode);
   if (filters.topic) query = query.contains("config->topics", [filters.topic]);
   const [sessions, topics] = await Promise.all([
@@ -45,6 +48,8 @@ export default async function Activity({
                 {m.label}
               </option>
             ))}
+            <option value="study">Flashcards: Study</option>
+            <option value="test">Flashcards: Test</option>
           </select>
         </label>
         <label className="grid min-w-0 gap-2">
@@ -72,7 +77,7 @@ export default async function Activity({
       ) : (
         <p className="panel p-6">
           No sessions match these filters. Try another mode or start a new
-          sprint.
+          session.
         </p>
       )}
     </div>

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
+vi.mock("server-only", () => ({}));
 vi.mock("@/utils/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/utils/supabase/admin", () => {
   const client = { from: vi.fn(), storage: { from: vi.fn() } };
@@ -174,13 +175,21 @@ it.each([
 it("stores an AI review against the caller and returns the card back", async () => {
   client([
     { kind: "term", front: "Front", back: "Back" },
-    { finished_at: null },
+    {
+      finished_at: null,
+      kind: "flashcards",
+      config: { mode: "test", card_ids: ["id"] },
+    },
   ]);
   vi.mocked(markFlashcard).mockResolvedValue({ mark: 1, reason: "Correct" });
-  const insert = vi.fn().mockReturnValue({
-    throwOnError: vi.fn().mockResolvedValue({ error: null }),
-  });
-  vi.mocked(admin().from).mockReturnValue({ insert } as never);
+  const insertChain = adminQuery({ id: "review" });
+  const insert = insertChain.insert;
+  const progress = adminQuery(null);
+  vi.mocked(admin().from)
+    .mockReturnValueOnce(insertChain as never)
+    .mockReturnValueOnce(adminQuery({ id: "review" }) as never)
+    .mockReturnValueOnce(adminQuery({ interval_days: 3, reviews: 2 }) as never)
+    .mockReturnValueOnce(progress as never);
   const response = await flashcard(
     request({ answer: "Answer", sessionId }),
     ctx,
@@ -190,6 +199,17 @@ it("stores an AI review against the caller and returns the card back", async () 
     reason: "Correct",
     back: "Back",
   });
+  expect(progress.upsert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      user_id: userId,
+      flashcard_id: "id",
+      interval_days: 8,
+      last_mark: 1,
+      reviews: 3,
+      due_on: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+    }),
+    { onConflict: "user_id,flashcard_id" },
+  );
   expect(insert).toHaveBeenCalledWith({
     flashcard_id: "id",
     user_id: userId,
@@ -347,3 +367,97 @@ it("marks written answers in progress without rescoring", async () => {
   expect((await mark(request(), ctx)).status).toBe(200);
   expect(rescoreSession).not.toHaveBeenCalled();
 });
+
+function adminQuery(data: unknown) {
+  const chain = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+    maybeSingle: vi.fn(),
+    single: vi.fn(),
+    insert: vi.fn(),
+    upsert: vi.fn(),
+    throwOnError: vi.fn().mockResolvedValue({ data }),
+  };
+  for (const key of [
+    "select",
+    "eq",
+    "order",
+    "limit",
+    "maybeSingle",
+    "single",
+    "insert",
+    "upsert",
+  ] as const)
+    chain[key].mockReturnValue(chain);
+  return chain;
+}
+it("does not reschedule a recycled AI review", async () => {
+  client([
+    { kind: "term", front: "Front", back: "Back" },
+    {
+      finished_at: null,
+      kind: "flashcards",
+      config: { mode: "test", card_ids: ["id"] },
+    },
+  ]);
+  vi.mocked(markFlashcard).mockResolvedValue({ mark: 1, reason: "Correct" });
+  vi.mocked(admin().from)
+    .mockReturnValueOnce(adminQuery({ id: "repeat" }) as never)
+    .mockReturnValueOnce(adminQuery({ id: "first" }) as never);
+  expect(
+    (await flashcard(request({ answer: "Answer", sessionId }), ctx)).status,
+  ).toBe(200);
+  expect(admin().from).toHaveBeenCalledTimes(2);
+  expect(admin().from).not.toHaveBeenCalledWith("flashcard_progress");
+});
+it("schedules a new AI card from its first review", async () => {
+  client([
+    { kind: "term", front: "Front", back: "Back" },
+    {
+      finished_at: null,
+      kind: "flashcards",
+      config: { mode: "test", card_ids: ["id"] },
+    },
+  ]);
+  vi.mocked(markFlashcard).mockResolvedValue({ mark: 0.5, reason: "Partial" });
+  const save = adminQuery(null);
+  for (const chain of [
+    adminQuery({ id: "first" }),
+    adminQuery({ id: "first" }),
+    adminQuery(null),
+    save,
+  ])
+    vi.mocked(admin().from).mockReturnValueOnce(chain as never);
+  expect(
+    (await flashcard(request({ answer: "Answer", sessionId }), ctx)).status,
+  ).toBe(200);
+  expect(save.upsert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      user_id: userId,
+      flashcard_id: "id",
+      interval_days: 1,
+      last_mark: 0.5,
+      reviews: 1,
+    }),
+    { onConflict: "user_id,flashcard_id" },
+  );
+});
+it.each([
+  { kind: "sprint", config: { mode: "test", card_ids: ["id"] } },
+  { kind: "flashcards", config: { mode: "study", card_ids: ["id"] } },
+  { kind: "flashcards", config: { mode: "test", card_ids: ["other"] } },
+])(
+  "rejects cards outside an active test before calling AI %#",
+  async (session) => {
+    client([
+      { kind: "term", front: "Front", back: "Back" },
+      { finished_at: null, ...session },
+    ]);
+    expect(
+      (await flashcard(request({ answer: "Answer", sessionId }), ctx)).status,
+    ).toBe(400);
+    expect(markFlashcard).not.toHaveBeenCalled();
+  },
+);
