@@ -1,7 +1,7 @@
 # Project Template
 
 A deliberately small, production-oriented foundation for Next.js applications.
-The template includes Supabase authentication, Drizzle ORM, shadcn/ui, Tailwind
+The template includes Supabase authentication, shadcn/ui, Tailwind
 CSS, unit and browser testing, formatting, linting, type checking, and CI.
 
 ## Requirements
@@ -37,24 +37,6 @@ noise and consume excessive memory on Apple Silicon with macOS 26. Re-test
 Turbopack when upgrading Next.js and remove the flag once the upstream issue is
 resolved.
 
-## Database workflow
-
-Define application tables in `drizzle/schema.ts`, then create and apply a
-reviewable SQL migration:
-
-```bash
-npm run db:generate
-npm run db:check
-npm run db:migrate
-```
-
-Use `npm run db:studio` to inspect data. The template intentionally does not
-provide a `db:push` script: shared and production databases should be changed
-through committed migrations.
-
-For Supabase deployments, use the transaction-mode pooler connection string.
-The database client disables prepared statements for compatibility with that
-pooler.
 
 ## Quality commands
 
@@ -74,9 +56,7 @@ and pushes to `main`.
 - `src/components` — reusable UI components
 - `src/env` — validated environment boundaries
 - `src/utils/supabase` — browser/server Supabase clients and session refresh
-- `src/db` — server-only database client
-- `drizzle` — schema and committed migration history
 - `e2e` — Playwright tests
 
 Add architecture only when a real product requirement justifies it. Prefer
-small, explicit modules and review every generated migration before applying it.
+small, explicit modules.

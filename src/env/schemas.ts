@@ -6,6 +6,4 @@ export const clientEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
 });
 
-export const serverEnvSchema = z.object({
-  DATABASE_URL: z.string().url(),
-});
+export const serverEnvSchema = z.object({});
