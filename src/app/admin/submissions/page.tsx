@@ -42,7 +42,8 @@ export default async function SubmissionsPage() {
                     {nameOf.get(a.user_id) || "Student"} · {q?.source}
                   </p>
                   <p className="chip">
-                    {a.mark}/{a.max_marks ?? q?.marks} · {a.band}
+                    {a.mark}/{a.max_marks ?? q?.marks}
+                    {a.band ? ` · ${a.band}` : ""}
                   </p>
                 </div>
                 <p className="text-sm">

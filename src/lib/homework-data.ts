@@ -68,8 +68,8 @@ export async function loadHomework(id: string) {
         ),
         reviews: [...((session as HomeworkSession).reviews ?? [])].sort(
           (a, b) =>
-            a.created_at.localeCompare(b.created_at) ||
-            a.id.localeCompare(b.id),
+            (a.created_at ?? "").localeCompare(b.created_at ?? "") ||
+            (a.id ?? "").localeCompare(b.id ?? ""),
         ),
       } satisfies HomeworkSession)
     : null;

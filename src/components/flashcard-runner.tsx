@@ -16,6 +16,12 @@ import {
   type FlashcardReview,
 } from "@/lib/flashcards";
 import { stageOneQueue } from "@/lib/homework";
+import {
+  dropPersistSession,
+  enqueuePersistRating,
+  isMissingSessionError,
+  removePersistRating,
+} from "@/lib/flashcard-persist-queue";
 import { HomeworkStages } from "./homework-stages";
 import type { FlashcardSession } from "@/lib/flashcard-data";
 import { Button } from "./ui/button";
@@ -140,6 +146,7 @@ export function FlashcardRunner({
     const prevQueue = queue;
     const prevMarks = marks;
     // Optimistic: advance immediately. Persist in the background (ratings are not AI).
+    // Queue survives navigation; missing-session errors drop the queued session.
     // On failure, roll back so the student can retry the same card.
     const next = nextQueue(queue, cardId, mark);
     setMarks((prev) => new Map(prev).set(cardId, mark));
@@ -147,11 +154,15 @@ export function FlashcardRunner({
     setFlipped(false);
     setAnswer("");
     setVerdict(null);
+    enqueuePersistRating({ sessionId, cardId, mark });
     const persist = async () => {
       await rateFlashcard(sessionId, cardId, mark);
+      removePersistRating(sessionId, cardId);
       await saveTime();
     };
     const rollback = (e: unknown) => {
+      if (isMissingSessionError(e)) dropPersistSession(sessionId);
+      else enqueuePersistRating({ sessionId, cardId, mark });
       setQueue(prevQueue);
       setMarks(prevMarks);
       setError(
@@ -174,13 +185,18 @@ export function FlashcardRunner({
   }
   async function check() {
     if (!card) return;
-    const result = await post(
-      `/api/flashcards/${encodeURIComponent(card.id)}/mark`,
-      { answer, sessionId: session.id },
-    );
-    setVerdict(result);
-    setMarks((prev) => new Map(prev).set(card.id, result.mark));
-    await saveTime();
+    try {
+      const result = await post(
+        `/api/flashcards/${encodeURIComponent(card.id)}/mark`,
+        { answer, sessionId: session.id },
+      );
+      setVerdict(result);
+      setMarks((prev) => new Map(prev).set(card.id, result.mark));
+      await saveTime();
+    } catch (e) {
+      if (isMissingSessionError(e)) dropPersistSession(session.id);
+      throw e;
+    }
   }
   return (
     <main className="mx-auto min-h-screen max-w-4xl space-y-6 px-5 py-6 sm:px-10">

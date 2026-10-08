@@ -176,3 +176,56 @@ test.describe("Student flashcards", () => {
     expect(aiRequests).toBe(1);
   });
 });
+
+test.describe("Flashcard persist queue", () => {
+  test.skip(
+    !process.env.STUDENT_EMAIL ||
+      !process.env.STUDENT_PASSWORD ||
+      !process.env.SUPABASE_SECRET_KEY,
+    "Requires a student account and service-role seed credentials",
+  );
+  test("drops a stale queued rating after the first missing-session error", async ({
+    page,
+  }) => {
+    test.setTimeout(120000);
+    const staleSession = "00000000-0000-4000-8000-000000000099";
+    const markUrls: string[] = [];
+    const doStatuses: number[] = [];
+    page.on("request", (req) => {
+      if (req.url().includes("/api/flashcards/") && req.url().includes("/mark"))
+        markUrls.push(req.url());
+    });
+    page.on("response", (res) => {
+      if (res.url().includes("/homework/") && res.url().includes("/do"))
+        doStatuses.push(res.status());
+    });
+    await signIn(page);
+    await page.goto("/flashcards", { waitUntil: "domcontentloaded" });
+    await page.evaluate(
+      ({ key, sessionId }) => {
+        localStorage.setItem(
+          key,
+          JSON.stringify([
+            { sessionId, cardId: "real-gdp", mark: 1 },
+            { sessionId, cardId: "gdp-per-capita", mark: 0 },
+          ]),
+        );
+      },
+      { key: "claro.flashcard.persist", sessionId: staleSession },
+    );
+    await page.reload({ waitUntil: "networkidle" });
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(
+            (key) => localStorage.getItem(key),
+            "claro.flashcard.persist",
+          ),
+        { timeout: 15000 },
+      )
+      .toBeNull();
+    // Drain uses rateFlashcard (server action). Mark API must stay quiet; /do must not 5xx.
+    expect(markUrls).toEqual([]);
+    expect(doStatuses.filter((status) => status >= 500)).toEqual([]);
+  });
+});

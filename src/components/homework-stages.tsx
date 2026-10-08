@@ -41,6 +41,7 @@ export function HomeworkStages({
           </button>
         ) : right === cards ? (
           <Link
+            prefetch={false}
             className="chip min-h-11 underline"
             aria-current={stage === 2 ? "step" : undefined}
             href={`/homework/${setId}/do?stage=questions`}

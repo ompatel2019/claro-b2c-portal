@@ -5,6 +5,19 @@ import { answered } from "@/lib/practice";
 import { FlashcardRunner } from "@/components/flashcard-runner";
 import { SprintRunner } from "@/components/sprint-runner";
 import type { Flashcard } from "@/lib/flashcards";
+
+function isNextControlFlow(error: unknown) {
+  const digest =
+    error && typeof error === "object" && "digest" in error
+      ? String((error as { digest?: string }).digest ?? "")
+      : "";
+  return (
+    digest.startsWith("NEXT_REDIRECT") ||
+    digest.startsWith("NEXT_NOT_FOUND") ||
+    digest.startsWith("NEXT_HTTP_ERROR_FALLBACK")
+  );
+}
+
 export default async function Run({
   params,
 }: {
@@ -14,8 +27,10 @@ export default async function Run({
   let loaded;
   try {
     loaded = await loadHomework(setId);
-  } catch {
-    redirect(`/homework/${setId}`);
+  } catch (error) {
+    if (isNextControlFlow(error)) throw error;
+    console.error(error);
+    redirect("/homework");
   }
   const { set, session, profile } = loaded;
   if (!session) redirect(`/homework/${set.id}`);

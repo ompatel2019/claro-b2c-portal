@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { loadHomeworkList } from "@/lib/homework-data";
+import { FlashcardPersistDrain } from "@/components/flashcard-persist-drain";
 import { StudentNav } from "@/components/student-nav";
 export default async function Layout({
   children,
@@ -19,6 +20,7 @@ export default async function Layout({
       <a className="sr-only focus:not-sr-only" href="#main">
         Skip to content
       </a>
+      <FlashcardPersistDrain />
       <StudentNav name={profile.full_name} homeworkCount={homeworkCount} />
       <main
         id="main"
