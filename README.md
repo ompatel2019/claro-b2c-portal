@@ -37,7 +37,6 @@ noise and consume excessive memory on Apple Silicon with macOS 26. Re-test
 Turbopack when upgrading Next.js and remove the flag once the upstream issue is
 resolved.
 
-
 ## Quality commands
 
 ```bash
