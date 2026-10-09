@@ -268,10 +268,10 @@ export function MyCards({
         />
       ) : (
         <div className="min-w-0 overflow-hidden rounded-2xl border bg-white">
-          <Table aria-label="My cards">
+          <Table aria-label="My cards" className="table-fixed sm:table-auto">
             <TableHeader>
               <TableRow>
-                <TableHead>
+                <TableHead className="w-12 sm:w-auto">
                   <input
                     type="checkbox"
                     aria-label="Select all cards on this page"
@@ -289,10 +289,15 @@ export function MyCards({
                     }
                   />
                 </TableHead>
-                {HEADERS.map((label) => (
-                  <TableHead key={label}>{label}</TableHead>
+                {HEADERS.map((label, index) => (
+                  <TableHead
+                    key={label}
+                    className={index > 1 ? "hidden sm:table-cell" : undefined}
+                  >
+                    {label}
+                  </TableHead>
                 ))}
-                <TableHead>
+                <TableHead className="w-[68px] sm:w-auto">
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
@@ -308,32 +313,36 @@ export function MyCards({
                       onChange={(e) => pick(card.id, e.target.checked)}
                     />
                   </TableCell>
-                  <TableCell className="max-w-64 min-w-40 whitespace-normal">
+                  <TableCell className="min-w-0 whitespace-normal sm:max-w-64 sm:min-w-40">
                     <button
-                      className="line-clamp-2 text-left font-medium"
+                      className="line-clamp-2 text-left font-medium break-words"
                       onClick={() => setEditor(card)}
                     >
                       {card.front}
                     </button>
                   </TableCell>
-                  <TableCell className="max-w-64 min-w-40 whitespace-normal">
-                    <span className="line-clamp-2">{card.back}</span>
+                  <TableCell className="min-w-0 whitespace-normal sm:max-w-64 sm:min-w-40">
+                    <span className="line-clamp-2 break-words">
+                      {card.back}
+                    </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {topics.find((t) => t.id === card.topic_id)?.name ??
                       card.topic_id}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {card.kind === "term" ? "Term" : "Stat"}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {card.seen} /{" "}
                     {card.percent === null ? "New" : `${card.percent}%`}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     {card.due ? dateLabel(card.due, true) : "Not reviewed"}
                   </TableCell>
-                  <TableCell>{dateLabel(card.updated_at, true)}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {dateLabel(card.updated_at, true)}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger

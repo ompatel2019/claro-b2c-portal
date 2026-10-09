@@ -20,7 +20,7 @@ test.describe("Topic Sprint setup", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 400, height: 800 });
-    await page.goto("/student/sprint?type=mcq&size=5");
+    await page.goto("/student/sprint?type=mcq&sub=t4-fiscal&size=5");
     const start = page.getByRole("button", { name: /^Start (sprint|with)/ });
     const bar = page.locator("form").filter({ has: start });
     await expect(bar.getByText(/^\d+ questions match/)).toBeVisible();
@@ -32,6 +32,34 @@ test.describe("Topic Sprint setup", () => {
         .locator("header")
         .getByRole("button", { name: "Feedback", exact: true }),
     ).toBeVisible();
+
+    const summary = bar.locator("p").first();
+    await expect(summary).toContainText("Economic Policies and Management");
+    await expect
+      .poll(() =>
+        Promise.all([bar.boundingBox(), summary.boundingBox()]).then(
+          ([outer, inner]) => outer!.width - inner!.width,
+        ),
+      )
+      .toBeLessThanOrEqual(48);
+    await expectStackedBelow(
+      summary,
+      bar.getByRole("button", { name: "Reset", exact: true }),
+    );
+    await expectStackedBelow(summary, start);
+    const chip = page.getByRole("button", {
+      name: /^National and global context for environmental management ·/,
+    });
+    await expect(chip).toHaveCount(1);
+    await expect
+      .poll(() =>
+        chip.evaluate(
+          (element) =>
+            document.documentElement.clientWidth -
+            element.getBoundingClientRect().right,
+        ),
+      )
+      .toBeGreaterThanOrEqual(0);
 
     // A shared account can have someone else's unfinished sprint. Leave it alone.
     const resume = page.getByRole("link", { name: "Continue", exact: true });

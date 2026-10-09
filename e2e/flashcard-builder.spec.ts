@@ -37,6 +37,24 @@ test.describe("Flashcard deck builder", () => {
         .getByRole("button", { name: "Feedback", exact: true }),
     ).toBeVisible();
 
+    for (const name of [
+      "Case study: globalisation and an economy other than Australia",
+      "National and global context for environmental management",
+      "Globalisation and economic development",
+    ]) {
+      const chip = page.getByRole("button", { name: new RegExp(`^${name} ·`) });
+      await expect(chip).toHaveCount(1);
+      await expect
+        .poll(() =>
+          chip.evaluate(
+            (element) =>
+              document.documentElement.clientWidth -
+              element.getBoundingClientRect().right,
+          ),
+        )
+        .toBeGreaterThanOrEqual(0);
+    }
+
     // An unrelated Continue banner is allowed; do not finish or delete its session.
     const resume = page.getByRole("link", { name: "Continue", exact: true });
     if (await resume.count()) {

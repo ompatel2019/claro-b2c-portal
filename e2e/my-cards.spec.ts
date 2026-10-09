@@ -79,6 +79,38 @@ test.describe("My cards", () => {
     await dialog.getByLabel("Back", { exact: true }).fill("Prices increase");
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await expect(front(page, "first")).toBeVisible();
+    // Check only this run's tagged card; unrelated cards and sessions stay untouched.
+    const desktop = page.viewportSize()!;
+    await page.setViewportSize({ width: 400, height: 800 });
+    const table = page.getByRole("table", { name: "My cards", exact: true });
+    await expect(table).toBeVisible();
+    await expect
+      .poll(() =>
+        table
+          .locator("..")
+          .evaluate((element) => element.scrollWidth <= element.clientWidth),
+      )
+      .toBe(true);
+    for (const name of ["Front", "Back", "Actions"]) {
+      await expect(
+        table.getByRole("columnheader", { name, exact: true }),
+      ).toBeVisible();
+    }
+    for (const name of ["Topic", "Kind", "Seen / %", "Next due", "Updated"]) {
+      await expect(
+        table.getByRole("columnheader", { name, exact: true }),
+      ).toBeHidden();
+    }
+    await expect(
+      table.getByRole("checkbox", { name: `Select ${run} first`, exact: true }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole("button", {
+        name: `Actions for ${run} first`,
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page.setViewportSize(desktop);
     await front(page, "first").click();
     await expect(dialog.getByRole("combobox", { name: "Topic" })).toHaveText(
       "Inflation",

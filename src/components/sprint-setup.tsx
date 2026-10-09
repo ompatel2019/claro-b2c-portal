@@ -725,7 +725,7 @@ export function SprintSetup({
       >
         <input type="hidden" name="config" value={JSON.stringify(c)} />
         <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-          <div className="min-w-0 flex-1 text-sm">
+          <div className="w-full min-w-0 text-sm sm:w-auto sm:flex-1">
             <p className="font-medium text-pretty">
               {summary(c, names, years)}
             </p>
@@ -787,7 +787,7 @@ function Chip({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-40",
+        "rounded-full border px-3 py-1 text-left text-xs font-medium transition-colors disabled:opacity-40",
         on ? "border-primary bg-accent" : "hover:bg-muted",
       )}
     >
