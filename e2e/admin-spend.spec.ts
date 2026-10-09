@@ -294,6 +294,29 @@ test.describe("admin spend", () => {
                 models.getByRole("columnheader", { name, exact: true }),
               ).toBeVisible();
         }
+        if (width === 400) {
+          for (const [name, details] of [
+            [
+              "By model",
+              /^Input [\d,]+ · Cached [\d,]+ · Output [\d,]+ tokens$/,
+            ],
+            [
+              "By task",
+              /^Avg per call: (?:<\$0\.0001|\$[\d,]+\.\d{2,4}|No calls)$/,
+            ],
+            ["Top students, 30 days", /^\d+\.\d% of spend$/],
+          ] as const) {
+            const table = page.getByRole("table", { name, exact: true });
+            if (await table.count()) {
+              const rows = table.locator("tbody tr");
+              expect(await rows.count()).toBeGreaterThan(0);
+              for (const row of await rows.all())
+                await expect(
+                  row.locator("th, td").first().getByText(details),
+                ).toBeVisible();
+            }
+          }
+        }
         // Hidden columns and wrapped labels should keep every table inside its card.
         for (const table of await page
           .locator('#main [data-slot="table-container"]')

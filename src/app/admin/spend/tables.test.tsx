@@ -27,7 +27,7 @@ it("model columns sort in both directions and token columns stay hidden in narro
         {
           model: "Beta",
           calls: 2,
-          input_tokens: 100,
+          input_tokens: 1234,
           cached_tokens: 50,
           output_tokens: 10,
           usd: 0.2,
@@ -49,6 +49,17 @@ it("model columns sort in both directions and token columns stay hidden in narro
       .getAllByRole("columnheader")
       .map((h) => h.textContent),
   ).toEqual(["Model", "Calls", "Input", "Cached", "Output tokens", "USD"]);
+  for (const [model, details] of [
+    ["Beta", "Input 1,234 · Cached 50 · Output 10 tokens"],
+    ["Alpha", "Input 20 · Cached 0 · Output 1 tokens"],
+  ]) {
+    const row = within(table).getByText(model, { exact: true }).closest("tr")!;
+    expect(within(row).getByText(details)).toHaveClass(
+      "text-xs",
+      "text-muted-foreground",
+      "@min-[640px]:hidden",
+    );
+  }
   for (const header of [
     "Model",
     "Calls",
@@ -109,7 +120,12 @@ it("task subtotals precede their own sortable tasks, including Other and no-call
     within(table)
       .getAllByRole("row")
       .slice(1)
-      .map((r) => r.querySelector("th, td")?.textContent);
+      .map((r) =>
+        r
+          .querySelector("th, td")
+          ?.textContent?.split("Avg per call:")[0]
+          .trim(),
+      );
   expect(rowLabels()).toEqual([
     "Marking only",
     "mark_written",
@@ -120,6 +136,21 @@ it("task subtotals precede their own sortable tasks, including Other and no-call
   ]);
   expect(within(table).getByText("No calls")).toBeInTheDocument();
   expect(within(table).getAllByText("$0.0020")).toHaveLength(1);
+  for (const [label, details] of [
+    ["Marking only", "Avg per call: $0.07"],
+    ["mark_written", "Avg per call: $0.0020"],
+    ["summary", "Avg per call: $0.10"],
+    ["Admin and evals", "Avg per call: No calls"],
+    ["Other", "Avg per call: $0.10"],
+    ["other_task", "Avg per call: $0.10"],
+  ]) {
+    const row = within(table).getByText(label, { exact: true }).closest("tr")!;
+    expect(within(row).getByText(details)).toHaveClass(
+      "text-xs",
+      "text-muted-foreground",
+      "sm:hidden",
+    );
+  }
   for (const header of ["Task", "Calls", "USD", "Avg per call"]) {
     const button = within(table).getByRole("button", { name: header });
     fireEvent.click(button);
@@ -165,6 +196,12 @@ it("student names link to detail, with formatted costs and percentages", () => {
   );
   expect(screen.getByText("$1.23")).toBeInTheDocument();
   expect(screen.getByText("25.0%")).toBeInTheDocument();
+  const row = screen.getByRole("link", { name: "Student A" }).closest("tr")!;
+  expect(within(row).getByText("25.0% of spend")).toHaveClass(
+    "text-xs",
+    "text-muted-foreground",
+    "sm:hidden",
+  );
   for (const button of screen.getAllByRole("button")) {
     fireEvent.click(button);
     expect(button.closest("th")).toHaveAttribute("aria-sort", "ascending");

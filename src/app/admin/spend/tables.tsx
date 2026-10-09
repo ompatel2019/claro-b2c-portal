@@ -45,7 +45,16 @@ export function ModelTable({ rows }: { rows: Spend["byModel"] }) {
             {
               id: "model",
               header: "Model",
-              cell: (r) => r.model,
+              cell: (r) => (
+                <>
+                  <div>{r.model}</div>
+                  <div className="text-muted-foreground text-xs @min-[640px]:hidden">
+                    Input {r.input_tokens.toLocaleString("en-AU")} · Cached{" "}
+                    {r.cached_tokens.toLocaleString("en-AU")} · Output{" "}
+                    {r.output_tokens.toLocaleString("en-AU")} tokens
+                  </div>
+                </>
+              ),
               sort: (r) => r.model,
               className: labelClass,
             },
@@ -152,7 +161,13 @@ export function TaskTable({ groups }: { groups: Spend["byTask"] }) {
               <TableBody key={g.name}>
                 <TableRow className="bg-muted/50 font-medium">
                   <TableHead scope="rowgroup" className={labelClass}>
-                    {g.name === "Marking" ? "Marking only" : g.name}
+                    <div>{g.name === "Marking" ? "Marking only" : g.name}</div>
+                    <div className="text-muted-foreground text-xs font-normal tracking-normal normal-case sm:hidden">
+                      Avg per call:{" "}
+                      {g.avgPerCall === null
+                        ? "No calls"
+                        : avgUsd(g.avgPerCall)}
+                    </div>
                   </TableHead>
                   <TableCell className={numberClass}>
                     {g.calls.toLocaleString("en-AU")}
@@ -165,7 +180,10 @@ export function TaskTable({ groups }: { groups: Spend["byTask"] }) {
                 {tasks.map((task) => (
                   <TableRow key={task.task}>
                     <TableCell className={`${labelClass} pl-6`}>
-                      {task.task}
+                      <div>{task.task}</div>
+                      <div className="text-muted-foreground text-xs sm:hidden">
+                        Avg per call: {avgUsd(task.avgPerCall)}
+                      </div>
                     </TableCell>
                     <TableCell className={numberClass}>
                       {task.calls.toLocaleString("en-AU")}
@@ -213,12 +231,17 @@ export function StudentTable({ rows }: { rows: Spend["topStudents"] }) {
               id: "name",
               header: "Name",
               cell: (r) => (
-                <Link
-                  href={`/admin/students/${encodeURIComponent(r.id)}`}
-                  className="underline underline-offset-4"
-                >
-                  {r.name}
-                </Link>
+                <>
+                  <Link
+                    href={`/admin/students/${encodeURIComponent(r.id)}`}
+                    className="underline underline-offset-4"
+                  >
+                    {r.name}
+                  </Link>
+                  <div className="text-muted-foreground text-xs sm:hidden">
+                    {r.percent.toFixed(1)}% of spend
+                  </div>
+                </>
               ),
               sort: (r) => r.name,
               className: labelClass,
