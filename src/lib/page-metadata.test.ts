@@ -26,9 +26,14 @@ const pages = import.meta.glob("../app/**/page.tsx", {
 it.each(
   Object.entries(pages).filter(([path]) => !path.includes("/admin/marking/")),
 )("%s declares an unbranded page title", (_, source) => {
-  const title = source.match(
-    /export const metadata(?:: Metadata)? = (?:pageMetadata\("([^"]+)"\)|\{ title: "([^"]+)" \})/,
-  );
+  const title =
+    source.match(
+      /export const metadata(?:: Metadata)? = (?:pageMetadata\("([^"]+)"\)|\{ title: "([^"]+)" \})/,
+    ) ??
+    // Pages titled by their data fall back to a plain label through the same helper.
+    source.match(
+      /export async function generateMetadata[\s\S]*?return pageMetadata\([^;]*?\?\? "([^"]+)"\)/,
+    );
   expect(title).not.toBeNull();
   const label = title![1] ?? title![2];
   expect(label).not.toMatch(/·\s*Claro/);

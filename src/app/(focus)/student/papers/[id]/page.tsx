@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { pageMetadata } from "@/lib/page-metadata";
 import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
@@ -11,7 +12,28 @@ import {
 import { SprintRunner } from "@/components/sprint-runner";
 import { PaperStart } from "@/components/paper-start";
 import { studentPaperFilter } from "@/lib/papers";
-export const metadata = pageMetadata("Paper session");
+
+const paperTitle = cache(async (id: string) => {
+  const profile = await requireProfile();
+  const db = await createClient();
+  const { data } = await db
+    .from("papers")
+    .select("title")
+    .eq("id", id)
+    .or(studentPaperFilter(profile.id))
+    .maybeSingle();
+  return data?.title ?? null;
+});
+
+/** The tab says which paper this is, not just "Paper session". */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const title = await paperTitle((await params).id).catch(() => null);
+  return pageMetadata(title ?? "Mock paper");
+}
 
 export default async function PaperPage({
   params,
