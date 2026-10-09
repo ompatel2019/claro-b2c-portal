@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useRef } from "react";
 import {
   History,
+  Target,
   Cards,
   Dashboard,
   SignOut,
@@ -80,6 +81,7 @@ export const nav: Record<
       label: "Marking",
       items: [
         { label: "Review queue", href: "/admin/marking/review", icon: Pen },
+        { label: "Accuracy", href: "/admin/marking/accuracy", icon: Target },
       ],
     },
     {

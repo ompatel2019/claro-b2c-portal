@@ -7,11 +7,13 @@ export function StatCard({
   value,
   caption,
   className,
+  empty = false,
 }: {
   label: React.ReactNode;
   value: string | number;
   caption?: React.ReactNode;
   className?: string;
+  empty?: boolean;
 }) {
   return (
     <Card size="sm" className={cn("gap-0", className)}>
@@ -19,7 +21,14 @@ export function StatCard({
         <dt className="text-muted-foreground text-[13px] font-medium">
           {label}
         </dt>
-        <dd className="mt-2 text-2xl leading-9 font-semibold tracking-[-0.01em] tabular-nums sm:text-3xl">
+        <dd
+          className={cn(
+            "mt-2 leading-9",
+            empty
+              ? "text-muted-foreground text-sm"
+              : "text-2xl font-semibold tracking-[-0.01em] tabular-nums sm:text-3xl",
+          )}
+        >
           {value}
         </dd>
         {caption && (

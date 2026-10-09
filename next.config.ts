@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/admin/marking/accuracy": ["./src/lib/ai/eval/results/*.json"],
+  },
   // Home and sprints moved under /student (§3, §7); keep old links working.
   async redirects() {
     return [
