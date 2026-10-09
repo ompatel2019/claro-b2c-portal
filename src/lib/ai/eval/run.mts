@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { admin } from "@/utils/supabase/admin";
 import { MARKER, markWritten } from "@/lib/marking/engine";
+import { bandExamples } from "@/lib/marking/examples";
 import type { MarkableQuestion } from "@/lib/marking/grade";
 import { gradeMessages } from "@/lib/marking/prompts";
 import { callJson } from "../openai";
@@ -114,11 +115,17 @@ const items = [
 ];
 mkdirSync(out, { recursive: true });
 if (dry) {
-  const text = items
-    .map((item) => {
-      if (!item.q) throw new Error(`Missing question ${item.id}`);
-      const messages = gradeMessages(item.q, item.answer);
-      return `## ${item.section}: ${item.id} ${item.label}\n\n### Grader messages\n\n\`\`\`json\n${JSON.stringify(messages, null, 2)}\n\`\`\`${item.section === "A1" ? `\n\n### Judge messages\n\n\`\`\`json\n${JSON.stringify(judgeMessages(item.q, item.answer, "[Placeholder: rendered student-facing feedback]", item.critique), null, 2)}\n\`\`\`` : ""}`;
+  const text = (
+    await Promise.all(
+      items.map(async (item) => {
+        if (!item.q) throw new Error(`Missing question ${item.id}`);
+        return { item, examples: await bandExamples(item.q) };
+      }),
+    )
+  )
+    .map(({ item, examples }) => {
+      const messages = gradeMessages(item.q!, item.answer, false, examples);
+      return `## ${item.section}: ${item.id} ${item.label}\n\n### Grader messages\n\n\`\`\`json\n${JSON.stringify(messages, null, 2)}\n\`\`\`${item.section === "A1" ? `\n\n### Judge messages\n\n\`\`\`json\n${JSON.stringify(judgeMessages(item.q!, item.answer, "[Placeholder: rendered student-facing feedback]", item.critique), null, 2)}\n\`\`\`` : ""}`;
     })
     .join("\n\n");
   const path = `${out}/${stamp}-dry-run.md`;
@@ -196,7 +203,9 @@ async function evaluate(item: (typeof items)[number], index: number) {
     row.band = result.band;
     row.check = result.check;
     row.flags.validated = result.feedback.validated;
-    row.feedback = renderFeedback(result.feedback);
+    const feedback = renderFeedback(result.feedback);
+    // Held-out feedback quotes A1 students' answers, which stay out of git.
+    if (item.section !== "Held-out") row.feedback = feedback;
     if (typeof item.expected === "number") {
       row.score = scoreItem({
         criteria: q.criteria,
@@ -223,7 +232,7 @@ async function evaluate(item: (typeof items)[number], index: number) {
           ...JUDGE,
           task: `${task}:judge`,
           schema: JudgeSchema,
-          messages: judgeMessages(q, item.answer, row.feedback, item.critique),
+          messages: judgeMessages(q, item.answer, feedback, item.critique),
         });
         row.verdict.score = Math.max(1, Math.min(10, row.verdict.score));
         row.flags.lowConfidence = row.verdict.lowConfidence;

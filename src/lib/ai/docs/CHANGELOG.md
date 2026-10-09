@@ -2,6 +2,21 @@
 
 Eval = A1 set, 18 headline items (fm-1 and ei-4 excluded). Signed error: + = lenient. Marker gpt-6.1-sol (Fast). Judge gpt-6-astra/low. Result files are in `src/lib/ai/eval/results/`. Runs marked dirty were made on an uncommitted change (the eval varied one setting), and the setting is recorded in the file.
 
+## 9 Oct 2026: band-anchored examples (A1 tutor-marked answers in the grader prompt)
+
+Up to two tutor-marked answers per band from the same question, from the non-test view (ENGINE.md, Band anchors). The A1 18 questions have no examples, so their prompts are unchanged and their numbers move only by run noise. Held-out = 196 A1 mock answers (split `test`), marks only.
+
+| Run                                | Set      | Exact | Within-1 | Band  | Signed | Mean \|Δ\| | Judge | $/answer | s/answer | Check agreed |
+| ---------------------------------- | -------- | ----- | -------- | ----- | ------ | ---------- | ----- | -------- | -------- | ------------ |
+| 1159 shipped 0940 engine           | A1 18    | 44.4% | 88.9%    | 50.0% | +0.44  | 0.61       | 4.67  | 0.0198   | 13.1     | 100%         |
+| 1159 shipped 0940 engine           | Held-out | 44.9% | 94.4%    | 44.9% | +0.15  | 0.61       | —     | 0.0234   | 15.2     | 93.4%        |
+| **1211 anchors (shipped)**         | A1 18    | 44.4% | 88.9%    | 50.0% | +0.44  | 0.61       | 4.83  | 0.0198   | 12.5     | 100%         |
+| **1211 anchors (shipped)**         | Held-out | 45.9% | 95.4%    | 45.9% | +0.08  | 0.59       | —     | 0.0274   | 16.0     | 92.3%        |
+| 1222 anchors + tutor notes (trial) | A1 18    | 44.4% | 88.9%    | 50.0% | +0.44  | 0.61       | 4.44  | 0.0206   | 13.3     | 94.4%        |
+| 1222 anchors + tutor notes (trial) | Held-out | 43.4% | 96.4%    | 43.4% | +0.05  | 0.60       | —     | 0.0286   | 16.0     | 91.3%        |
+
+The held-out gain is small: paired against 1159, 15 answers moved closer to the tutor's mark and 11 further away (170 unchanged), so +1 point exact is within run noise. The clearer effect is less leniency on 3–6 mark questions (signed +0.19 to +0.04 on 3-markers). Both engines over-mark weak answers and under-mark strong ones (tutor 0: about +0.75; tutor 4–5: about −0.7). Band equals exact on held-out because every A1 mock band is a single mark. Claro check 10/10 in every run. Shipped 1211; the tutor-notes trial was dropped (held-out exact −2.5 points against 1211).
+
 ## 9 Oct 2026: band-descriptor element check (prompt)
 
 Every element named in a band descriptor must be evidenced. Examples and evidence must be specific. Distinguish and compare need an explicit contrast. A key factual error rules out the top band. Between two bands, the lower one.

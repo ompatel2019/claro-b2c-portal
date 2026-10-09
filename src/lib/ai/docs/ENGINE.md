@@ -1,6 +1,6 @@
 # Marking engine
 
-How a written answer is marked. Code: `src/lib/marking/` (engine, grade, prompts, schemas) and `src/lib/ai/` (OpenAI call, prices). Eval: `src/lib/ai/eval/`.
+How a written answer is marked. Code: `src/lib/marking/` (engine, examples, grade, prompts, schemas) and `src/lib/ai/` (OpenAI call, prices). Eval: `src/lib/ai/eval/`.
 
 ## Model
 
@@ -9,16 +9,22 @@ All three passes use **gpt-6.1-sol** (`MODELS.strong`) with Fast (priority) proc
 
 ## The chain (`markWritten`)
 
-| Pass                                | Sees                                                          | Writes                                                                                                    | Thinking | ai_usage task   |
-| ----------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | -------- | --------------- |
-| 1. Grader                           | question, guideline bands, notes, sample answer, raw answer   | full GradeSchema: analysis, bands considered, band, mark, justification, 2–6 comments, next band, outline | low      | `mark_written`  |
-| 2. Blind check                      | the same prompt as pass 1, **never** pass 1's mark            | CheckSchema: analysis, bands considered, band, justification, mark                                        | low      | `check_written` |
-| 3. Reconcile (only on disagreement) | the check prompt plus both assessments as Marker A / Marker B | CheckSchema                                                                                               | medium   | `second_pass`   |
+| Pass                                | Sees                                                                      | Writes                                                                                                    | Thinking | ai_usage task   |
+| ----------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | -------- | --------------- |
+| 1. Grader                           | question, guideline bands, notes, sample answer, band anchors, raw answer | full GradeSchema: analysis, bands considered, band, mark, justification, 2–6 comments, next band, outline | low      | `mark_written`  |
+| 2. Blind check                      | the same prompt as pass 1, **never** pass 1's mark                        | CheckSchema: analysis, bands considered, band, justification, mark                                        | low      | `check_written` |
+| 3. Reconcile (only on disagreement) | the check prompt plus both assessments as Marker A / Marker B             | CheckSchema                                                                                               | medium   | `second_pass`   |
 
 - Passes 1 and 2 run in parallel, so the check adds no latency.
+- All three passes see the same band anchors (below), so they share one cacheable prompt prefix per question.
 - Every pass gets one correction retry if its band or mark is invalid. After that the mark is clamped and the band is derived from it.
 - Feedback (comments, next band, outline) always comes from pass 1. The justification and band come from whichever pass settles the mark.
 - Thinking levels were picked by eval (CHANGELOG, 9 Oct). A medium check pass or a medium grader gave the same headline marks as low at more cost and time, and the medium grader's first pass alone was less accurate.
+
+## Band anchors (`examples.ts`)
+
+Before marking, `bandExamples` reads the question's tutor-marked answers from the **`marking_examples_for_grader`** view only. That view excludes `split = 'test'`, so held-out answers can never reach a prompt. `pickBandExamples` keeps whole tutor marks and takes up to **two per band** (and two at 0), highest band first, in a fixed order (by id). They go in the user message after the sample answer and before `<student_answer>`, wrapped as `<marked_answer tutor_mark="n">` and treated as evidence, never instructions. Questions with no examples (all NESA questions, and the A1 eval-set bank questions) get exactly the old prompt.
+Examples today: 2,007 anonymised A1 mock-exam answers on the 41 retired `a1-m*` questions (origin `a1`, split `example`), imported by `src/lib/ai/eval/import-a1-examples.mts`. Tutor notes are not shown: adding them lowered held-out exact (CHANGELOG, run 1222).
 
 ## Agreement rule (`marksAgree`)
 
@@ -56,12 +62,14 @@ The NESA directive verb glossary, highest band fully satisfied, and the sample a
 
 - Every call is costed (`PRICES`, standard rates ×2 for Fast) and logged to `ai_usage`.
 - `callJson` refuses once total spend reaches `BUDGET_USD` ($90).
-- The eval refuses to start, and stops between items, once spend reaches `EVAL_BLOCK_USD` ($80). Eval calls are logged as task `eval`.
+- The eval refuses to start, and stops between items, once spend reaches `EVAL_BLOCK_USD` ($80). Eval calls are logged per item as task `eval:<stamp>:<item>:mark` or `:judge`, which is how each item is costed.
 
 ## Eval
 
 `npx tsx --conditions=react-server --env-file=.env.local src/lib/ai/eval/run.mts [--dry-run] [--limit=N] [--label=x]`
 
 - Runs A1's 20 answers with Karan's marks and critiques. Headline numbers exclude fm-1 (its answer duplicates fm-5) and ei-4 (3.5 is an invented midpoint), which are reported separately. It also runs our 10-answer Claro check.
+- **Held-out set**: the 196 `marking_examples` rows with `split = 'test'` on the `a1-m*` mock questions (up to 6 whole-mark answers per question spread across marks, fixed seed in `split.ts`). Reported as its own section with the same mark metrics. It has no judge, because there is no Karan critique for these answers. These questions were never used to tune the prompt.
+- Items run 6 at a time; `--limit=N` applies per section.
 - Feedback is judged by a pinned **gpt-6-astra** (low thinking), separate from the marker so runs stay comparable. The judge reports Pros kept and Cons fixed, the way A1's judge does.
 - Results: JSON in `src/lib/ai/eval/results/` (the `evals` bucket doesn't exist yet), plus a markdown summary in `/workspace/claro/eval-runs/`.

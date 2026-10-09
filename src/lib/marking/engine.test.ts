@@ -4,12 +4,14 @@ import type { MarkableQuestion } from "./grade";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/ai/openai", () => ({ callJson: vi.fn() }));
+vi.mock("./examples", () => ({ bandExamples: vi.fn() }));
 vi.mock("@/utils/supabase/admin", () => {
   const client = { from: vi.fn() };
   return { admin: () => client };
 });
 
 import { callJson } from "@/lib/ai/openai";
+import { bandExamples } from "./examples";
 import { admin } from "@/utils/supabase/admin";
 import {
   AlreadyMarking,
@@ -98,6 +100,7 @@ const mockedCall = vi.mocked(callJson);
 beforeEach(() => {
   vi.resetAllMocks();
   mockedCall.mockResolvedValue(grade);
+  vi.mocked(bandExamples).mockResolvedValue([]);
 });
 
 it("returns validated grade on the first reply and anchors quotes", async () => {
@@ -232,7 +235,7 @@ it("starts both blind passes before either resolves", async () => {
         }),
     );
   const marking = markWritten(q, "prices rise", "user");
-  expect(mockedCall).toHaveBeenCalledTimes(2);
+  await vi.waitFor(() => expect(mockedCall).toHaveBeenCalledTimes(2));
   expect(
     mockedCall.mock.calls.map(([o]) => [o.task, o.effort, o.fast, o.schema]),
   ).toEqual([
@@ -249,6 +252,23 @@ it("starts both blind passes before either resolves", async () => {
     mark: 4,
     check: { status: "agreed", marks: [4, 3] },
   });
+});
+
+it("puts the question's band anchors in the grader, blind check and reconciler prompts", async () => {
+  vi.mocked(bandExamples).mockResolvedValue([
+    { answer_text: "Anchor four", tutor_mark: 4 },
+  ]);
+  mockedCall
+    .mockResolvedValueOnce(grade)
+    .mockResolvedValueOnce(checkGrade(2))
+    .mockResolvedValueOnce(checkGrade(4));
+  await markWritten(q, "prices rise", "user");
+  expect(bandExamples).toHaveBeenCalledWith(q);
+  expect(mockedCall).toHaveBeenCalledTimes(3);
+  for (const [{ messages }] of mockedCall.mock.calls)
+    expect(messages[1].content).toContain(
+      '<marked_answer tutor_mark="4">\nAnchor four\n</marked_answer>',
+    );
 });
 
 it.each([undefined, "eval"])(

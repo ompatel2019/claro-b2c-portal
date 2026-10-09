@@ -28,6 +28,9 @@ vi.mock("@/lib/marking/engine", () => ({
   markWritten: mocks.mark,
 }));
 vi.mock("../openai", () => ({ callJson: mocks.judge }));
+vi.mock("@/lib/marking/examples", () => ({
+  bandExamples: async () => [{ answer_text: "Anchor", tutor_mark: 2 }],
+}));
 vi.mock("./report", () => ({ writeResults: mocks.report }));
 
 const argv = process.argv;
@@ -129,6 +132,7 @@ it("dry-run renders exact grader and judge messages without marking, judging or 
   expect(path).toMatch(/eval-runs\/\d{4}-\d{2}-\d{2}-\d{4}-dry-run.md$/);
   expect(text).toContain("### Grader messages");
   expect(text).toContain("## Held-out: a1-m2-21a");
+  expect(text).toContain('<marked_answer tutor_mark=\\"2\\">');
   expect(text).toContain("### Judge messages");
   expect(text).toContain("[Placeholder: rendered student-facing feedback]");
   expect(text).toContain("KARAN'S CRITIQUE OF THE EARLIER AI OUTPUT");
@@ -183,6 +187,7 @@ it("costs each item by its own eval task, judges only A1 and clamps the judge sc
   expect(rows[1]).toMatchObject({
     section: "Held-out",
     expected: 2,
+    feedback: null,
     score: { delta: 1, exact: false, band: false },
     judgeUsd: 0,
     verdict: null,

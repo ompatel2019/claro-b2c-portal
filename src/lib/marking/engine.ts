@@ -16,6 +16,7 @@ import {
   validateGrade,
   type MarkableQuestion,
 } from "./grade";
+import { bandExamples } from "./examples";
 import {
   bandCorrection,
   flashcardMessages,
@@ -76,16 +77,17 @@ export async function markWritten(
     return { grade, mark, criterion, validated: validation.ok };
   }
 
+  const examples = await bandExamples(q);
   const [first, second] = await Promise.all([
     pass(
       GradeSchema,
-      gradeMessages(q, answer),
+      gradeMessages(q, answer, false, examples),
       MARKER.effort.grade,
       "mark_written",
     ),
     pass(
       CheckSchema,
-      gradeMessages(q, answer, true),
+      gradeMessages(q, answer, true, examples),
       MARKER.effort.check,
       "check_written",
     ),
@@ -116,6 +118,7 @@ export async function markWritten(
           mark: second.mark,
           justification: second.grade.justification,
         },
+        examples,
       ),
       MARKER.effort.reconcile,
       "second_pass",
