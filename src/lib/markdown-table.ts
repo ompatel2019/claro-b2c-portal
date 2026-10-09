@@ -49,3 +49,17 @@ export function blocks(source: string): Block[] {
   }
   return out;
 }
+
+/** Markdown image links for QuestionView; unsafe protocols stay literal text. */
+export function imageParts(text: string): { text: string; url?: string }[] {
+  const parts: { text: string; url?: string }[] = [];
+  const pattern = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+  let from = 0;
+  for (const match of text.matchAll(pattern)) {
+    if (match.index > from) parts.push({ text: text.slice(from, match.index) });
+    parts.push({ text: match[1], url: match[2] });
+    from = match.index + match[0].length;
+  }
+  if (from < text.length) parts.push({ text: text.slice(from) });
+  return parts;
+}

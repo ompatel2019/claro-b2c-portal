@@ -100,3 +100,24 @@ it("StaticTable expands child rows with an accessible control", () => {
   fireEvent.click(expand);
   expect(screen.queryByText("Subtopic marks")).not.toBeInTheDocument();
 });
+
+it("bulk selection is opt-in, page-scoped and provides a clear callback", () => {
+  nav.router.mockReturnValue({ push: nav.push });
+  nav.path.mockReturnValue("/admin/content/questions");
+  nav.search.mockReturnValue(new URLSearchParams("status=draft"));
+  render(
+    <DataTable
+      label="Questions"
+      columns={columns}
+      rows={rows}
+      pager={{ page: 1, pages: 1, total: 2, sort: { id: "value", dir: "asc" } }}
+      bulk={(ids, clear) => (
+        <button onClick={clear}>Publish {ids.join(",")}</button>
+      )}
+    />,
+  );
+  fireEvent.click(screen.getByRole("checkbox", { name: "Select a" }));
+  expect(screen.getByRole("button", { name: "Publish a" })).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Publish a" }));
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});

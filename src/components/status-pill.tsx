@@ -26,6 +26,9 @@ const pills = {
   "Not answered": [EyeOff, "bg-muted text-muted-foreground"],
   "In progress": [Dot, "border-ink text-ink"],
   Finished: [Check, "bg-muted text-muted-foreground"],
+  Draft: [Pending, "bg-muted text-muted-foreground"],
+  Live: [CheckCircle, "bg-success-soft text-success"],
+  Retired: [EyeOff, "bg-muted text-muted-foreground"],
   New: [Dot, "bg-muted text-muted-foreground"],
   Triaged: [EyeOff, "bg-warning-soft text-warning"],
   Resolved: [CheckCircle, "bg-success-soft text-success"],
@@ -75,6 +78,9 @@ export function statePill(
 }
 
 export const STATUS_PILL = {
+  draft: "Draft",
+  live: "Live",
+  retired: "Retired",
   new: "New",
   triaged: "Triaged",
   resolved: "Resolved",

@@ -1,20 +1,42 @@
-import { blocks } from "@/lib/markdown-table";
+import { blocks, imageParts } from "@/lib/markdown-table";
 
 /** Renders question stems/stimuli, turning GFM pipe tables into real HTML tables. */
 export function RichText({
   text,
   className,
+  renderImages = false,
 }: {
   text: string;
   className?: string;
+  renderImages?: boolean;
 }) {
   return (
     <div className={className}>
       {blocks(text).map((block, i) =>
         block.type === "text" ? (
-          <p key={i} className="whitespace-pre-wrap">
-            {block.text}
-          </p>
+          renderImages ? (
+            <div key={i} className="min-w-0 break-words whitespace-pre-wrap">
+              {imageParts(block.text).map((part, j) =>
+                part.url ? (
+                  // Public stimulus assets may be hosted outside the app's image domains.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={j}
+                    src={part.url}
+                    alt={part.text}
+                    loading="lazy"
+                    className="my-3 h-auto max-w-full rounded-lg"
+                  />
+                ) : (
+                  <span key={j}>{part.text}</span>
+                ),
+              )}
+            </div>
+          ) : (
+            <p key={i} className="whitespace-pre-wrap">
+              {block.text}
+            </p>
+          )
         ) : (
           <div key={i} className="my-4 overflow-x-auto">
             <table className="border-line w-full min-w-[20rem] border-collapse text-left text-sm">

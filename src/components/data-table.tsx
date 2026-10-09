@@ -1,6 +1,7 @@
 "use client";
 import { Fragment, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { TablePagination } from "./table-pagination";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Pager, Sorting } from "@/lib/admin";
@@ -35,6 +36,7 @@ type Props<T> = {
   onRow?: (row: T) => void;
   pager?: Pager;
   selectable?: boolean;
+  bulk?: (ids: string[], clear: () => void) => React.ReactNode;
   /** A full-width row under a row (e.g. expanded subtopics). */
   renderDetail?: (row: T) => React.ReactNode;
   /** Student-app density: taller rows. */
@@ -102,30 +104,7 @@ function PagedTable<T extends { id: string }>(
         sorting={pager.sort}
         toggle={toggle}
       />
-      <nav
-        aria-label={`${props.label} pagination`}
-        className="flex flex-wrap items-center justify-between gap-2 text-sm"
-      >
-        <span aria-live="polite">
-          Page {pager.page} of {pager.pages} · {pager.total} rows
-        </span>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            disabled={pager.page <= 1}
-            onClick={() => navigate({ page: String(pager.page - 1) })}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            disabled={pager.page >= pager.pages}
-            onClick={() => navigate({ page: String(pager.page + 1) })}
-          >
-            Next
-          </Button>
-        </div>
-      </nav>
+      <TablePagination pager={pager} label={props.label} />
     </>
   );
 }
@@ -137,16 +116,22 @@ function TableView<T extends { id: string }>({
   onRow,
   sorting,
   toggle,
-  selectable,
+  selectable: selectRows,
+  bulk,
   renderDetail,
   student,
 }: Props<T> & { sorting: Sorting | null; toggle: (id: string) => void }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const selectable = selectRows || !!bulk;
   return (
     <div className="bg-card min-w-0 overflow-hidden rounded-2xl border">
       {selectable && selected.size > 0 && (
-        <div role="status" className="border-b px-5 py-2 text-sm">
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-2 border-b px-5 py-2 text-sm"
+        >
           {selected.size} selected
+          {bulk?.([...selected], () => setSelected(new Set()))}
           <Button variant="ghost" onClick={() => setSelected(new Set())}>
             Clear selection
           </Button>

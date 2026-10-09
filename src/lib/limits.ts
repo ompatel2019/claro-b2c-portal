@@ -9,3 +9,9 @@ export const SHORT_PHOTO_PAGE_LIMIT = 3;
 export const LONG_PHOTO_PAGE_LIMIT = 8;
 export const OPEN_DISPUTES_PER_ANSWER = 1;
 export const OPEN_DISPUTES_PER_STUDENT = 3;
+
+// Admin test marking uses the same typed-answer limits as student marking.
+export {
+  WRITTEN_WORD_LIMIT as TYPED_ANSWER_WORD_LIMIT,
+  WRITTEN_WORD_WARNING as TYPED_ANSWER_WARNING_WORDS,
+};

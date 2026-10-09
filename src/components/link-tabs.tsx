@@ -6,7 +6,7 @@ export function LinkTabs({
   active,
   label,
 }: {
-  tabs: { value: string; label: string; href: string }[];
+  tabs: { value: string; label: string; count?: number; href: string }[];
   active: string;
   label: string;
 }) {
@@ -20,6 +20,7 @@ export function LinkTabs({
           className="text-muted-foreground hover:text-ink aria-[current=page]:border-ink aria-[current=page]:text-ink -mb-px inline-flex h-9 items-center gap-1.5 border-b-2 border-transparent px-3 text-sm font-medium"
         >
           {t.label}
+          {t.count !== undefined && ` (${t.count})`}
         </Link>
       ))}
     </nav>

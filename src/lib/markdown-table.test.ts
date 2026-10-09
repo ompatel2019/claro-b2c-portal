@@ -32,3 +32,17 @@ it("keeps escaped pipes inside table cells", () => {
     { type: "table", headers: ["Mean |Δ|", "Cost"], rows: [["0.5", "$1"]] },
   ]);
 });
+
+it("parses image links without interpreting unsafe URLs or HTML", async () => {
+  const { imageParts } = await import("./markdown-table");
+  expect(
+    imageParts("Before ![CPI chart](https://example.com/cpi.png) after"),
+  ).toEqual([
+    { text: "Before " },
+    { text: "CPI chart", url: "https://example.com/cpi.png" },
+    { text: " after" },
+  ]);
+  expect(imageParts("![x](javascript:alert(1)) <script>x</script>")).toEqual([
+    { text: "![x](javascript:alert(1)) <script>x</script>" },
+  ]);
+});
