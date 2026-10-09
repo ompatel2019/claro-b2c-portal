@@ -3,6 +3,7 @@ const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   reads: [] as string[],
   rpc: vi.fn(),
+  statusCount: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ requireAdmin: mocks.requireAdmin }));
@@ -39,7 +40,11 @@ vi.mock("@/utils/supabase/admin", () => ({
             : [];
       const query = {
         select: () => query,
-        eq: () => query,
+        eq: (_column: string, value: string) => {
+          query.throwOnError = () => mocks.statusCount(value);
+          return query;
+        },
+        throwOnError: () => mocks.statusCount(),
         in: () => query,
         order: () => query,
         range: (from: number, to: number) =>
@@ -65,6 +70,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.reads.length = 0;
   mocks.requireAdmin.mockResolvedValue({ role: "admin" });
+  mocks.statusCount.mockResolvedValue({ count: 0 });
   mocks.rpc.mockImplementation((_name: string, args: { p_ids: string[] }) => ({
     throwOnError: async () => ({
       data: args.p_ids.map((id) => ({
@@ -86,6 +92,7 @@ it.each([
   () => loadQuestionList({}),
   () => loadQuestion("q-0000"),
   () => loadImportReview(0.82),
+  () => loadImportReview(0.82, 1, false),
 ])("guards every loader before service data access", async (load) => {
   mocks.requireAdmin.mockRejectedValue(new Error("student"));
   await expect(load()).rejects.toThrow("student");
@@ -111,4 +118,60 @@ it("searches displayed topic names and aggregate values without truncating the b
   expect((await loadQuestionList({ q: "Inflation" })).pager.total).toBe(1101);
   expect((await loadQuestionList({ q: "1200" })).pager.total).toBe(1101);
   expect((await loadQuestionList({ q: "missing text" })).pager.total).toBe(0);
+});
+
+it("keeps the bank usable when the import-review badge times out", async () => {
+  mocks.rpc.mockImplementation((name: string, args: { p_ids: string[] }) => ({
+    throwOnError: async () => {
+      if (name === "admin_import_review") throw new Error("statement timeout");
+      return { data: args.p_ids.map((id) => ({ id, attempts: 0 })) };
+    },
+  }));
+  const [review, list] = await Promise.all([
+    loadImportReview(0.82, 1, false),
+    loadQuestionList({ q: "inflation" }),
+  ]);
+  expect(review.tabCount).toBeNull();
+  expect(list.rows).toHaveLength(50);
+  // A failed primary query must not masquerade as an empty review.
+  await expect(loadImportReview(0.82)).rejects.toThrow("statement timeout");
+});
+
+it("keeps filtered review results when only the unfiltered badge fails", async () => {
+  const rows = [
+    { draft: { id: "import-1" }, row: { id: "live-1" }, score: 0.9 },
+  ];
+  mocks.rpc.mockImplementation(
+    (
+      _name: string,
+      args: { p_filters: { q?: string } },
+      options?: { head: boolean },
+    ) => {
+      const query = {
+        order: () => query,
+        range: () => query,
+        throwOnError: async () => {
+          if (!args.p_filters.q) throw new Error("statement timeout");
+          return options?.head ? { count: 1 } : { data: rows };
+        },
+      };
+      return query;
+    },
+  );
+  const review = await loadImportReview(0.82, 1, true, { q: "inflation" });
+  expect(review.tabCount).toBeNull();
+  expect(review.rows).toEqual(rows);
+  expect(review.pager.total).toBe(1);
+});
+
+it("marks only the failed status badge unavailable and preserves zero counts", async () => {
+  mocks.statusCount.mockImplementation(async (status: string) => {
+    if (status === "draft") throw new Error("statement timeout");
+    return { count: status === "live" ? 1101 : 0 };
+  });
+  await expect(loadQuestionCounts()).resolves.toEqual({
+    live: 1101,
+    draft: null,
+    retired: 0,
+  });
 });

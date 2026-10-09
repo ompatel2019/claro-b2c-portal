@@ -110,26 +110,25 @@ export async function loadImportReview(
 ) {
   await requireAdmin();
   const db = await createClient();
-  const count = await db
-    .rpc(
-      "admin_import_review",
-      {
-        p_threshold: threshold,
-        p_filters: { ...filters, q: filters.q?.trim().slice(0, 100) },
-      },
-      { head: true, count: "exact" },
-    )
-    .throwOnError();
+  const countQuery = async (f: QuestionFilters) =>
+    db
+      .rpc(
+        "admin_import_review",
+        {
+          p_threshold: threshold,
+          p_filters: { ...f, q: f.q?.trim().slice(0, 100) },
+        },
+        { head: true, count: "exact" },
+      )
+      .throwOnError();
+  // A badge is secondary; the active review's count is needed for pagination.
+  const count = includeRows
+    ? await countQuery(filters)
+    : await countQuery(filters).catch(() => null);
   const all = QUESTION_FILTER_KEYS.some((key) => filters[key])
-    ? await db
-        .rpc(
-          "admin_import_review",
-          { p_threshold: threshold },
-          { head: true, count: "exact" },
-        )
-        .throwOnError()
+    ? await countQuery({}).catch(() => null)
     : count;
-  const total = count.count ?? 0;
+  const total = count?.count ?? 0;
   const pages = Math.max(1, Math.ceil(total / 50));
   const page = Math.min(
     pages,
@@ -147,7 +146,7 @@ export async function loadImportReview(
           .throwOnError()
       : null;
   return {
-    tabCount: all.count ?? 0,
+    tabCount: all?.count ?? null,
     rows: (rows?.data ?? []) as ReviewPair[],
     pager: {
       page,
@@ -161,21 +160,27 @@ export async function loadImportReview(
 /** Status tab counts (whole bank). */
 export async function loadQuestionCounts() {
   await requireAdmin();
-  const count = (status: string) =>
-    admin()
-      .from("questions")
-      .select("id", { count: "exact", head: true })
-      .eq("status", status)
-      .throwOnError();
+  const count = async (status: string) => {
+    try {
+      const result = await admin()
+        .from("questions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", status)
+        .throwOnError();
+      return result.count ?? null;
+    } catch {
+      return null;
+    }
+  };
   const [live, draft, retired] = await Promise.all([
     count("live"),
     count("draft"),
     count("retired"),
   ]);
   return {
-    live: live.count ?? 0,
-    draft: draft.count ?? 0,
-    retired: retired.count ?? 0,
+    live,
+    draft,
+    retired,
   };
 }
 

@@ -198,7 +198,10 @@ test.describe("Schema and RLS", () => {
     const evalQuestions = await db
       .from("questions")
       .select("status")
-      .like("id", "a1-%");
+      .like("id", "a1-%")
+      // A1 content imports (a1-p-*, a1-x-*) are content, not the eval set.
+      .not("id", "like", "a1-p-%")
+      .not("id", "like", "a1-x-%");
     expect(evalQuestions.data).toEqual(Array(61).fill({ status: "retired" }));
     const hidden = await student.db
       .from("questions")

@@ -6,6 +6,48 @@ const tag = `e2e${Date.now().toString(36)}`;
 const id = `${tag}-q1`;
 const twin = `${tag}-q2`;
 
+// Independent of the write/cleanup suite and requires no service key or fixtures.
+test("all question tabs and search load without the error boundary", async ({
+  page,
+}) => {
+  test.skip(!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD);
+  test.setTimeout(240000);
+  await signInAdmin(page);
+  for (const query of [
+    "?status=live",
+    "?status=draft",
+    "?status=review",
+    "?status=retired",
+    "?q=inflation",
+  ]) {
+    await test.step(query, async () => {
+      await page.goto(`/admin/content/questions${query}`);
+      await expect(
+        page.getByRole("heading", { name: "Questions", exact: true }),
+      ).toBeVisible({ timeout: 60000 });
+      const content =
+        query === "?status=review"
+          ? page
+              .locator('[aria-label^="Review "]')
+              .first()
+              .or(
+                page.getByText("Nothing to review", {
+                  exact: true,
+                }),
+              )
+          : page
+              .getByRole("table", { name: "Questions" })
+              .or(
+                page.getByText(
+                  /^No (live questions|draft questions|retired questions|questions match)$/,
+                ),
+              );
+      await expect(content).toBeVisible({ timeout: 60000 });
+      await expect(page.getByText(/Couldn['’]t load this/)).toHaveCount(0);
+    });
+  }
+});
+
 test.describe("Admin questions", () => {
   test.skip(
     !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD || !adminClient(),
@@ -44,7 +86,7 @@ test.describe("Admin questions", () => {
     await expect(async () => {
       await page
         .getByLabel("Source label", { exact: true })
-        .fill(`2026 ${tag} Q1(b)`);
+        .fill(`2026 Q1(b) ${tag}`);
       await expect(page.getByLabel("ID", { exact: true })).toHaveValue(
         "2026-q1b",
       );
