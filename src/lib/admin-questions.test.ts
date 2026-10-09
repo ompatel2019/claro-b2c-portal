@@ -1,11 +1,31 @@
 import { beforeEach, expect, it, vi } from "vitest";
+import { unstable_cache } from "next/cache";
+import { QUESTION_IMPORT_REVIEW_TAG } from "./question-review-cache";
 const mocks = vi.hoisted(() => ({
   requireAdmin: vi.fn(),
   reads: [] as string[],
   rpc: vi.fn(),
+  reviewRpc: vi.fn(),
+  order: vi.fn(),
+  range: vi.fn(),
+  cache: new Map<string, Promise<unknown>>(),
   statusCount: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
+vi.mock("next/cache", () => ({
+  unstable_cache: vi.fn((fn: () => Promise<unknown>, keys: string[]) => () => {
+    const key = JSON.stringify(keys);
+    if (!mocks.cache.has(key)) {
+      const pending = fn().catch((error) => {
+        mocks.cache.delete(key);
+        throw error;
+      });
+      mocks.cache.set(key, pending);
+    }
+    return mocks.cache.get(key);
+  }),
+  updateTag: vi.fn(),
+}));
 vi.mock("@/lib/auth", () => ({ requireAdmin: mocks.requireAdmin }));
 const bank = Array.from({ length: 1101 }, (_, i) => ({
   id: `q-${String(i).padStart(4, "0")}`,
@@ -22,6 +42,7 @@ const bank = Array.from({ length: 1101 }, (_, i) => ({
 }));
 vi.mock("@/utils/supabase/admin", () => ({
   admin: () => ({
+    rpc: mocks.reviewRpc,
     from: (table: string) => {
       mocks.reads.push(table);
       const rows =
@@ -69,6 +90,8 @@ import {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.reads.length = 0;
+  mocks.cache.clear();
+  mocks.reviewRpc.mockImplementation(() => reviewResult([]));
   mocks.requireAdmin.mockResolvedValue({ role: "admin" });
   mocks.statusCount.mockResolvedValue({ count: 0 });
   mocks.rpc.mockImplementation((_name: string, args: { p_ids: string[] }) => ({
@@ -98,6 +121,7 @@ it.each([
   await expect(load()).rejects.toThrow("student");
   expect(mocks.reads).toEqual([]);
   expect(mocks.rpc).not.toHaveBeenCalled();
+  expect(mocks.reviewRpc).not.toHaveBeenCalled();
 });
 it("pages the whole bank, sorts aggregate columns and clamps the 50-row page", async () => {
   const list = await loadQuestionList({
@@ -120,95 +144,220 @@ it("searches displayed topic names and aggregate values without truncating the b
   expect((await loadQuestionList({ q: "missing text" })).pager.total).toBe(0);
 });
 
+const reviewRows = Array.from({ length: 103 }, (_, i) => ({
+  id: `draft-${String(i).padStart(3, "0")}`,
+  draft: { id: `draft-${i}` },
+  row: { id: `live-${i}` },
+  score: 0.9,
+}));
+
+function reviewResult(data = reviewRows) {
+  return {
+    order: mocks.order.mockImplementation(() => ({
+      range: mocks.range.mockImplementation((from: number, to: number) => ({
+        throwOnError: vi.fn(async () => ({ data: data.slice(from, to + 1) })),
+      })),
+    })),
+  };
+}
+
 it("keeps the bank usable when the import-review badge times out", async () => {
-  mocks.rpc.mockImplementation((name: string, args: { p_ids: string[] }) => ({
-    throwOnError: async () => {
-      if (name === "admin_import_review") throw new Error("statement timeout");
-      return { data: args.p_ids.map((id) => ({ id, attempts: 0 })) };
-    },
+  mocks.reviewRpc.mockImplementation(() => ({
+    order: () => ({
+      range: () => ({
+        throwOnError: async () => {
+          throw new Error("statement timeout");
+        },
+      }),
+    }),
   }));
   const [review, list] = await Promise.all([
     loadImportReview(0.82, 1, false),
     loadQuestionList({ q: "inflation" }),
   ]);
-  expect(review.tabCount).toBeNull();
+  expect(review).toMatchObject({
+    tabCount: null,
+    rows: [],
+    pager: { total: 0, page: 1, pages: 1 },
+  });
   expect(list.rows).toHaveLength(50);
-  // A failed primary query must not masquerade as an empty review.
   await expect(loadImportReview(0.82)).rejects.toThrow("statement timeout");
 });
 
 it("keeps filtered review results when only the unfiltered badge fails", async () => {
-  const rows = [
-    { draft: { id: "import-1" }, row: { id: "live-1" }, score: 0.9 },
-  ];
-  mocks.rpc.mockImplementation(
-    (
-      _name: string,
-      args: { p_filters: { q?: string } },
-      options?: { head: boolean },
-    ) => {
-      const query = {
-        order: () => query,
-        range: () => query,
-        throwOnError: async () => {
-          if (!args.p_filters.q) throw new Error("statement timeout");
-          return options?.head ? { count: 1 } : { data: rows };
+  mocks.reviewRpc.mockImplementation((_name, args) =>
+    args.p_filters.q
+      ? reviewResult(reviewRows.slice(0, 1))
+      : {
+          order: () => ({
+            range: () => ({
+              throwOnError: async () => {
+                throw new Error("statement timeout");
+              },
+            }),
+          }),
         },
-      };
-      return query;
-    },
   );
   const review = await loadImportReview(0.82, 1, true, { q: "inflation" });
   expect(review.tabCount).toBeNull();
-  expect(review.rows).toEqual(rows);
+  expect(review.rows).toEqual(reviewRows.slice(0, 1));
   expect(review.pager.total).toBe(1);
 });
 
-it("starts filtered and unfiltered review counts together and uses the unfiltered tab count", async () => {
-  let resolveFiltered!: (value: { count: number }) => void;
-  let resolveUnfiltered!: (value: { count: number }) => void;
-  const filtered = new Promise<{ count: number }>((resolve) => {
+it("reuses one service RPC for repeated reviews and the unfiltered badge", async () => {
+  mocks.reviewRpc.mockImplementation(() => reviewResult());
+  expect((await loadImportReview(0.82, 1, false)).tabCount).toBe(103);
+  const first = await loadImportReview(0.82);
+  expect(await loadImportReview(0.82)).toEqual(first);
+  // Status and paging do not affect the pair set.
+  await loadImportReview(0.82, 2, true, {
+    status: "review",
+    page: "2",
+    q: "  ",
+  });
+  expect(mocks.reviewRpc).toHaveBeenCalledExactlyOnceWith(
+    "question_import_review",
+    { p_threshold: 0.82, p_filters: {} },
+  );
+  expect(mocks.order).toHaveBeenCalledExactlyOnceWith("id");
+  expect(mocks.range).toHaveBeenCalledExactlyOnceWith(0, 999);
+  expect(mocks.range.mock.results[0].value.throwOnError).toHaveBeenCalledOnce();
+  expect(mocks.rpc).not.toHaveBeenCalled();
+});
+
+it("fetches all 2,350 review pairs across three service RPC pages", async () => {
+  const pairs = Array.from({ length: 2350 }, (_, i) => ({
+    id: `draft-${String(i).padStart(4, "0")}`,
+    draft: { id: `draft-${i}` },
+    row: { id: `live-${i}` },
+    score: 0.9,
+  }));
+  mocks.reviewRpc.mockImplementation(() => reviewResult(pairs));
+
+  const review = await loadImportReview(0.82, 999);
+
+  expect(review.tabCount).toBe(2350);
+  expect(review.pager).toEqual({
+    page: 47,
+    pages: 47,
+    total: 2350,
+    sort: { id: "id", dir: "asc" },
+  });
+  expect(review.rows).toEqual(pairs.slice(2300));
+  expect(review.rows.at(-1)).toEqual(pairs.at(-1));
+  expect(mocks.reviewRpc).toHaveBeenCalledTimes(3);
+  for (let call = 1; call <= 3; call++) {
+    expect(mocks.reviewRpc).toHaveBeenNthCalledWith(
+      call,
+      "question_import_review",
+      { p_threshold: 0.82, p_filters: {} },
+    );
+    expect(mocks.order).toHaveBeenNthCalledWith(call, "id");
+    expect(
+      mocks.range.mock.results[call - 1].value.throwOnError,
+    ).toHaveBeenCalledOnce();
+  }
+  expect(mocks.order).toHaveBeenCalledTimes(3);
+  expect(mocks.range.mock.calls).toEqual([
+    [0, 999],
+    [1000, 1999],
+    [2000, 2999],
+  ]);
+});
+
+it("normalizes search and filter key order and includes threshold in the cache key", async () => {
+  mocks.reviewRpc.mockImplementation(() => reviewResult());
+  const q = "a".repeat(100);
+  await loadImportReview(0.82, 1, true, { q: `  ${q}extra `, type: "mcq" });
+  await loadImportReview(0.82, 1, true, { type: "mcq", q });
+  expect(mocks.reviewRpc).toHaveBeenCalledTimes(2);
+  expect(mocks.reviewRpc).toHaveBeenCalledWith("question_import_review", {
+    p_threshold: 0.82,
+    p_filters: { q, type: "mcq" },
+  });
+  await loadImportReview(0.9);
+  expect(mocks.reviewRpc).toHaveBeenCalledTimes(3);
+  expect(vi.mocked(unstable_cache)).toHaveBeenCalledWith(
+    expect.any(Function),
+    [QUESTION_IMPORT_REVIEW_TAG, "0.82", JSON.stringify({ q, type: "mcq" })],
+    { revalidate: 120, tags: [QUESTION_IMPORT_REVIEW_TAG] },
+  );
+});
+
+it("starts filtered and unfiltered pairs concurrently and uses at most two RPCs", async () => {
+  let resolveFiltered!: (value: { data: typeof reviewRows }) => void;
+  let resolveUnfiltered!: (value: { data: typeof reviewRows }) => void;
+  const filtered = new Promise<{ data: typeof reviewRows }>((resolve) => {
     resolveFiltered = resolve;
   });
-  const unfiltered = new Promise<{ count: number }>((resolve) => {
+  const unfiltered = new Promise<{ data: typeof reviewRows }>((resolve) => {
     resolveUnfiltered = resolve;
   });
-  const filteredCount = vi.fn(() => filtered);
-  const unfilteredCount = vi.fn(() => unfiltered);
-  mocks.rpc.mockImplementation(
-    (_name: string, args: { p_filters: { type?: string } }) => ({
-      throwOnError: args.p_filters.type ? filteredCount : unfilteredCount,
+  const filteredRead = vi.fn(() => filtered);
+  const unfilteredRead = vi.fn(() => unfiltered);
+  mocks.reviewRpc.mockImplementation((_name, args) => ({
+    order: () => ({
+      range: (from: number, to: number) => ({
+        throwOnError: () =>
+          (args.p_filters.type ? filteredRead() : unfilteredRead()).then(
+            ({ data }) => ({ data: data.slice(from, to + 1) }),
+          ),
+      }),
     }),
-  );
-
-  const pendingReview = loadImportReview(0.82, 1, false, { type: "mcq" });
+  }));
+  const pending = loadImportReview(0.82, 1, true, { type: "mcq" });
   try {
     await vi.waitFor(() => {
-      expect(mocks.rpc).toHaveBeenCalledTimes(2);
-      expect(mocks.rpc).toHaveBeenNthCalledWith(
-        1,
-        "admin_import_review",
-        { p_threshold: 0.82, p_filters: { type: "mcq", q: undefined } },
-        { head: true, count: "exact" },
-      );
-      expect(mocks.rpc).toHaveBeenNthCalledWith(
-        2,
-        "admin_import_review",
-        { p_threshold: 0.82, p_filters: { q: undefined } },
-        { head: true, count: "exact" },
-      );
-      expect(filteredCount).toHaveBeenCalledExactlyOnceWith();
-      expect(unfilteredCount).toHaveBeenCalledExactlyOnceWith();
+      expect(mocks.reviewRpc).toHaveBeenCalledTimes(2);
+      expect(filteredRead).toHaveBeenCalledOnce();
+      expect(unfilteredRead).toHaveBeenCalledOnce();
     });
   } finally {
-    resolveFiltered({ count: 3 });
-    resolveUnfiltered({ count: 17 });
-    await pendingReview;
+    resolveFiltered({ data: reviewRows.slice(0, 3) });
+    resolveUnfiltered({ data: reviewRows.slice(0, 17) });
+    await pending;
   }
+  const review = await pending;
+  expect(review).toMatchObject({
+    tabCount: 17,
+    rows: reviewRows.slice(0, 3),
+    pager: { total: 3 },
+  });
+  await loadImportReview(0.82, 1, true, { type: "mcq" });
+  await loadImportReview(0.82, 1, false);
+  expect(mocks.reviewRpc).toHaveBeenCalledTimes(2);
+});
 
-  const review = await pendingReview;
-  expect(review.tabCount).toBe(17);
-  expect(review.pager.total).toBe(3);
+it.each([
+  [999, 3, 3],
+  [0, 1, 50],
+  [-1, 1, 50],
+  [NaN, 1, 50],
+  [1.5, 1, 50],
+  [2, 2, 50],
+])(
+  "clamps requested page %s and preserves ordered 50-row slices",
+  async (requested, page, length) => {
+    mocks.reviewRpc.mockImplementation(() => reviewResult());
+    const review = await loadImportReview(0.82, requested);
+    expect(review.pager).toEqual({
+      page,
+      pages: 3,
+      total: 103,
+      sort: { id: "id", dir: "asc" },
+    });
+    expect(review.rows).toEqual(reviewRows.slice((page - 1) * 50, page * 50));
+    expect(review.rows).toHaveLength(length);
+    expect(mocks.reviewRpc).toHaveBeenCalledOnce();
+  },
+);
+
+it("preserves zero counts and empty review pagination", async () => {
+  expect(await loadImportReview(0.82, 999)).toEqual({
+    tabCount: 0,
+    rows: [],
+    pager: { page: 1, pages: 1, total: 0, sort: { id: "id", dir: "asc" } },
+  });
 });
 
 it("marks only the failed status badge unavailable and preserves zero counts", async () => {

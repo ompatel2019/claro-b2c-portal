@@ -1,7 +1,8 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { QUESTION_IMPORT_REVIEW_TAG } from "@/lib/question-review-cache";
 import { requireAdmin } from "@/lib/auth";
 import { paperSchema } from "@/lib/paper-builder";
 import { admin } from "@/utils/supabase/admin";
@@ -63,6 +64,7 @@ export async function savePaper(
   revalidatePath(LIST);
   revalidatePath(`${LIST}/${id}`);
   revalidatePath("/admin/content/questions");
+  updateTag(QUESTION_IMPORT_REVIEW_TAG);
   revalidatePath("/student/papers");
   const saved = data as {
     total: number;
@@ -183,6 +185,7 @@ export async function retirePapers(input: unknown) {
   };
   revalidatePath(LIST);
   revalidatePath("/student/papers");
+  updateTag(QUESTION_IMPORT_REVIEW_TAG);
   return {
     done: saved.previous.length,
     undo: contentUndoToken("papers", profile.id, saved),
@@ -215,5 +218,6 @@ export async function undoRetirePapers(token: string) {
   }
   revalidatePath(LIST);
   revalidatePath("/student/papers");
+  updateTag(QUESTION_IMPORT_REVIEW_TAG);
   return done;
 }

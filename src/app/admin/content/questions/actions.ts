@@ -1,6 +1,7 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
+import { QUESTION_IMPORT_REVIEW_TAG } from "@/lib/question-review-cache";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { admin } from "@/utils/supabase/admin";
@@ -72,6 +73,7 @@ export async function saveQuestion(
           : (conflictOf(error.code) ?? "Could not save."),
     };
   revalidatePath(LIST);
+  updateTag(QUESTION_IMPORT_REVIEW_TAG);
   revalidatePath(`${LIST}/${q.id}`);
   return data;
 }
@@ -126,6 +128,7 @@ export async function undoQuestionChanges(input: unknown) {
       throw new Error("A question changed. Reload before undoing.");
   }
   revalidatePath(LIST);
+  updateTag(QUESTION_IMPORT_REVIEW_TAG);
 }
 
 export type BulkAction =
@@ -210,6 +213,7 @@ export async function bulkQuestions(
         });
     }
     revalidatePath(LIST);
+    updateTag(QUESTION_IMPORT_REVIEW_TAG);
     return { done: undo.length, failures, undo };
   }
   if (action.kind === "retire") {
@@ -229,6 +233,7 @@ export async function bulkQuestions(
         });
     }
     revalidatePath(LIST);
+    updateTag(QUESTION_IMPORT_REVIEW_TAG);
     return { done: undo.length, failures, undo };
   }
   const { data: rows } = await db
@@ -291,6 +296,7 @@ export async function bulkQuestions(
     }
   }
   revalidatePath(LIST);
+  updateTag(QUESTION_IMPORT_REVIEW_TAG);
   return { done, failures, undo };
 }
 
@@ -330,6 +336,7 @@ export async function mergeDraft(draftId: string, intoId: string) {
   if (!data?.length)
     throw new Error("This draft has changed. Reload and try again.");
   revalidatePath(LIST);
+  updateTag(QUESTION_IMPORT_REVIEW_TAG);
   return [
     {
       id: before.id,

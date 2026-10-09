@@ -1,4 +1,6 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
+import { QUESTION_IMPORT_REVIEW_TAG } from "@/lib/question-review-cache";
 import { admin } from "@/utils/supabase/admin";
 import { requireAdmin } from "@/lib/auth";
 import { loadTopics } from "@/lib/admin-content";
@@ -102,6 +104,40 @@ async function aggregates(ids: string[], detail = false) {
   return result;
 }
 
+const REVIEW_FETCH = 1000;
+
+/** Cache only service data; caller authorization stays outside the cache scope. */
+function importReviewPairs(threshold: number, filters: QuestionFilters) {
+  const normalized = Object.fromEntries(
+    QUESTION_FILTER_KEYS.flatMap((key) => {
+      const value =
+        key === "q" ? filters.q?.trim().slice(0, 100) : filters[key];
+      return value ? [[key, value]] : [];
+    }),
+  );
+  return unstable_cache(
+    async () => {
+      // PostgREST caps a response (1000 rows by default), so read every page.
+      const all: ReviewPair[] = [];
+      for (let from = 0; ; from += REVIEW_FETCH) {
+        const { data } = await admin()
+          .rpc("question_import_review", {
+            p_threshold: threshold,
+            p_filters: normalized,
+          })
+          .order("id")
+          .range(from, from + REVIEW_FETCH - 1)
+          .throwOnError();
+        const chunk = (data ?? []) as ReviewPair[];
+        all.push(...chunk);
+        if (chunk.length < REVIEW_FETCH) return all;
+      }
+    },
+    [QUESTION_IMPORT_REVIEW_TAG, String(threshold), JSON.stringify(normalized)],
+    { revalidate: 120, tags: [QUESTION_IMPORT_REVIEW_TAG] },
+  )();
+}
+
 export async function loadImportReview(
   threshold: number,
   requestedPage = 1,
@@ -109,46 +145,25 @@ export async function loadImportReview(
   filters: QuestionFilters = {},
 ) {
   await requireAdmin();
-  const db = await createClient();
-  const countQuery = async (f: QuestionFilters) =>
-    db
-      .rpc(
-        "admin_import_review",
-        {
-          p_threshold: threshold,
-          p_filters: { ...f, q: f.q?.trim().slice(0, 100) },
-        },
-        { head: true, count: "exact" },
-      )
-      .throwOnError();
-  // A badge is secondary; the active review's count is needed for pagination.
-  // The unfiltered badge count is independent of the filtered one, so they run together.
-  const filtering = QUESTION_FILTER_KEYS.some((key) => filters[key]);
-  const [count, all] = await Promise.all([
-    includeRows ? countQuery(filters) : countQuery(filters).catch(() => null),
-    filtering ? countQuery({}).catch(() => null) : null,
+  const filtering = QUESTION_FILTER_KEYS.some((key) =>
+    key === "q" ? filters.q?.trim() : filters[key],
+  );
+  const pairs = importReviewPairs(threshold, filters);
+  // A badge is secondary; active review failures must still propagate.
+  const [rows, all] = await Promise.all([
+    includeRows ? pairs : pairs.catch(() => null),
+    filtering ? importReviewPairs(threshold, {}).catch(() => null) : null,
   ]);
-  const tabCount = filtering ? all : count;
-  const total = count?.count ?? 0;
+  const tabCount = filtering ? all : rows;
+  const total = rows?.length ?? 0;
   const pages = Math.max(1, Math.ceil(total / 50));
   const page = Math.min(
     pages,
     Math.max(1, Number.isSafeInteger(requestedPage) ? requestedPage : 1),
   );
-  const rows =
-    includeRows && total
-      ? await db
-          .rpc("admin_import_review", {
-            p_threshold: threshold,
-            p_filters: { ...filters, q: filters.q?.trim().slice(0, 100) },
-          })
-          .order("id")
-          .range((page - 1) * 50, page * 50 - 1)
-          .throwOnError()
-      : null;
   return {
-    tabCount: tabCount?.count ?? null,
-    rows: (rows?.data ?? []) as ReviewPair[],
+    tabCount: tabCount?.length ?? null,
+    rows: includeRows ? (rows ?? []).slice((page - 1) * 50, page * 50) : [],
     pager: {
       page,
       pages,

@@ -139,6 +139,7 @@ export function ImportReview({
           <Card key={draft.id} aria-label={`Review ${draft.id}`}>
             <CardHeader className="flex flex-wrap items-center gap-2">
               <Link
+                prefetch={false}
                 className="font-semibold underline"
                 href={`${base}/${draft.id}`}
               >
@@ -149,6 +150,7 @@ export function ImportReview({
               </span>
               <span className="text-muted-foreground">→</span>
               <Link
+                prefetch={false}
                 className="font-semibold underline"
                 href={`${base}/${row.id}`}
               >

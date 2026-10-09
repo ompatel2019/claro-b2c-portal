@@ -10,17 +10,25 @@ const readSql = (file: string) =>
     .replace(/--[^\n]*/g, "");
 const definition =
   /create\s+(?:or\s+replace\s+)?function\s+public\.admin_import_review\s*\([\s\S]*?\bas\s+(\$\w*\$)[\s\S]*?\1\s*;/gi;
+const serviceDefinition =
+  /create\s+(?:or\s+replace\s+)?function\s+public\.question_import_review\s*\([\s\S]*?\bas\s+(\$\w*\$)[\s\S]*?\1\s*;/gi;
 const latest = readdirSync(directory)
   .filter((file) => file.endsWith(".sql"))
   .sort()
-  .filter((file) => [...readSql(file).matchAll(definition)].length > 0)
+  .filter((file) => [...readSql(file).matchAll(serviceDefinition)].length > 0)
   .at(-1);
 
 it.each([...new Set(["0034_import_review_trgm_index.sql", latest])])(
   "%s keeps the candidate search indexable and preserves the review contract",
   (file) => {
     expect(file).toBeDefined();
-    const sql = [...readSql(file!).matchAll(definition)].at(-1)?.[0];
+    const sql = [
+      ...readSql(file!).matchAll(
+        file === "0034_import_review_trgm_index.sql"
+          ? definition
+          : serviceDefinition,
+      ),
+    ].at(-1)?.[0];
     expect(sql).toBeDefined();
     const normalized = sql!.replace(/\s+/g, " ").toLowerCase();
     // Require the operator in the candidate WHERE, not a comment or score projection.
@@ -38,8 +46,15 @@ it.each([...new Set(["0034_import_review_trgm_index.sql", latest])])(
     );
     expect(normalized).toContain("stable security definer");
     expect(normalized).toMatch(/set search_path (?:to|=) ''/);
+    if (file === "0034_import_review_trgm_index.sql") {
+      expect(normalized).toContain(
+        "if not (select public.is_admin()) then raise exception 'admin only'",
+      );
+    } else {
+      expect(normalized).not.toContain("is_admin");
+    }
     expect(normalized).toContain(
-      "if not (select public.is_admin()) then raise exception 'admin only'",
+      'returns table(id text, draft jsonb, "row" jsonb, score double precision)',
     );
     // Explicit duplicates bypass retirement and threshold checks, but never match themselves.
     expect(normalized).toMatch(
@@ -94,4 +109,54 @@ it("the latest admin_dashboard sets the trigram threshold before its % import-re
   );
   expect(threshold).toBeGreaterThan(-1);
   expect(sql.indexOf("operator(extensions.%)")).toBeGreaterThan(threshold);
+});
+
+it("0036 preserves the service body and delegates authenticated review through the admin guard", () => {
+  const sql = readSql("0036_question_import_review_service.sql")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+  const service = [...sql.matchAll(serviceDefinition)][0][0];
+  const previous = [
+    ...readSql("0034_import_review_trgm_index.sql")
+      .replace(/\s+/g, " ")
+      .toLowerCase()
+      .matchAll(definition),
+  ][0][0];
+  expect(service.slice(service.indexOf("begin"))).toBe(
+    previous
+      .slice(previous.indexOf("begin"))
+      .replace(
+        " if not (select public.is_admin()) then raise exception 'admin only'; end if;",
+        "",
+      ),
+  );
+  const wrapper = [...sql.matchAll(definition)][0][0];
+  expect(wrapper).toContain("stable security definer set search_path to ''");
+  expect(wrapper).toContain(
+    'returns table(id text, draft jsonb, "row" jsonb, score double precision)',
+  );
+  expect(wrapper).toContain(
+    "p_threshold double precision default 0.82, p_filters jsonb default '{}'::jsonb",
+  );
+  expect(wrapper).toMatch(
+    /begin if not \(select public\.is_admin\(\)\) then raise exception 'admin only'; end if; return query select \* from public\.question_import_review\(p_threshold, p_filters\); end;/,
+  );
+  expect(wrapper).not.toContain("from public.questions");
+  expect(sql).not.toMatch(/\bdrop\b/);
+  expect(sql).toContain(
+    "revoke all on function public.question_import_review(double precision, jsonb) from public, anon, authenticated;",
+  );
+  expect(
+    [...sql.matchAll(/grant[^;]+question_import_review[^;]+;/g)].map(
+      (match) => match[0],
+    ),
+  ).toEqual([
+    "grant execute on function public.question_import_review(double precision, jsonb) to service_role;",
+  ]);
+  expect(sql).toContain(
+    "revoke execute on function public.admin_import_review(double precision, jsonb) from public, anon;",
+  );
+  expect(sql).toContain(
+    "grant execute on function public.admin_import_review(double precision, jsonb) to authenticated;",
+  );
 });

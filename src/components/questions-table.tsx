@@ -42,6 +42,7 @@ function columns(name: (id: string) => string): Column<QuestionListRow>[] {
       sort: true,
       cell: (q) => (
         <Link
+          prefetch={false}
           className="font-medium underline-offset-4 hover:underline"
           href={`${BASE}/${q.id}`}
         >
@@ -318,6 +319,7 @@ export function QuestionsTable({
                 {dialog.failures.map((f) => (
                   <li key={f.id}>
                     <Link
+                      prefetch={false}
                       className="font-medium underline"
                       href={`${BASE}/${f.id}`}
                     >
