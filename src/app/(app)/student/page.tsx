@@ -57,7 +57,11 @@ const load = {
     const count = (from: string | null, to: string) => {
       let q = db
         .from("flashcard_progress")
-        .select("flashcard_id", { count: "exact", head: true })
+        .select("flashcard_id,flashcards!inner(id)", {
+          count: "exact",
+          head: true,
+        })
+        .eq("flashcards.status", "live")
         .eq("user_id", userId)
         .lte("due_on", to);
       if (from) q = q.gt("due_on", from);

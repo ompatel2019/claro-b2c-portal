@@ -18,7 +18,11 @@ export default async function Layout({
   const [{ count }, jar] = await Promise.all([
     db
       .from("flashcard_progress")
-      .select("flashcard_id", { count: "exact", head: true })
+      .select("flashcard_id,flashcards!inner(id)", {
+        count: "exact",
+        head: true,
+      })
+      .eq("flashcards.status", "live")
       .eq("user_id", profile.id)
       .lte("due_on", sydneyToday()),
     cookies(),

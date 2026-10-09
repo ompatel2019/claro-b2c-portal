@@ -78,8 +78,14 @@ test.describe("Flashcard session and results", () => {
       if (/\/api\/flashcards\/[^/]+\/mark$/.test(new URL(r.url()).pathname))
         markRequests++;
     });
-    await page.keyboard.press("l");
-    await expect(page.getByRole("table")).toContainText(cards[1].back);
+    // The first key press can land before hydration on prod: retry it.
+    await expect(async () => {
+      if (!(await page.getByRole("table").isVisible()))
+        await page.keyboard.press("l");
+      await expect(page.getByRole("table")).toContainText(cards[1].back, {
+        timeout: 1000,
+      });
+    }).toPass({ timeout: 20000 });
     await expect(page.getByRole("button", { name: "Knew it (3)" })).toHaveCount(
       0,
     );

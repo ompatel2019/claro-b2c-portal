@@ -21,7 +21,7 @@ export default async function Flashcards({
   const profile = await requireProfile();
   const params = await searchParams;
   const db = await createClient();
-  const [topicResult, bank, unfinished] = await Promise.all([
+  const [topicResult, bank, unfinished, ownCount] = await Promise.all([
     db
       .from("topics")
       .select("id,parent_id,name,sort")
@@ -36,6 +36,12 @@ export default async function Flashcards({
       .is("finished_at", null)
       .order("started_at", { ascending: false })
       .limit(1)
+      .throwOnError(),
+    db
+      .from("flashcards")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", profile.id)
+      .eq("status", "live")
       .throwOnError(),
   ]);
   const { cards, progress } = bank;
@@ -76,6 +82,14 @@ export default async function Flashcards({
       <PageHeader
         title="Flashcards"
         description="Build the exact deck you want to drill."
+        actions={
+          <Link
+            className={buttonVariants({ variant: "outline" })}
+            href="/student/flashcards/mine"
+          >
+            My cards ({ownCount.count ?? 0})
+          </Link>
+        }
       />
       <Card className="mx-auto max-w-[720px]">
         <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">

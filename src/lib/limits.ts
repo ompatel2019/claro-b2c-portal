@@ -1,0 +1,3 @@
+export const OWN_FLASHCARD_LIMIT = 2_000;
+export const CARD_IMPORT_ROW_LIMIT = 500;
+export const CARD_IMPORT_BYTE_LIMIT = 1_048_576;
