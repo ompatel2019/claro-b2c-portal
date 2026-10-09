@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 test.describe.configure({ mode: "serial" });
-import { signIn, start, finish, cleanupSessions } from "./helpers";
+import { signIn, start, finish, cleanupSessions, pick } from "./helpers";
 test.describe("Student practice", () => {
   test.skip(
     !process.env.STUDENT_EMAIL || !process.env.STUDENT_PASSWORD,
@@ -31,16 +31,17 @@ test.describe("Student practice", () => {
   });
   test("multiple choice sprint, flag and results", async ({ page }) => {
     finishedId = await start(page, "Multiple choice", ids);
-    const nav = page.getByRole("navigation", { name: "Question navigator" });
+    const nav = page.getByRole("navigation", { name: "Question booklet" });
     const count = await nav.getByRole("button").count();
-    await page
-      .getByRole("button", { name: "Flag question", exact: true })
-      .click();
-    await expect(
-      page.getByRole("button", { name: "Unflag question", exact: true }),
-    ).toBeVisible();
+    const flag = page.getByRole("button", {
+      name: "Flag for review",
+      exact: true,
+    });
+    await expect(flag).toHaveAttribute("aria-pressed", "false");
+    await flag.click();
+    await expect(flag).toHaveAttribute("aria-pressed", "true");
     for (let i = 0; i < count; i++) {
-      await page.getByRole("radio", { name: /^Option A:/ }).check();
+      await pick(page, "A");
       if (i < count - 1)
         await page.getByRole("button", { name: "Next question" }).click();
     }
@@ -59,8 +60,10 @@ test.describe("Student practice", () => {
   });
   test("exit and resume at the first unanswered question", async ({ page }) => {
     const id = await start(page, "Multiple choice", ids);
-    await page.getByRole("radio", { name: /^Option A:/ }).check();
-    await page.getByRole("button", { name: "Exit", exact: true }).click();
+    await pick(page, "A");
+    await page
+      .getByRole("button", { name: "Save and exit", exact: true })
+      .click();
     await expect(page).toHaveURL(/\/$/);
     await page.locator(`a[href="/practice/${id}"]`).click();
     await expect(page).toHaveURL(new RegExp(`/practice/${id}$`));
@@ -135,7 +138,9 @@ test.describe("AI backed written practice", () => {
       .getByRole("button", { name: "Confirm transcript", exact: true })
       .click();
     await expect(page.getByText("Transcript confirmed.")).toBeVisible();
-    await page.getByRole("button", { name: "Exit", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Save and exit", exact: true })
+      .click();
     await expect(page).toHaveURL(/\/$/);
   });
 });

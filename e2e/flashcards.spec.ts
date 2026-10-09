@@ -128,11 +128,16 @@ test.describe("Student flashcards", () => {
     );
     await page.getByRole("button", { name: "Flip card", exact: true }).click();
     await page.getByRole("button", { name: "Knew it", exact: true }).click();
-    // Finish may hard-navigate; if the runner lands on the complete state first, click through.
-    const results = page.waitForURL(/\/results$/, { timeout: 60000 });
+    // Finish hard-navigates; if the runner lands on the complete state
+    // instead (slow save under load), click through. Poll for either.
     const see = page.getByRole("button", { name: "See results", exact: true });
-    if (await see.isVisible().catch(() => false)) await see.click();
-    await results;
+    await expect(async () => {
+      if (!/\/results$/.test(new URL(page.url()).pathname)) {
+        if (await see.isVisible()) await see.click();
+        expect(new URL(page.url()).pathname).toMatch(/\/results$/);
+      }
+    }).toPass({ timeout: 60000 });
+    await page.waitForLoadState();
     await expect(
       page.getByText(`${count - 1}/${count}`, { exact: true }),
     ).toBeVisible();

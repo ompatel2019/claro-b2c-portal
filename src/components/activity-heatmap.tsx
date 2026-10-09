@@ -160,7 +160,7 @@ export function ActivityHeatmap({
             </div>
           </div>
         )}
-        <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="text-muted-foreground flex flex-col-reverse items-start gap-2 text-xs sm:flex-row sm:items-center sm:justify-between">
           <span>
             {active === 0 &&
               !error &&

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { signIn, start, cleanupSessions, adminClient } from "./helpers";
+import { signIn, start, cleanupSessions, adminClient, pick } from "./helpers";
 test.describe("Session expiry mid-sprint", () => {
   test.skip(
     !process.env.STUDENT_EMAIL || !process.env.STUDENT_PASSWORD,
@@ -23,9 +23,7 @@ test.describe("Session expiry mid-sprint", () => {
           r.ok(),
         { timeout: 30000 },
       );
-      await page
-        .getByRole("radio", { name: new RegExp(`^Option ${option}:`) })
-        .check();
+      await pick(page, option);
       await saved;
       await page.getByRole("button", { name: "Next question" }).click();
       await expect(page.getByText(`Question ${i + 2} of`)).toBeVisible();
@@ -43,11 +41,11 @@ test.describe("Session expiry mid-sprint", () => {
     );
     await context.clearCookies();
     await page
-      .getByRole("button", { name: "Submit sprint", exact: true })
+      .getByRole("button", { name: "Finish", exact: true })
       .last()
       .click();
     await page
-      .getByRole("button", { name: "Confirm submit", exact: true })
+      .getByRole("button", { name: "Finish and mark", exact: true })
       .click();
     await expect(
       page.getByRole("alert").filter({ hasText: "answers are already saved" }),
@@ -68,7 +66,7 @@ test.describe("Session expiry mid-sprint", () => {
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/practice/${id}$`));
     await expect(page.getByText(/Question 3 of/)).toBeVisible();
-    const nav = page.getByRole("navigation", { name: "Question navigator" });
+    const nav = page.getByRole("navigation", { name: "Question booklet" });
     await expect(
       nav.getByRole("button", { name: "Question 1: Answered" }),
     ).toBeVisible();

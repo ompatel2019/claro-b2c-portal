@@ -2,8 +2,14 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { ensureSession, withAuthRetry } from "@/lib/auth-client";
-import type { Attempt } from "@/lib/practice";
+import { plural, type Attempt } from "@/lib/practice";
+import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+
+const MAX_WORDS = 3000;
+const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length;
 export function WrittenAnswer({
   attempt: a,
   userId,
@@ -30,6 +36,8 @@ export function WrittenAnswer({
   const [lines, setLines] = useState<string[]>(a.transcript?.split("\n") ?? []);
   const [notes, setNotes] = useState("");
   const locked = !["pending", "transcribed"].includes(a.status);
+  const text = a.transcript ?? a.answer_text ?? "";
+  const words = wordCount(text);
   const photo = a.transcript !== null;
   const applyRef = useRef(local);
   useEffect(() => {
@@ -149,7 +157,10 @@ export function WrittenAnswer({
     <div className="space-y-4">
       {locked ? (
         <>
-          <p role="status" className="chip">
+          <p
+            role="status"
+            className="text-muted-foreground text-sm font-medium"
+          >
             {a.status === "marked"
               ? "Answer marked"
               : a.status === "failed"
@@ -164,13 +175,19 @@ export function WrittenAnswer({
         <>
           <label className="grid gap-3 font-semibold">
             {photo ? "Check your transcript" : "Your answer"}
-            <textarea
+            <Textarea
               key={a.id}
-              className="field min-h-64 font-normal"
-              value={a.transcript ?? a.answer_text ?? ""}
+              rows={6}
+              className="min-h-36 text-base font-normal"
+              value={text}
               disabled={busy || disabled}
               data-question-id={a.question_id}
               onChange={(e) => {
+                if (
+                  wordCount(e.target.value) > MAX_WORDS &&
+                  e.target.value.length > text.length
+                )
+                  return;
                 edit(
                   photo
                     ? { transcript: e.target.value }
@@ -183,6 +200,16 @@ export function WrittenAnswer({
               }}
             />
           </label>
+          <p
+            className={cn(
+              "text-muted-foreground -mt-2 text-right text-xs tabular-nums",
+              words >= 2500 && "text-warning",
+            )}
+          >
+            {plural(words, "word")} · aim for about {a.question.marks * 35}–
+            {a.question.marks * 50}
+            {words >= 2500 && ` · limit ${MAX_WORDS.toLocaleString()}`}
+          </p>
           {photo && confirm && (
             <div className="space-y-3">
               <p>Check each line before confirming your transcript.</p>
@@ -211,8 +238,7 @@ export function WrittenAnswer({
           {confirmed && <p role="status">Transcript confirmed.</p>}
           <label className="grid gap-2 text-sm">
             Upload a photo
-            <input
-              className="field"
+            <Input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               capture="environment"

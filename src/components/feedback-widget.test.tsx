@@ -144,3 +144,23 @@ it("reports a question as a linked content error; the link can be removed", asyn
     session_id: null,
   });
 });
+
+it("keeps Send disabled until there is a message or a screenshot", async () => {
+  setup();
+  fireEvent.click(screen.getByRole("button", { name: "Feedback" }));
+  const send = await screen.findByRole("button", { name: "Send" });
+  expect((send as HTMLButtonElement).disabled).toBe(true);
+  const box = screen.getByRole("textbox", { name: "Message" });
+  fireEvent.change(box, { target: { value: "  hi " } });
+  expect((send as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.change(box, { target: { value: "" } });
+  fireEvent.change(screen.getByLabelText("Add screenshots"), {
+    target: { files: [png()] },
+  });
+  expect((send as HTMLButtonElement).disabled).toBe(false);
+  fireEvent.click(send);
+  await waitFor(() => expect(insert).toHaveBeenCalled());
+  expect(insert.mock.calls[0][0]).toMatchObject({
+    message: "Screenshot attached.",
+  });
+});

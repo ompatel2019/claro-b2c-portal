@@ -63,9 +63,12 @@ function Thumb({ file, onRemove }: { file: File; onRemove: () => void }) {
 /** §2.4: one feedback widget with context — floating button + dialog. */
 export function FeedbackWidget({
   userId,
+  floating = true,
   children,
 }: {
   userId: string;
+  /** Sessions hide the floating button; SessionShell has a top-bar icon. */
+  floating?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -111,7 +114,8 @@ export function FeedbackWidget({
   }
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const text = message.trim();
+    // A screenshot alone is enough; the table needs a 3+ character message.
+    const text = message.trim() || "Screenshot attached.";
     if (text.length < 3) return setError("Write at least 3 characters.");
     setBusy(true);
     setError("");
@@ -153,17 +157,19 @@ export function FeedbackWidget({
   return (
     <Open.Provider value={show}>
       {children}
-      <button
-        type="button"
-        onClick={() => show()}
-        aria-label="Feedback"
-        className="group bg-ink fixed right-6 bottom-6 z-40 flex h-12 min-w-12 items-center justify-center gap-2 rounded-full px-3.5 text-white shadow-lg print:hidden"
-      >
-        <MessageSquare aria-hidden className="size-5" />
-        <span className="hidden text-sm font-medium group-hover:inline group-focus-visible:inline">
-          Feedback
-        </span>
-      </button>
+      {floating && (
+        <button
+          type="button"
+          onClick={() => show()}
+          aria-label="Feedback"
+          className="group bg-ink fixed right-6 bottom-6 z-40 flex h-12 min-w-12 items-center justify-center gap-2 rounded-full px-3.5 text-white shadow-lg print:hidden"
+        >
+          <MessageSquare aria-hidden className="size-5" />
+          <span className="hidden text-sm font-medium group-hover:inline group-focus-visible:inline">
+            Feedback
+          </span>
+        </button>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           className="sm:max-w-lg"
@@ -206,8 +212,6 @@ export function FeedbackWidget({
             <div className="space-y-1">
               <Textarea
                 aria-label="Message"
-                required
-                minLength={3}
                 maxLength={MAX}
                 rows={5}
                 value={message}
@@ -266,7 +270,12 @@ export function FeedbackWidget({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={busy}>
+              <Button
+                type="submit"
+                disabled={
+                  busy || (message.trim().length < 3 && files.length === 0)
+                }
+              >
                 {busy
                   ? "Sending…"
                   : error.startsWith("We couldn’t")

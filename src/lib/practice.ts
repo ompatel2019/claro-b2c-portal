@@ -13,16 +13,23 @@ export type Topic = {
   name: string;
   sort: number;
 };
+/** sessions.config for a sprint (§3.2). time_limit_min is the pre-§3.2 shape. */
+export type SprintConfig = {
+  mode: Mode;
+  topics: string[];
+  subtopics?: string[];
+  time_limit_s?: number | null;
+  time_limit_min?: number;
+  on_timeout?: "overtime" | "finish";
+  feedback?: "end" | "each";
+};
+export const timeLimit = (c: SprintConfig) =>
+  c.time_limit_s ?? (c.time_limit_min ? c.time_limit_min * 60 : null);
 export type Session = {
   kind?: string;
   id: string;
   user_id: string;
-  config: {
-    mode: Mode;
-    topics: string[];
-    target_marks: number;
-    time_limit_min: number;
-  };
+  config: SprintConfig;
   started_at: string;
   finished_at: string | null;
   score: number | null;
