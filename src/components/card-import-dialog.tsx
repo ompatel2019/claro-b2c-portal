@@ -7,13 +7,17 @@ import {
 } from "@/app/(app)/flashcards/my-card-actions";
 import {
   detectSeparator,
+  normaliseFront,
   parseCards,
   reviewImport,
   type Mapping,
+  type CardInput,
   type Separator,
 } from "@/lib/card-import";
 import { plural, type Topic } from "@/lib/practice";
 import { CARD_IMPORT_BYTE_LIMIT } from "@/lib/limits";
+import { DataTable } from "./data-table";
+import type { ReviewedRecord } from "@/lib/flashcard-import";
 import { Choose, KINDS, topicOptions } from "./card-editor";
 import {
   Dialog,
@@ -39,13 +43,26 @@ const SEPARATORS = [
   { value: ";", label: "Semicolon" },
 ];
 const FIELDS = ["front", "back", "topic", "kind"] as const;
+/** Shared mode keeps the student flow intact and delegates admin reads/writes to guarded actions. */
+type SharedImport = {
+  review: (records: unknown) => Promise<ReviewedRecord[]>;
+  save: (
+    records: unknown,
+  ) => Promise<{ error?: string; ids?: string[]; version?: string }>;
+  undo: (
+    ids: string[],
+    version: string,
+  ) => Promise<{ done: number; total: number }>;
+};
 export function CardImportDialog({
   topics,
   ownFronts,
   onClose,
+  shared,
 }: {
   topics: Topic[];
   ownFronts: string[];
+  shared?: SharedImport;
   onClose: () => void;
 }) {
   const [step, setStep] = useState(1);
@@ -94,6 +111,41 @@ export function CardImportDialog({
           topics,
           ownFronts,
         );
+        if (shared) {
+          start(async () => {
+            try {
+              const result = await shared.review(checked.map((r) => r.card));
+              const reviewed = result.map((r, index) => ({
+                index,
+                card: {
+                  front: r.front,
+                  back: r.back,
+                  topic_id: r.topic_id,
+                  kind: r.kind,
+                } as CardInput,
+                status:
+                  r.status === "ready"
+                    ? "Ready"
+                    : r.status === "duplicate"
+                      ? "Duplicate"
+                      : "Invalid",
+                error: r.reason || null,
+              }));
+              setReview(reviewed);
+              setIncluded(
+                new Set(
+                  reviewed
+                    .filter((r) => r.status === "Ready")
+                    .map((r) => r.index),
+                ),
+              );
+              setStep(3);
+            } catch {
+              setError("Couldn't check these rows. Try again.");
+            }
+          });
+          return;
+        }
         setReview(checked);
         setIncluded(
           new Set(
@@ -109,29 +161,59 @@ export function CardImportDialog({
   const submit = () =>
     start(async () => {
       try {
-        const result = await importMyCards(
-          review.filter((r) => included.has(r.index)).map((r) => r.card),
-        );
+        const cards = review
+          .filter((r) => included.has(r.index))
+          .map((r) => r.card);
+        const result = shared
+          ? await shared.save(cards)
+          : await importMyCards(cards);
         if (result.error) return setError(result.error);
         const ids = result.ids ?? [];
-        toast.success(`${plural(ids.length, "card")} imported.`, {
-          duration: 10000,
-          action: {
-            label: "Undo",
-            onClick: async () => {
-              const undone = await deleteMyCards(ids);
-              if (undone.error) toast.error(undone.error);
-              else {
-                toast.success("Import undone.", { duration: 4000 });
-              }
+        toast.success(
+          shared
+            ? `Imported ${ids.length} cards as drafts`
+            : `${plural(ids.length, "card")} imported.`,
+          {
+            duration: 10000,
+            action: {
+              label: "Undo",
+              onClick: async () => {
+                if (shared) {
+                  try {
+                    const undone = await shared.undo(
+                      ids,
+                      "version" in result ? (result.version ?? "") : "",
+                    );
+                    toast.success(
+                      undone.done !== undone.total
+                        ? `Removed ${undone.done} cards. Later edits kept.`
+                        : "Import undone",
+                      { duration: 4000 },
+                    );
+                  } catch {
+                    toast.error("Couldn't undo the import. Try again.");
+                  }
+                  return;
+                }
+                const undone = await deleteMyCards(ids);
+                if (undone.error) toast.error(undone.error);
+                else toast.success("Import undone.", { duration: 4000 });
+              },
             },
           },
-        });
+        );
         onClose();
       } catch {
         setError("Couldn't import your cards. Try again.");
       }
     });
+  const chosenCount = shared
+    ? new Set(
+        review
+          .filter((r) => included.has(r.index))
+          .map((r) => `${r.card.kind}|${normaliseFront(r.card.front)}`),
+      ).size
+    : included.size;
   const width = Math.max(0, ...rows.map((r) => r.length));
   return (
     <Dialog
@@ -142,11 +224,11 @@ export function CardImportDialog({
     >
       <DialogContent className="max-h-[90dvh] min-w-0 overflow-y-auto sm:max-w-2xl">
         <DialogTitle aria-live="polite">
-          Import cards · Step {step} of 3
+          Import cards · {shared ? "step" : "Step"} {step} of 3
         </DialogTitle>
         <DialogDescription>
           {step === 1
-            ? "Paste text or upload a .txt, .csv or .tsv file (1 MB, 500 rows maximum)."
+            ? `Paste text or upload a .txt, .csv or .tsv file (1 MB, 500 rows maximum).${shared ? " Rows land as drafts." : ""}`
             : step === 2
               ? "Map the columns and choose defaults."
               : "Review your cards before importing."}
@@ -156,6 +238,7 @@ export function CardImportDialog({
             <label className="grid min-w-0 gap-1">
               Paste text
               <Textarea
+                aria-label="Paste text"
                 rows={6}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -174,6 +257,14 @@ export function CardImportDialog({
                     return;
                   }
                   setError("");
+                  if (shared) {
+                    try {
+                      setText(await file.text());
+                    } catch {
+                      setError("Couldn't read this file. Try again.");
+                    }
+                    return;
+                  }
                   setText(await file.text());
                 }}
               />
@@ -249,22 +340,24 @@ export function CardImportDialog({
               {count("Invalid")} invalid
             </p>
             <div className="max-h-64 overflow-auto rounded-2xl border">
-              <Table aria-label="Import review">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Include</TableHead>
-                    <TableHead>Front</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {review.map((r) => (
-                    <TableRow key={r.index}>
-                      <TableCell>
+              {shared ? (
+                <DataTable
+                  label="Import review"
+                  rows={review.map((r) => ({ ...r, id: String(r.index) }))}
+                  columns={[
+                    {
+                      id: "include",
+                      header: "Include",
+                      cell: (r) => (
                         <input
                           type="checkbox"
+                          className="accent-primary size-4"
                           aria-label={`Include row ${r.index + 1}`}
-                          disabled={r.status !== "Ready"}
+                          disabled={
+                            pending ||
+                            r.status === "Invalid" ||
+                            r.error === "Already a Claro card"
+                          }
                           checked={included.has(r.index)}
                           onChange={(e) =>
                             setIncluded((s) => {
@@ -275,18 +368,79 @@ export function CardImportDialog({
                             })
                           }
                         />
-                      </TableCell>
-                      <TableCell className="max-w-64 truncate">
-                        {r.card.front || "Empty front"}
-                      </TableCell>
-                      <TableCell>
-                        {r.status}
-                        {r.error && ` · ${r.error}`}
-                      </TableCell>
+                      ),
+                    },
+                    {
+                      id: "front",
+                      header: "Front",
+                      cell: (r) => (
+                        <span className="line-clamp-2 max-w-24 [overflow-wrap:anywhere] whitespace-normal sm:max-w-xs">
+                          {r.card.front || "Empty front"}
+                        </span>
+                      ),
+                    },
+                    {
+                      id: "back",
+                      header: "Back",
+                      className: "hidden sm:table-cell",
+                      cell: (r) => (
+                        <span className="line-clamp-2 max-w-xs [overflow-wrap:anywhere] whitespace-normal">
+                          {r.card.back}
+                        </span>
+                      ),
+                    },
+                    {
+                      id: "status",
+                      header: "Status",
+                      cell: (r) => (
+                        <span className="block max-w-28 [overflow-wrap:anywhere] whitespace-normal">
+                          {r.status}
+                          {r.error && ` · ${r.error}`}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
+              ) : (
+                <Table aria-label="Import review">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Include</TableHead>
+                      <TableHead>Front</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {review.map((r) => (
+                      <TableRow key={r.index}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            aria-label={`Include row ${r.index + 1}`}
+                            disabled={r.status !== "Ready"}
+                            checked={included.has(r.index)}
+                            onChange={(e) =>
+                              setIncluded((s) => {
+                                const n = new Set(s);
+                                if (e.target.checked) n.add(r.index);
+                                else n.delete(r.index);
+                                return n;
+                              })
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="max-w-64 truncate">
+                          {r.card.front || "Empty front"}
+                        </TableCell>
+                        <TableCell>
+                          {r.status}
+                          {r.error && ` · ${r.error}`}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </div>
           </div>
         )}
@@ -309,10 +463,22 @@ export function CardImportDialog({
             </Button>
           )}
           {step < 3 ? (
-            <Button onClick={next}>Next</Button>
+            <Button onClick={next} disabled={shared && pending}>
+              {shared && step === 2
+                ? pending
+                  ? "Checking…"
+                  : error
+                    ? "Try again"
+                    : "Review"
+                : "Next"}
+            </Button>
           ) : (
             <Button disabled={pending || !included.size} onClick={submit}>
-              Import {plural(included.size, "card")}
+              {shared && pending
+                ? "Importing…"
+                : shared && error
+                  ? "Try again"
+                  : `Import ${plural(chosenCount, "card")}`}
             </Button>
           )}
         </div>

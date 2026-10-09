@@ -34,6 +34,7 @@ it("local tables never call navigation hooks", () => {
     throw new Error("No router mounted");
   });
   render(<DataTable label="Local" columns={columns} rows={rows} />);
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Value" }));
   expect(screen.getAllByRole("row")[1]).toHaveTextContent("1");
   expect(nav.router).not.toHaveBeenCalled();
@@ -120,4 +121,64 @@ it("bulk selection is opt-in, page-scoped and provides a clear callback", () => 
   expect(screen.getByRole("button", { name: "Publish a" })).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Publish a" }));
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+
+it("bulk actions opt into selection and can clear the selected page", () => {
+  const selected = vi.fn();
+  render(
+    <DataTable
+      label="Bulk"
+      columns={columns}
+      rows={rows}
+      bulk={(ids, clear) => (
+        <button
+          onClick={() => {
+            selected(ids);
+            clear();
+          }}
+        >
+          Apply to selected
+        </button>
+      )}
+    />,
+  );
+  expect(
+    screen.queryByRole("button", { name: "Apply to selected" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Select all rows on this page" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Apply to selected" }));
+  expect(selected).toHaveBeenCalledWith(["a", "b"]);
+  expect(
+    screen.getByRole("checkbox", { name: "Select all rows on this page" }),
+  ).not.toBeChecked();
+});
+
+it("clears bulk selection when the server page or filters change", () => {
+  nav.router.mockReturnValue({ push: nav.push });
+  nav.path.mockReturnValue("/admin/content/questions");
+  nav.search.mockReturnValue(new URLSearchParams("status=draft&page=1"));
+  const bulk = (ids: string[]) => <button>Publish {ids.join(",")}</button>;
+  const table = (page: number) => (
+    <DataTable
+      label="Questions"
+      columns={columns}
+      rows={rows}
+      pager={{ page, pages: 2, total: 4, sort: { id: "value", dir: "asc" } }}
+      bulk={bulk}
+    />
+  );
+  const { rerender } = render(table(1));
+  fireEvent.click(screen.getByRole("checkbox", { name: "Select a" }));
+  expect(screen.getByRole("button", { name: "Publish a" })).toBeVisible();
+  nav.search.mockReturnValue(new URLSearchParams("status=draft&page=2"));
+  rerender(table(2));
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  expect(screen.getByRole("checkbox", { name: "Select a" })).not.toBeChecked();
+  fireEvent.click(screen.getByRole("checkbox", { name: "Select b" }));
+  nav.search.mockReturnValue(new URLSearchParams("status=live&page=2"));
+  rerender(table(2));
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  expect(screen.getByRole("checkbox", { name: "Select b" })).not.toBeChecked();
 });

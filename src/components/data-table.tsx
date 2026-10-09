@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TablePagination } from "./table-pagination";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Pager, Sorting } from "@/lib/admin";
+import { sortRows, type Pager, type Sorting } from "@/lib/admin";
 import { ArrowDown, ArrowUp } from "@/components/icons";
 import {
   Table,
@@ -24,7 +24,6 @@ export type Column<T> = {
   className?: string;
 };
 
-import { sortRows } from "@/lib/admin";
 export { sortRows } from "@/lib/admin";
 
 export type TableSorting = Sorting | null;
@@ -36,6 +35,7 @@ type Props<T> = {
   onRow?: (row: T) => void;
   pager?: Pager;
   selectable?: boolean;
+  /** Opt-in actions for selected rows on the current page. */
   bulk?: (ids: string[], clear: () => void) => React.ReactNode;
   /** A full-width row under a row (e.g. expanded subtopics). */
   renderDetail?: (row: T) => React.ReactNode;

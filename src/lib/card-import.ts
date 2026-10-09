@@ -1,16 +1,21 @@
 import { z } from "zod";
-import { CARD_IMPORT_BYTE_LIMIT, CARD_IMPORT_ROW_LIMIT } from "./limits";
+import {
+  CARD_IMPORT_BYTE_LIMIT,
+  CARD_IMPORT_ROW_LIMIT,
+  CARD_FRONT_LIMIT,
+  CARD_BACK_LIMIT,
+} from "./limits";
 export const cardSchema = z.object({
   front: z
     .string()
     .trim()
     .min(1, "Front is empty")
-    .max(200, "Front over 200 characters"),
+    .max(CARD_FRONT_LIMIT, "Front over 200 characters"),
   back: z
     .string()
     .trim()
     .min(1, "Back is empty")
-    .max(1000, "Back over 1,000 characters"),
+    .max(CARD_BACK_LIMIT, "Back over 1,000 characters"),
   topic_id: z.string().min(1, "Choose a subtopic").max(200),
   kind: z.enum(["term", "stat"], { error: "Kind must be Term or Stat" }),
 });
@@ -103,12 +108,14 @@ export function reviewImport(
   defaults: Pick<CardInput, "topic_id" | "kind">,
   topics: { id: string; name: string }[],
   ownFronts: string[],
+  options?: { sharedFrontKeys: Set<string> },
 ) {
   if (rows.length > CARD_IMPORT_ROW_LIMIT)
     throw new Error("Import at most 500 rows.");
   if (mapping.front < 0 || mapping.back < 0 || mapping.front === mapping.back)
     throw new Error("Map separate Front and Back columns.");
-  const own = new Set(ownFronts.map(normaliseFront));
+  const own =
+    options?.sharedFrontKeys ?? new Set(ownFronts.map(normaliseFront));
   const seen = new Set<string>();
   return rows.map((row, index) => {
     const topic = row[mapping.topic]?.trim();
@@ -128,9 +135,13 @@ export function reviewImport(
       (topics.some((t) => t.id === card.topic_id)
         ? null
         : "Choose a valid subtopic");
-    const key = normaliseFront(card.front);
+    const key = options
+      ? `${card.kind}|${normaliseFront(card.front)}`
+      : normaliseFront(card.front);
     const duplicate = own.has(key)
-      ? "Already in your cards"
+      ? options
+        ? "Already a Claro card"
+        : "Already in your cards"
       : seen.has(key)
         ? "Repeated in this file"
         : null;

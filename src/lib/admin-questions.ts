@@ -1,9 +1,9 @@
 import "server-only";
 import { admin } from "@/utils/supabase/admin";
 import { requireAdmin } from "@/lib/auth";
+import { loadTopics } from "@/lib/admin-content";
 import { pageOf, tableParams, type Pager } from "@/lib/admin";
 import { pages } from "@/lib/flashcard-data";
-import type { Topic } from "@/lib/practice";
 import {
   QUESTION_FILTER_KEYS,
   TYPE_LABELS,
@@ -13,6 +13,8 @@ import {
 import { dateLabel } from "@/lib/practice";
 import { createClient } from "@/utils/supabase/server";
 import type { ReviewPair } from "@/components/import-review";
+
+export { loadTopics } from "@/lib/admin-content";
 
 /** One row of the §4.4 list. */
 export type QuestionListRow = {
@@ -286,18 +288,6 @@ export async function loadQuestionList(f: QuestionFilters) {
   });
   const stats = await aggregates(paged.rows.map((r) => r.id));
   return { ...paged, rows: withStats(paged.rows, stats), status };
-}
-
-export async function loadTopics() {
-  await requireAdmin();
-  return pages<Topic>((from, to) =>
-    admin()
-      .from("topics")
-      .select("id,parent_id,name,sort")
-      .order("sort")
-      .order("id")
-      .range(from, to),
-  );
 }
 
 export type StoredQuestion = QuestionInput & {

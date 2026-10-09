@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import { docCommitDates } from "./src/lib/ai/docs/commit-dates.mjs";
 
 const nextConfig: NextConfig = {
+  // The 1 MiB CSV limit needs room for JSON escaping (up to 6×) and Action metadata.
+  experimental: { serverActions: { bodySizeLimit: "8mb" } },
   env: { ENGINE_DOC_COMMIT_DATES: docCommitDates() },
   outputFileTracingIncludes: {
     "/admin/marking/engine": [
