@@ -11,7 +11,7 @@ import { sydneyDay } from "@/lib/admin";
 import { parseRange } from "./data";
 import { RangeSelect } from "./range-select";
 import { ModelTable, TaskTable, StudentTable } from "./tables";
-import { usd } from "./helpers";
+import { usd, avgUsd } from "./helpers";
 
 export default async function SpendPage({
   searchParams,
@@ -31,7 +31,10 @@ export default async function SpendPage({
         description="AI usage and costs in USD."
         actions={<RangeSelect key={JSON.stringify(range)} range={range} />}
       />
-      <p className="text-muted-foreground text-[13px]">
+      <p
+        className="text-muted-foreground text-[13px]"
+        data-range={typeof range === "object" ? "custom" : range}
+      >
         {spend.window.from
           ? `${dateLabel(spend.window.from)} to ${dateLabel(spend.window.to)}`
           : "All time"}{" "}
@@ -90,30 +93,32 @@ export default async function SpendPage({
           value={
             spend.avgPerMarkedWritten === null
               ? "No marked written answers"
-              : usd(spend.avgPerMarkedWritten)
+              : avgUsd(spend.avgPerMarkedWritten)
           }
           caption="Selected range"
         />
       </div>
-      {total > 0 ? (
-        <DailyChart
-          title="Spend per day"
-          hero={usd(total)}
-          kind="bars"
-          points={spend.perDay.map((p) => ({
-            day: p.day,
-            value: p.usd,
-            models: p.models,
-          }))}
-        />
-      ) : (
-        <EmptyState
-          icon={Wallet}
-          title="No spend in this range"
-          description="Daily spend by model will appear after an AI call."
-        />
-      )}
-      <ModelTable rows={spend.byModel} />
+      <div className="grid min-w-0 gap-4 xl:grid-cols-2">
+        {total > 0 ? (
+          <DailyChart
+            title="Spend per day"
+            hero={usd(total)}
+            kind="bars"
+            points={spend.perDay.map((p) => ({
+              day: p.day,
+              value: p.usd,
+              models: p.models,
+            }))}
+          />
+        ) : (
+          <EmptyState
+            icon={Wallet}
+            title="No spend in this range"
+            description="Daily spend by model will appear after an AI call."
+          />
+        )}
+        <ModelTable rows={spend.byModel} />
+      </div>
       <TaskTable groups={spend.byTask} />
       <StudentTable rows={spend.topStudents} />
       <Card className="min-w-0">

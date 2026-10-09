@@ -8,7 +8,6 @@ import {
   rangeWindow,
   type Range,
   type Usage,
-  type SpendTotal,
   type Student,
   type MarkedAttempt,
 } from "@/app/admin/spend/data";
@@ -371,15 +370,8 @@ export async function loadSpend(range: Range = "month", now = new Date()) {
       : window.since < recent
         ? window.since
         : recent;
-  const [totals, usage, attempts, students] = await Promise.all([
-    pages<SpendTotal>((from, to) =>
-      db
-        .from("ai_usage")
-        .select("usd,created_at")
-        .lt("created_at", now.toISOString())
-        .order("id")
-        .range(from, to),
-    ),
+  const [dashboard, usage, attempts, students] = await Promise.all([
+    loadDashboard(),
     pages<Usage>((from, to) => {
       let query = db
         .from("ai_usage")
@@ -393,7 +385,9 @@ export async function loadSpend(range: Range = "month", now = new Date()) {
     pages<MarkedAttempt>(async (from, to) => {
       let query = db
         .from("attempts")
-        .select("marked_at,question_id,question:questions(type)")
+        .select(
+          "marked_at,question_id,note:feedback->>note,question:questions(type)",
+        )
         .eq("status", "marked")
         .lt("marked_at", window.until);
       if (window.since) query = query.gte("marked_at", window.since);
@@ -410,7 +404,7 @@ export async function loadSpend(range: Range = "month", now = new Date()) {
     ),
   ]);
   return {
-    ...computeSpend(totals, usage, attempts, students, range, now),
+    ...computeSpend(dashboard.spend, usage, attempts, students, range, now),
     cap: SPEND_CAP_USD,
     markers: [EVAL_BLOCK_USD, BUDGET_USD, SPEND_CAP_USD],
     limits: {

@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { signInAdmin } from "./helpers";
+import { sydneyDay } from "../src/lib/admin";
+import { dateLabel } from "../src/lib/practice";
+import type { Range } from "../src/app/admin/spend/data";
 
 const kpis = [
   "Today",
@@ -7,7 +10,34 @@ const kpis = [
   "All time",
   "Avg cost per marked written answer",
 ];
-async function chooseRange(page: Page, label: string) {
+async function expectWindow(page: Page, range: Range = "month") {
+  const today = sydneyDay(new Date());
+  const from =
+    typeof range === "object"
+      ? range.from
+      : range === "30"
+        ? new Date(Date.parse(today) - 29 * 86_400_000)
+            .toISOString()
+            .slice(0, 10)
+        : `${today.slice(0, 7)}-01`;
+  const to = typeof range === "object" ? range.to : today;
+  const dates =
+    range === "all"
+      ? `(All time|\\d{1,2} \\w{3,4} \\d{4} to ${dateLabel(today)})`
+      : `${dateLabel(from)} to ${dateLabel(to)}`;
+  await expect(
+    page
+      .locator(
+        `p[data-range="${typeof range === "object" ? "custom" : range}"]`,
+      )
+      .filter({
+        hasText: new RegExp(
+          `^${dates} \\(Sydney, ${to === today ? "through now" : "inclusive"}\\) · \\d+ calls$`,
+        ),
+      }),
+  ).toBeVisible({ timeout: 30000 });
+}
+async function chooseRange(page: Page, label: string, range?: Range) {
   const select = page.getByRole("combobox", { name: "Date range" });
   await expect(async () => {
     await select.click();
@@ -16,12 +46,14 @@ async function chooseRange(page: Page, label: string) {
       .click({ timeout: 2000 });
     await expect(select).toHaveText(label);
   }).toPass({ timeout: 20000 });
+  if (range !== undefined) await expectWindow(page, range);
 }
-async function ready(page: Page) {
+async function ready(page: Page, range: Range = "month") {
   await expect(
     page.getByRole("heading", { level: 1, name: "AI spend", exact: true }),
   ).toBeVisible({ timeout: 30000 });
   await expect(page.locator('[data-slot="card"] > dl')).toHaveCount(4);
+  await expectWindow(page, range);
 }
 
 test.describe("admin spend", () => {
@@ -56,7 +88,9 @@ test.describe("admin spend", () => {
     expect(values[0]).toMatch(/^\$\d+\.\d{2}$/);
     expect(values[1]).toMatch(/^\$\d+\.\d{2}$/);
     expect(values[2]).toMatch(/^\$\d+\.\d{2} of \$100$/);
-    expect(values[3]).toMatch(/^(\$\d+\.\d{2}|No marked written answers)$/);
+    expect(values[3]).toMatch(
+      /^(\$0\.00\d{2}|\$\d+\.\d{2}|No marked written answers)$/,
+    );
     for (const text of [
       "80% · Evals blocked",
       "90% · All AI stops",
@@ -89,7 +123,10 @@ test.describe("admin spend", () => {
     if (
       await page.getByRole("table", { name: "By task", exact: true }).count()
     ) {
-      const subtotals = page.getByRole("table", { name: "Task subtotals" });
+      const subtotals = page.getByRole("table", {
+        name: "By task",
+        exact: true,
+      });
       await expect(
         subtotals.getByText("Marking only", { exact: true }),
       ).toBeVisible();
@@ -131,26 +168,29 @@ test.describe("admin spend", () => {
     for (const [label, value] of [
       ["Last 30 days", "30"],
       ["All time", "all"],
-    ]) {
-      await chooseRange(page, label);
+    ] as const) {
+      await chooseRange(page, label, value);
       await expect(page).toHaveURL(new RegExp(`[?&]range=${value}(&|$)`));
       await expect(select).toHaveText(label);
     }
     await chooseRange(page, "Custom");
     await page.getByLabel("From", { exact: true }).fill("2026-10-01");
-    await page.getByLabel("To", { exact: true }).fill("2026-10-09");
+    await page.getByLabel("To", { exact: true }).fill("2026-10-02");
     await page.getByRole("button", { name: "Apply", exact: true }).click();
-    await expect(page).toHaveURL(/range=custom&from=2026-10-01&to=2026-10-09$/);
+    await expect(page).toHaveURL(/range=custom&from=2026-10-01&to=2026-10-02$/);
+    await expectWindow(page, { from: "2026-10-01", to: "2026-10-02" });
     await expect(select).toHaveText("Custom");
     await expect(page.getByLabel("From", { exact: true })).toHaveValue(
       "2026-10-01",
     );
     await expect(page.getByLabel("To", { exact: true })).toHaveValue(
-      "2026-10-09",
+      "2026-10-02",
     );
-    await chooseRange(page, "This month");
+    await chooseRange(page, "This month", "month");
     await expect(page).toHaveURL(/\/admin\/spend$/);
     for (const query of [
+      "from=0001-01-01&to=2026-10-09",
+      "from=9999-01-01&to=9999-01-02",
       "range=invalid",
       "range=custom",
       "from=bad&to=2026-10-09",
@@ -177,7 +217,16 @@ test.describe("admin spend", () => {
         "?range=invalid",
       ]) {
         await page.goto(`/admin/spend${query}`);
-        await ready(page);
+        await ready(
+          page,
+          query === "?range=30"
+            ? "30"
+            : query === "?range=all"
+              ? "all"
+              : query.startsWith("?range=custom")
+                ? { from: "2026-10-01", to: "2026-10-09" }
+                : "month",
+        );
         await expect
           .poll(() =>
             page.evaluate(

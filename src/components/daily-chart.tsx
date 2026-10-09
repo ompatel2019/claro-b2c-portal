@@ -57,7 +57,7 @@ export function DailyChart({
       <CardContent>
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          className="h-auto w-full"
+          className="h-auto w-full max-w-[600px]"
           role="img"
           aria-label={
             models.length
@@ -72,8 +72,7 @@ export function DailyChart({
                 y={y(g)}
                 textAnchor="end"
                 dominantBaseline="middle"
-                fontSize={18}
-                className="fill-muted-foreground"
+                className="fill-muted-foreground text-[22px] sm:text-[18px]"
               >
                 {format(g)}
               </text>
@@ -91,8 +90,7 @@ export function DailyChart({
               <text
                 x={LEFT}
                 y={H - 4}
-                fontSize={18}
-                className="fill-muted-foreground"
+                className="fill-muted-foreground text-[22px] sm:text-[18px]"
               >
                 {dateLabel(points[0].day)}
               </text>
@@ -100,8 +98,7 @@ export function DailyChart({
                 x={W - PAD}
                 y={H - 4}
                 textAnchor="end"
-                fontSize={18}
-                className="fill-muted-foreground"
+                className="fill-muted-foreground text-[22px] sm:text-[18px]"
               >
                 {dateLabel(points.at(-1)!.day)}
               </text>

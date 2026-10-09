@@ -107,7 +107,6 @@ function spendClient(options: { fail?: string; count?: number } = {}) {
           data: null,
           error: new Error("Spend unavailable"),
         });
-      const columns = query.select.mock.calls[0][0] as string;
       const row =
         table === "profiles"
           ? { id: "fake-student-a", full_name: "Student A" }
@@ -116,19 +115,18 @@ function spendClient(options: { fail?: string; count?: number } = {}) {
                 marked_at: "2026-10-09T02:30:00Z",
                 question_id: null,
                 question: null,
+                note: null,
               }
-            : columns === "usd,created_at"
-              ? { usd: "0.01", created_at: "2026-10-09T02:30:00Z" }
-              : {
-                  usd: "0.01",
-                  created_at: "2026-10-09T02:30:00Z",
-                  user_id: "fake-student-a",
-                  model: "Model A",
-                  task: "mark_written",
-                  input_tokens: 10,
-                  cached_tokens: 2,
-                  output_tokens: 5,
-                };
+            : {
+                usd: "0.01",
+                created_at: "2026-10-09T02:30:00Z",
+                user_id: "fake-student-a",
+                model: "Model A",
+                task: "mark_written",
+                input_tokens: 10,
+                cached_tokens: 2,
+                output_tokens: 5,
+              };
       const count = table === "ai_usage" ? (options.count ?? 1) : 1;
       return Promise.resolve({
         data: Array.from(
@@ -141,14 +139,20 @@ function spendClient(options: { fail?: string; count?: number } = {}) {
     queries.push({ table, query });
     return query;
   });
-  mocks.createClient.mockResolvedValue({ from });
+  mocks.createClient.mockResolvedValue({ from, rpc: mocks.rpc });
   return queries;
 }
 const spendNow = new Date("2026-10-09T03:00:00Z");
 it("pages usage past 1000 rows and returns shared caps and limits", async () => {
   const queries = spendClient({ count: 1201 });
+  mocks.throwOnError.mockResolvedValue({
+    data: { ...empty, spend: { month: 42, all: 84 } },
+  });
   const result = await loadSpend("month", spendNow);
-  expect(result.all).toBeCloseTo(12.01);
+  expect(result.today).toBeCloseTo(12.01);
+  expect(result.month).toBe(42);
+  expect(result.all).toBe(84);
+  expect(mocks.rpc).toHaveBeenCalledWith("admin_dashboard");
   expect(result.byModel[0]).toMatchObject({
     calls: 1201,
     input_tokens: 12010,
@@ -166,13 +170,10 @@ it("pages usage past 1000 rows and returns shared caps and limits", async () => 
     openDisputesPerStudent: 3,
   });
   const usage = queries.filter((q) => q.table === "ai_usage");
-  expect(usage).toHaveLength(6);
+  expect(usage).toHaveLength(3);
   expect(usage.map(({ query }) => query.range.mock.calls[0])).toEqual([
     [0, 499],
-    [0, 499],
     [500, 999],
-    [500, 999],
-    [1000, 1499],
     [1000, 1499],
   ]);
   for (const { query } of usage) {
@@ -180,14 +181,15 @@ it("pages usage past 1000 rows and returns shared caps and limits", async () => 
     expect(query.lt).toHaveBeenCalledWith("created_at", spendNow.toISOString());
     expect(query.select.mock.calls[0][0]).not.toContain("*");
   }
-  const details = usage.filter(
-    ({ query }) => query.select.mock.calls[0][0] !== "usd,created_at",
-  );
-  for (const { query } of details)
+  for (const { query } of usage) {
+    expect(query.select).toHaveBeenCalledWith(
+      "created_at,user_id,model,task,input_tokens,cached_tokens,output_tokens,usd",
+    );
     expect(query.gte).toHaveBeenCalledWith(
       "created_at",
       "2026-09-09T14:00:00.000Z",
     );
+  }
   const profiles = queries.find((q) => q.table === "profiles")!.query;
   expect(profiles.eq).toHaveBeenCalledWith("role", "student");
   expect(profiles.select).toHaveBeenCalledWith("id,full_name");
@@ -197,6 +199,9 @@ it("filters custom attempt dates server-side while preserving fixed recent usage
   await loadSpend({ from: "2026-08-01", to: "2026-08-31" }, spendNow);
   const attempts = queries.find((q) => q.table === "attempts")!.query;
   expect(attempts.eq).toHaveBeenCalledWith("status", "marked");
+  expect(attempts.select).toHaveBeenCalledWith(
+    "marked_at,question_id,note:feedback->>note,question:questions(type)",
+  );
   expect(attempts.gte).toHaveBeenCalledWith(
     "marked_at",
     "2026-07-31T14:00:00.000Z",
@@ -205,11 +210,7 @@ it("filters custom attempt dates server-side while preserving fixed recent usage
     "marked_at",
     "2026-08-31T14:00:00.000Z",
   );
-  const detail = queries.find(
-    (q) =>
-      q.table === "ai_usage" &&
-      q.query.select.mock.calls[0][0] !== "usd,created_at",
-  )!.query;
+  const detail = queries.find((q) => q.table === "ai_usage")!.query;
   expect(detail.gte).toHaveBeenCalledWith(
     "created_at",
     "2026-07-31T14:00:00.000Z",
@@ -229,3 +230,11 @@ it.each(["ai_usage", "attempts", "profiles"])(
     );
   },
 );
+
+it("propagates dashboard failures through spend", async () => {
+  spendClient();
+  mocks.throwOnError.mockRejectedValue(new Error("Dashboard unavailable"));
+  await expect(loadSpend("month", spendNow)).rejects.toThrow(
+    "Dashboard unavailable",
+  );
+});

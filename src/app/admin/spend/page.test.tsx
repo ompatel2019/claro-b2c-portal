@@ -21,7 +21,7 @@ import ErrorPage from "./error";
 const now = new Date("2026-10-08T23:00:00Z");
 function spend(range: Range = "month") {
   return {
-    ...computeSpend([], [], [], [], range, now),
+    ...computeSpend({ month: 0, all: 0 }, [], [], [], range, now),
     cap: 100,
     markers: [80, 90, 100],
     limits: {
@@ -77,7 +77,7 @@ it("renders four KPIs, labelled budget markers, empty sections and loader limits
 it("shows stacked spend, calls, written average and over-limit student links, clamping the progress bar", async () => {
   const data = spend("30");
   data.all = 120;
-  data.avgPerMarkedWritten = 0.25;
+  data.avgPerMarkedWritten = 0.0025;
   data.byModel = [
     {
       model: "Alpha",
@@ -100,7 +100,7 @@ it("shows stacked spend, calls, written average and over-limit student links, cl
     "aria-valuenow",
     "100",
   );
-  expect(screen.getByText("$0.25")).toBeInTheDocument();
+  expect(screen.getByText("$0.0025")).toBeInTheDocument();
   expect(screen.getByRole("img")).toHaveAccessibleName(
     "Spend per day, Sydney dates, stacked by model",
   );

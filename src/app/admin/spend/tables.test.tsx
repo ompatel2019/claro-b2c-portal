@@ -16,7 +16,7 @@ it("money has two decimal places, with four for small call averages", () => {
   expect(avgUsd(0.00123)).toBe("$0.0012");
   expect(avgUsd(0.01)).toBe("$0.01");
 });
-it("model columns sort in both directions and token columns are hidden below xl", () => {
+it("model columns sort in both directions and token columns stay hidden in narrow model cards", () => {
   render(
     <ModelTable
       rows={[
@@ -66,19 +66,20 @@ it("model columns sort in both directions and token columns are hidden below xl"
   }
   expect(
     within(table).getByRole("columnheader", { name: "Input" }),
-  ).toHaveClass("hidden", "xl:table-cell");
+  ).toHaveClass("hidden", "@min-[640px]:table-cell");
 });
-it("task subtotals remain above sortable tasks, including Other and no-call wording", () => {
+it("task subtotals precede their own sortable tasks, including Other and no-call wording", () => {
   render(
     <TaskTable
       groups={[
         {
           name: "Marking",
-          calls: 1,
-          usd: 0.002,
-          avgPerCall: 0.002,
+          calls: 3,
+          usd: 0.202,
+          avgPerCall: 0.202 / 3,
           tasks: [
             { task: "mark_written", calls: 1, usd: 0.002, avgPerCall: 0.002 },
+            { task: "summary", calls: 2, usd: 0.2, avgPerCall: 0.1 },
           ],
         },
         {
@@ -98,28 +99,45 @@ it("task subtotals remain above sortable tasks, including Other and no-call word
       ]}
     />,
   );
-  const subtotals = screen.getByRole("table", { name: "Task subtotals" });
-  expect(
-    within(subtotals)
+  const table = screen.getByRole("table", { name: "By task" });
+  expect(screen.getAllByRole("table")).toHaveLength(1);
+  const rowLabels = () =>
+    within(table)
       .getAllByRole("row")
       .slice(1)
-      .map((r) => within(r).getAllByRole("cell")[0].textContent),
-  ).toEqual(["Marking only", "Admin and evals", "Other"]);
-  expect(within(subtotals).getByText("No calls")).toBeInTheDocument();
-  const table = screen.getByRole("table", { name: "By task" });
-  expect(within(table).getByText("$0.0020")).toBeInTheDocument();
+      .map((r) => r.querySelector("th, td")?.textContent);
+  expect(rowLabels()).toEqual([
+    "Marking only",
+    "mark_written",
+    "summary",
+    "Admin and evals",
+    "Other",
+    "other_task",
+  ]);
+  expect(within(table).getByText("No calls")).toBeInTheDocument();
+  expect(within(table).getAllByText("$0.0020")).toHaveLength(1);
   for (const header of ["Task", "Calls", "USD", "Avg per call"]) {
-    const button = within(table).getByRole("button", {
-      name: header,
-    });
+    const button = within(table).getByRole("button", { name: header });
     fireEvent.click(button);
-    expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+    expect(button.closest("th")).toHaveAttribute("aria-sort", "ascending");
+    expect(rowLabels()).toEqual([
+      "Marking only",
       "mark_written",
-    );
-    fireEvent.click(button);
-    expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+      "summary",
+      "Admin and evals",
+      "Other",
       "other_task",
-    );
+    ]);
+    fireEvent.click(button);
+    expect(button.closest("th")).toHaveAttribute("aria-sort", "descending");
+    expect(rowLabels()).toEqual([
+      "Marking only",
+      "summary",
+      "mark_written",
+      "Admin and evals",
+      "Other",
+      "other_task",
+    ]);
     fireEvent.click(button);
   }
 });

@@ -24,6 +24,7 @@ const students = [
 ];
 const attempt = (extra: Partial<MarkedAttempt> = {}): MarkedAttempt => ({
   marked_at: "2026-10-09T02:30:00Z",
+  note: null,
   question_id: "fake-question",
   question: { type: "short" },
   ...extra,
@@ -40,6 +41,10 @@ it("parses presets, repeated parameters and inclusive custom dates", () => {
 });
 it.each([
   { range: "bad" },
+  { from: "0001-01-01", to: "2026-10-09" },
+  { from: "2019-12-31", to: "2026-10-09" },
+  { from: "2026-10-09", to: "2026-10-10" },
+  { from: "9999-12-31", to: "9999-12-31" },
   { range: "custom" },
   { from: "2026-02-29", to: "2026-03-01" },
   { from: "2026-04-31", to: "2026-05-01" },
@@ -48,7 +53,7 @@ it.each([
   { to: "2026-10-09" },
   { from: "2026-1-01", to: "2026-10-09" },
 ])("defaults invalid ranges: %j", (params) =>
-  expect(parseRange(params)).toBe("month"),
+  expect(parseRange(params, now)).toBe("month"),
 );
 it("uses Sydney calendar months, 30 days and DST-aware custom endpoints", () => {
   expect(rangeWindow("month", now)).toEqual({
@@ -80,7 +85,7 @@ it("keeps KPIs and fixed student windows independent of the selected range", () 
     usage({ user_id: "fake-admin", usd: 5 }),
   ];
   const result = computeSpend(
-    rows,
+    { month: 14, all: 24 },
     rows,
     [attempt()],
     students,
@@ -114,7 +119,7 @@ it("aggregates model tokens, task groups and daily model stacks; averages only w
     usage({ task: "unknown", model: "Model B" }),
   ];
   const result = computeSpend(
-    rows,
+    { month: 0, all: 0 },
     rows,
     [
       attempt(),
@@ -170,7 +175,7 @@ it("aggregates model tokens, task groups and daily model stacks; averages only w
   });
 });
 it("handles empty data, all-time start and exclusive end boundaries", () => {
-  const empty = computeSpend([], [], [], [], "all", now);
+  const empty = computeSpend({ month: 0, all: 0 }, [], [], [], "all", now);
   expect(empty.perDay).toEqual([]);
   expect(empty.avgPerMarkedWritten).toBeNull();
   expect(empty.byTask.map((g) => g.name)).toEqual([
@@ -182,11 +187,18 @@ it("handles empty data, all-time start and exclusive end boundaries", () => {
     usage({ created_at: now.toISOString() }),
     usage({ created_at: "2026-10-10T00:00:00Z" }),
   ];
-  const all = computeSpend(rows, rows, [], students, "all", now);
+  const all = computeSpend(
+    { month: 0, all: 0.5 },
+    rows,
+    [],
+    students,
+    "all",
+    now,
+  );
   expect(all.perDay[0].day).toBe("2026-10-04");
   expect(all.all).toBe(0.5);
   const custom = computeSpend(
-    rows,
+    { month: 0, all: 0 },
     rows,
     [],
     students,
@@ -209,7 +221,14 @@ it("returns top ten and students strictly over 150 calls in the rolling hour", (
     usage({ user_id: profiles[0].id, created_at: "2026-10-09T01:59:59Z" }),
     usage({ user_id: "fake-admin" }),
   );
-  const result = computeSpend(rows, rows, [], profiles, "month", now);
+  const result = computeSpend(
+    { month: 0, all: 0.5 },
+    rows,
+    [],
+    profiles,
+    "month",
+    now,
+  );
   expect(result.topStudents).toHaveLength(10);
   expect(result.topStudents[0].id).toBe(profiles[1].id);
   expect(result.over150).toEqual([
@@ -224,7 +243,7 @@ it("includes lower boundaries and excludes the midnight after a custom end day",
     usage({ created_at: "2026-10-04T13:00:00Z", usd: 20 }),
   ];
   const result = computeSpend(
-    rows,
+    { month: 0, all: 0 },
     rows,
     [
       attempt({ marked_at: "2026-10-03T14:00:00Z" }),
@@ -246,7 +265,14 @@ it("uses exactly 30 Sydney days for students and includes the rolling hour bound
       usage({ created_at: "2026-10-09T02:00:00Z", usd: 0 }),
     ),
   ];
-  const result = computeSpend(rows, rows, [attempt()], students, "month", now);
+  const result = computeSpend(
+    { month: 0, all: 0.5 },
+    rows,
+    [attempt()],
+    students,
+    "month",
+    now,
+  );
   expect(result.topStudents[0]).toMatchObject({
     calls: 152,
     usd: 2,
@@ -254,4 +280,77 @@ it("uses exactly 30 Sydney days for students and includes the rolling hour bound
   });
   expect(result.over150[0].calls).toBe(151);
   expect(result.avgPerMarkedWritten).toBe(0);
+});
+
+it("normalises real engine and eval names before grouping and averaging", () => {
+  const rows = [
+    "mark_written",
+    "check_written",
+    "second_pass",
+    "transcribe_answer",
+    "mark_flashcard",
+    "session_summary",
+    "admin_test:mark",
+    "eval:20261009:0:mark",
+    "eval:20261009:1:check",
+    "eval:20261009:2:second_pass",
+    "eval:20261009:3:judge",
+    "seed-extract-economics",
+    "seed-flashcards",
+  ].map((task) => usage({ task }));
+  const result = computeSpend(
+    { month: 0, all: 0 },
+    rows,
+    [
+      attempt(),
+      attempt({ note: "No answer" }),
+      attempt({ question_id: null, question: null, note: "No answer" }),
+    ],
+    students,
+    "month",
+    now,
+  );
+  expect(result.byTask.map((g) => [g.name, g.calls])).toEqual([
+    ["Marking", 6],
+    ["Admin and evals", 5],
+    ["Other", 2],
+  ]);
+  expect(result.byTask[0].tasks.map((t) => t.task)).toEqual([
+    "check_written",
+    "flashcard_mark",
+    "mark_written",
+    "second_pass",
+    "summary",
+    "transcribe",
+  ]);
+  expect(result.byTask[1].tasks).toContainEqual({
+    task: "eval",
+    calls: 4,
+    usd: 4,
+    avgPerCall: 1,
+  });
+  expect(result.markedWritten).toBe(1);
+  expect(result.avgPerMarkedWritten).toBe(4);
+  expect(
+    computeSpend(
+      { month: 0, all: 0 },
+      [],
+      [attempt({ note: "No answer" })],
+      students,
+      "month",
+      now,
+    ).avgPerMarkedWritten,
+  ).toBeNull();
+});
+it("accepts sane custom boundaries including today in Sydney", () => {
+  expect(parseRange({ from: "2020-01-01", to: "2026-10-09" }, now)).toEqual({
+    from: "2020-01-01",
+    to: "2026-10-09",
+  });
+  expect(
+    parseRange(
+      { from: "2026-10-10", to: "2026-10-10" },
+      new Date("2026-10-09T13:01:00Z"),
+    ),
+  ).toEqual({ from: "2026-10-10", to: "2026-10-10" });
 });

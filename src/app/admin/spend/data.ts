@@ -12,10 +12,10 @@ export type Usage = {
   output_tokens: number;
   usd: number | string;
 };
-export type SpendTotal = Pick<Usage, "created_at" | "usd">;
 export type Student = { id: string; full_name: string };
 export type MarkedAttempt = {
   marked_at: string;
+  note: string | null;
   question_id: string | null;
   question: { type: string } | null;
 };
@@ -23,20 +23,24 @@ const DAY = 86_400_000;
 function shiftDay(day: string, days: number) {
   return new Date(Date.parse(day) + days * DAY).toISOString().slice(0, 10);
 }
-function validDay(day: string | undefined): day is string {
+function validDay(day: string | undefined, today: string): day is string {
   return (
     !!day &&
     /^\d{4}-\d{2}-\d{2}$/.test(day) &&
+    day >= "2020-01-01" &&
+    day <= today &&
     Number.isFinite(Date.parse(day)) &&
     new Date(day).toISOString().slice(0, 10) === day
   );
 }
 export function parseRange(
   params: Record<string, string | string[] | undefined> = {},
+  now = new Date(),
 ): Range {
   const { range, from, to } = singleParams(params);
+  const today = sydneyDay(now);
   if (from !== undefined || to !== undefined || range === "custom")
-    return validDay(from) && validDay(to) && from <= to
+    return validDay(from, today) && validDay(to, today) && from <= to
       ? { from, to }
       : "month";
   return range === "30" || range === "all" ? range : "month";
@@ -74,9 +78,23 @@ const markingTasks = [
 const writtenTasks = markingTasks.slice(0, 4);
 const adminTasks = ["admin_test", "eval"];
 
-/** Inputs are server reads: totals all-time, usage covering range and fixed 30 days, marked attempts in range, student profiles only. */
+function normaliseTask(task: string) {
+  const name = task.split(":", 1)[0];
+  switch (name) {
+    case "transcribe_answer":
+      return "transcribe";
+    case "mark_flashcard":
+      return "flashcard_mark";
+    case "session_summary":
+      return "summary";
+    default:
+      return name;
+  }
+}
+
+/** SQL dashboard totals, usage covering range and fixed 30 days, marked attempts and student profiles. */
 export function computeSpend(
-  totals: SpendTotal[],
+  totals: { month: number; all: number },
   usage: Usage[],
   attempts: MarkedAttempt[],
   students: Student[],
@@ -85,18 +103,14 @@ export function computeSpend(
 ) {
   const window = rangeWindow(range, now);
   const todayKey = sydneyDay(now);
-  const monthKey = todayKey.slice(0, 7);
-  let today = 0,
-    month = 0,
-    all = 0;
-  for (const row of totals) {
-    if (Date.parse(row.created_at) >= now.getTime()) continue;
-    const day = sydneyDay(row.created_at),
-      usd = Number(row.usd);
-    all += usd;
-    if (day === todayKey) today += usd;
-    if (day.slice(0, 7) === monthKey) month += usd;
-  }
+  const today = usage.reduce(
+    (sum, row) =>
+      Date.parse(row.created_at) < now.getTime() &&
+      sydneyDay(row.created_at) === todayKey
+        ? sum + Number(row.usd)
+        : sum,
+    0,
+  );
   const inRange = (date: string) =>
     (!window.since || Date.parse(date) >= Date.parse(window.since)) &&
     Date.parse(date) < Date.parse(window.until);
@@ -142,8 +156,9 @@ export function computeSpend(
     model.output_tokens += r.output_tokens;
     model.usd += usd;
     byModel.set(r.model, model);
-    const task = byTask.get(r.task) ?? {
-      task: r.task,
+    const name = normaliseTask(r.task);
+    const task = byTask.get(name) ?? {
+      task: name,
       calls: 0,
       usd: 0,
       avgPerCall: 0,
@@ -151,11 +166,11 @@ export function computeSpend(
     task.calls++;
     task.usd += usd;
     task.avgPerCall = task.usd / task.calls;
-    byTask.set(r.task, task);
+    byTask.set(name, task);
     const day = days.get(sydneyDay(r.created_at))!;
     day.usd += usd;
     day.models[r.model] = (day.models[r.model] ?? 0) + usd;
-    if (writtenTasks.includes(r.task)) writtenUsd += usd;
+    if (writtenTasks.includes(name)) writtenUsd += usd;
   }
   const groups = ["Marking", "Admin and evals", "Other"]
     .map((name) => {
@@ -183,6 +198,7 @@ export function computeSpend(
   const markedWritten = attempts.filter(
     (a) =>
       inRange(a.marked_at) &&
+      a.note !== "No answer" &&
       (a.question_id === null ||
         ["short", "extended"].includes(a.question?.type ?? "")),
   ).length;
@@ -218,8 +234,8 @@ export function computeSpend(
   return {
     window: { ...window, from },
     today,
-    month,
-    all,
+    month: totals.month,
+    all: totals.all,
     markedWritten,
     avgPerMarkedWritten: markedWritten ? writtenUsd / markedWritten : null,
     perDay: [...days.values()],

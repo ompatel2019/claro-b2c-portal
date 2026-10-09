@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
+import { sortRows, type Sorting } from "@/lib/admin";
 import { DataTable } from "@/components/data-table";
 import { EmptyState } from "@/components/empty-state";
 import { Wallet } from "@/components/icons";
@@ -29,7 +31,7 @@ export function ModelTable({ rows }: { rows: Spend["byModel"] }) {
       />
     );
   return (
-    <Card className="min-w-0">
+    <Card className="@container min-w-0">
       <CardHeader>
         <CardTitle>
           <h2>By model</h2>
@@ -60,7 +62,7 @@ export function ModelTable({ rows }: { rows: Spend["byModel"] }) {
               cell: (r: Spend["byModel"][number]) =>
                 r[id].toLocaleString("en-AU"),
               sort: (r: Spend["byModel"][number]) => r[id],
-              className: `hidden xl:table-cell ${numberClass}`,
+              className: `hidden @min-[640px]:table-cell ${numberClass}`,
             }),
           ),
           {
@@ -76,9 +78,18 @@ export function ModelTable({ rows }: { rows: Spend["byModel"] }) {
   );
 }
 export function TaskTable({ groups }: { groups: Spend["byTask"] }) {
-  const rows = groups
-    .flatMap((g) => g.tasks)
-    .map((r) => ({ ...r, id: r.task }));
+  const [sorting, setSorting] = useState<Sorting | null>(null);
+  const columns = [
+    { id: "task", header: "Task", className: labelClass },
+    { id: "calls", header: "Calls", className: numberClass },
+    { id: "usd", header: "USD", className: numberClass },
+    {
+      id: "avgPerCall",
+      header: "Avg per call",
+      className: `hidden sm:table-cell ${numberClass}`,
+    },
+  ] as const;
+  const rows = groups.flatMap((g) => g.tasks);
   if (!rows.length)
     return (
       <EmptyState
@@ -95,67 +106,83 @@ export function TaskTable({ groups }: { groups: Spend["byTask"] }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Table aria-label="Task subtotals">
+        <Table aria-label="By task">
           <TableHeader>
             <TableRow>
-              <TableHead>Task</TableHead>
-              <TableHead className={numberClass}>Calls</TableHead>
-              <TableHead className={numberClass}>USD</TableHead>
-              <TableHead className={`hidden sm:table-cell ${numberClass}`}>
-                Avg per call
-              </TableHead>
+              {columns.map((column) => (
+                <TableHead
+                  key={column.id}
+                  className={column.className}
+                  aria-sort={
+                    sorting?.id === column.id
+                      ? sorting.dir === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : undefined
+                  }
+                >
+                  <button
+                    type="button"
+                    className="uppercase"
+                    onClick={() =>
+                      setSorting(
+                        sorting?.id !== column.id
+                          ? { id: column.id, dir: "asc" }
+                          : sorting.dir === "asc"
+                            ? { id: column.id, dir: "desc" }
+                            : null,
+                      )
+                    }
+                  >
+                    {column.header}
+                  </button>
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {groups.map((g) => (
-              <TableRow key={g.name} className="font-medium">
-                <TableCell className={labelClass}>
-                  {g.name === "Marking" ? "Marking only" : g.name}
-                </TableCell>
-                <TableCell className={numberClass}>{g.calls}</TableCell>
-                <TableCell className={numberClass}>{usd(g.usd)}</TableCell>
-                <TableCell className={`hidden sm:table-cell ${numberClass}`}>
-                  {g.avgPerCall === null ? "No calls" : avgUsd(g.avgPerCall)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
+          {groups.map((g) => {
+            const sortBy = columns.find((c) => c.id === sorting?.id)?.id;
+            const tasks =
+              sorting && sortBy
+                ? sortRows(g.tasks, (r) => r[sortBy], sorting.dir)
+                : g.tasks;
+            return (
+              <TableBody key={g.name}>
+                <TableRow className="bg-muted/50 font-medium">
+                  <TableHead scope="rowgroup" className={labelClass}>
+                    {g.name === "Marking" ? "Marking only" : g.name}
+                  </TableHead>
+                  <TableCell className={numberClass}>
+                    {g.calls.toLocaleString("en-AU")}
+                  </TableCell>
+                  <TableCell className={numberClass}>{usd(g.usd)}</TableCell>
+                  <TableCell className={`hidden sm:table-cell ${numberClass}`}>
+                    {g.avgPerCall === null ? "No calls" : avgUsd(g.avgPerCall)}
+                  </TableCell>
+                </TableRow>
+                {tasks.map((task) => (
+                  <TableRow key={task.task}>
+                    <TableCell className={`${labelClass} pl-6`}>
+                      {task.task}
+                    </TableCell>
+                    <TableCell className={numberClass}>
+                      {task.calls.toLocaleString("en-AU")}
+                    </TableCell>
+                    <TableCell className={numberClass}>
+                      {usd(task.usd)}
+                    </TableCell>
+                    <TableCell
+                      className={`hidden sm:table-cell ${numberClass}`}
+                    >
+                      {avgUsd(task.avgPerCall)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            );
+          })}
         </Table>
       </CardContent>
-      <DataTable
-        label="By task"
-        rows={rows}
-        columns={[
-          {
-            id: "task",
-            header: "Task",
-            cell: (r) => r.task,
-            sort: (r) => r.task,
-            className: labelClass,
-          },
-          {
-            id: "calls",
-            header: "Calls",
-            cell: (r) => r.calls.toLocaleString("en-AU"),
-            sort: (r) => r.calls,
-            className: numberClass,
-          },
-          {
-            id: "usd",
-            header: "USD",
-            cell: (r) => usd(r.usd),
-            sort: (r) => r.usd,
-            className: numberClass,
-          },
-          {
-            id: "avg",
-            header: "Avg per call",
-            cell: (r) => avgUsd(r.avgPerCall),
-            sort: (r) => r.avgPerCall,
-            className: `hidden sm:table-cell ${numberClass}`,
-          },
-        ]}
-      />
     </Card>
   );
 }
