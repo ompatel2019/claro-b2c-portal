@@ -1,0 +1,164 @@
+{
+  "meta": {
+    "stamp": "2026-10-09-1439",
+    "git": "0f0f088",
+    "dirty": false,
+    "label": "sonnet-format-retry-3",
+    "limit": null,
+    "items": [114, 209, 222],
+    "marker": {
+      "model": "anthropic/claude-sonnet-5.5",
+      "effort": {
+        "grade": "low",
+        "check": "low",
+        "reconcile": "medium"
+      }
+    },
+    "judge": {
+      "model": "gpt-6-astra",
+      "effort": "low"
+    },
+    "spentBefore": 70.634403,
+    "spentAfter": 70.724631,
+    "blocked": false
+  },
+  "headline": {
+    "n": 0,
+    "exact": null,
+    "within1": null,
+    "band": null,
+    "meanSigned": null,
+    "meanAbs": null,
+    "prosKept": null,
+    "consFixed": null,
+    "judgeMean": null,
+    "usdPerAnswer": null,
+    "secondsPerAnswer": null,
+    "judgeUsd": 0,
+    "blindAgreement": null,
+    "secondPass": 0,
+    "inReview": 0,
+    "firstPass": {
+      "n": 0,
+      "exact": null,
+      "within1": null,
+      "band": null,
+      "meanSigned": null,
+      "meanAbs": null,
+      "prosKept": null,
+      "consFixed": null,
+      "judgeMean": null,
+      "usdPerAnswer": null,
+      "secondsPerAnswer": null
+    }
+  },
+  "heldOut": {
+    "n": 1,
+    "exact": 1,
+    "within1": 1,
+    "band": 1,
+    "meanSigned": 0,
+    "meanAbs": 0,
+    "prosKept": null,
+    "consFixed": null,
+    "judgeMean": null,
+    "usdPerAnswer": 0.033144,
+    "secondsPerAnswer": 8.881025718,
+    "judgeUsd": 0,
+    "blindAgreement": 1,
+    "secondPass": 0,
+    "inReview": 0,
+    "firstPass": {
+      "n": 1,
+      "exact": 1,
+      "within1": 1,
+      "band": 1,
+      "meanSigned": 0,
+      "meanAbs": 0,
+      "prosKept": null,
+      "consFixed": null,
+      "judgeMean": null,
+      "usdPerAnswer": 0.033144,
+      "secondsPerAnswer": 8.881025718
+    }
+  },
+  "items": [
+    {
+      "id": "a1-m3-22c",
+      "section": "Held-out",
+      "label": "",
+      "marks": 4,
+      "expected": 0,
+      "mark": 0,
+      "band": "NO BAND SATISFIED",
+      "check": {
+        "status": "agreed",
+        "marks": [0, 0]
+      },
+      "delta": 0,
+      "flags": {
+        "validated": true
+      },
+      "usd": 0.033144,
+      "judgeUsd": 0,
+      "seconds": 8.881025718,
+      "verdict": null,
+      "feedback": null,
+      "error": null,
+      "score": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "a1-m5-22a",
+      "section": "Held-out",
+      "label": "",
+      "marks": 1,
+      "expected": 1,
+      "mark": null,
+      "band": null,
+      "check": null,
+      "delta": null,
+      "flags": {},
+      "usd": 0.032832,
+      "judgeUsd": 0,
+      "seconds": 11.14427063,
+      "verdict": null,
+      "feedback": null,
+      "error": "[\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_small\",\n    \"minimum\": 2,\n    \"inclusive\": true,\n    \"path\": [\n      \"comments\"\n    ],\n    \"message\": \"Too small: expected array to have >=2 items\"\n  },\n  {\n    \"origin\": \"array\",\n    \"code\": \"too_small\",\n    \"minimum\": 3,\n    \"inclusive\": true,\n    \"path\": [\n      \"better_answer_outline\"\n    ],\n    \"message\": \"Too small: expected array to have >=3 items\"\n  }\n]"
+    },
+    {
+      "id": "2024-q23a",
+      "section": "Claro",
+      "label": "imprecise",
+      "marks": 2,
+      "expected": [1, 2],
+      "mark": 2,
+      "band": "Outlines an environmental issue affecting the Australian economy",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.024252,
+      "judgeUsd": 0,
+      "seconds": 7.767586439999999,
+      "verdict": null,
+      "feedback": "The student identifies climate change and outlines its features and economic impact: 'hurts farmers in Australia because of more droughts so they grow less'. That is enough to outline an environmental issue affecting the economy, though the wording is informal.\n1. [Strength · Knowledge] \"because of pollution\" — You identify a cause of climate change, which adds a feature to your outline.\n2. [Strength · Analysis] \"this hurts farmers in Australia because of more droughts so they grow less\" — You link the issue to a specific economic effect on Australian agriculture, which makes this an outline rather than just a naming of the issue.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Name the issue: climate change from greenhouse gas emissions\n- Feature: rising temperatures and more extreme weather in Australia\n- Economic effect: lower agricultural output and exports\n- Further effect: damage to infrastructure and higher insurance costs",
+      "error": null
+    }
+  ]
+}

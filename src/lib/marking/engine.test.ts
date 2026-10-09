@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, expect, it, vi } from "vitest";
+import { z, ZodError } from "zod";
 import type { MarkableQuestion } from "./grade";
 
 vi.mock("server-only", () => ({}));
@@ -116,7 +117,7 @@ it("returns validated grade on the first reply and anchors quotes", async () => 
   expect(mockedCall).toHaveBeenCalledWith(
     expect.objectContaining({
       task: "mark_written",
-      model: MODELS.strong,
+      model: MODELS.marker,
       effort: "low",
       schema: GradeSchema,
       userId: "user",
@@ -167,6 +168,69 @@ it.each(["missing fix", "missing strength", "empty next mark"])(
     );
   },
 );
+
+it("retries a grade call once with a fix-up user message when the reply fails the schema", async () => {
+  const answer = "The prices rise rapidly";
+  const schemaError = z
+    .object({ comments: z.array(z.object({ quote: z.string() })) })
+    .safeParse({ comments: [{ quote: 1, body: answer }] }).error!;
+  mockedCall.mockRejectedValueOnce(schemaError);
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    expect(await markWritten(q, answer, "user")).toMatchObject({
+      mark: 4,
+      feedback: { validated: true },
+    });
+    expect(mockedCall).toHaveBeenCalledTimes(3);
+    const { messages: original, ...firstOptions } = mockedCall.mock.calls[0][0];
+    const { messages: retried, ...retryOptions } = mockedCall.mock.calls[2][0];
+    expect(retryOptions).toEqual(firstOptions);
+    expect(retryOptions.task).toBe("mark_written");
+    expect(original).toHaveLength(2);
+    expect(retried).toHaveLength(original.length + 1);
+    expect(retried.slice(0, original.length)).toEqual(original);
+    const fixUp = retried[original.length];
+    expect(fixUp.role).toBe("user");
+    expect(fixUp.content).toContain("comments.0.quote");
+    expect(fixUp.content).toContain(schemaError.issues[0].message);
+    expect(original).not.toContainEqual(fixUp);
+    expect(warn).toHaveBeenCalledExactlyOnceWith({
+      task: "mark_written",
+      paths: [["comments", 0, "quote"]],
+    });
+    expect(JSON.stringify(warn.mock.calls[0])).not.toContain(answer);
+  } finally {
+    warn.mockRestore();
+  }
+});
+
+it("propagates a second consecutive schema failure", async () => {
+  mockedCall.mockImplementation(async (options) => {
+    if (options.task === "mark_written") throw new ZodError([]);
+    return grade;
+  });
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    await expect(
+      markWritten(q, "The prices rise rapidly", "user"),
+    ).rejects.toBeInstanceOf(ZodError);
+    expect(mockedCall).toHaveBeenCalledTimes(3);
+    expect(
+      mockedCall.mock.calls.filter(([o]) => o.task === "mark_written"),
+    ).toHaveLength(2);
+    expect(warn).toHaveBeenCalledTimes(1);
+  } finally {
+    warn.mockRestore();
+  }
+});
+
+it("does not retry a non-schema error", async () => {
+  mockedCall.mockRejectedValueOnce(new Error("Budget reached"));
+  await expect(
+    markWritten(q, "The prices rise rapidly", "user"),
+  ).rejects.toThrow("Budget reached");
+  expect(mockedCall).toHaveBeenCalledTimes(2);
+});
 
 it("returns original quote slices and cleaned prose from a canned reply", async () => {
   mockedCall.mockResolvedValue({
@@ -303,9 +367,9 @@ it.each([undefined, "eval"])(
     expect(
       mockedCall.mock.calls.map(([o]) => [o.effort, o.fast, o.model]),
     ).toEqual([
-      ["low", true, MODELS.strong],
-      ["low", true, MODELS.strong],
-      ["medium", true, MODELS.strong],
+      ["low", true, MODELS.marker],
+      ["low", true, MODELS.marker],
+      ["medium", true, MODELS.marker],
     ]);
     const messages = mockedCall.mock.calls[2][0].messages;
     expect(messages[2].content).toContain("Marker A:");

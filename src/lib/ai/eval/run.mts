@@ -1,5 +1,6 @@
 // Offline marking eval against the current engine; --dry-run only reads the DB.
-// Run: npx tsx --conditions=react-server --env-file=.env.local src/lib/ai/eval/run.mts [--dry-run] [--limit=N] [--label=text]
+// Run: npx tsx --conditions=react-server --env-file=.env.local src/lib/ai/eval/run.mts [--dry-run] [--limit=N | --items=0,1,...] [--label=text]
+// --items uses 0-based positions in the full array: A1, then Held-out, then Claro.
 // Results: src/lib/ai/eval/results/ and /workspace/claro/eval-runs/.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -26,12 +27,22 @@ const limit = Number(
   args.find((a) => a.startsWith("--limit="))?.slice(8) ?? Infinity,
 );
 const label = args.find((a) => a.startsWith("--label="))?.slice(8) ?? "";
+const selectedItems =
+  args
+    .find((a) => a.startsWith("--items="))
+    ?.slice(8)
+    .split(",")
+    .map(Number) ?? null;
 if (
-  args.some((a) => !/^(--dry-run|--limit=\d+|--label=.*)$/.test(a)) ||
-  limit < 1
+  args.some(
+    (a) => !/^(--dry-run|--limit=\d+|--items=\d+(,\d+)*|--label=.*)$/.test(a),
+  ) ||
+  limit < 1 ||
+  selectedItems?.some((index) => !Number.isSafeInteger(index)) ||
+  (selectedItems !== null && args.some((a) => a.startsWith("--limit=")))
 ) {
   throw new Error(
-    "Use --dry-run, --limit=N (positive integer per section), --label=text",
+    "Use --dry-run, --limit=N (positive integer per section), --items=0,1,... (non-negative integer indices; cannot combine with --limit), --label=text",
   );
 }
 const parts = new Intl.DateTimeFormat("en-AU", {
@@ -84,7 +95,7 @@ const { data: questions } = await db
   )
   .in("id", [...new Set([...checks, ...held].map((c) => c.question_id))])
   .throwOnError();
-const items = [
+const allItems = [
   ...a1.slice(0, limit).map((c) => ({
     id: c.questionId,
     section: "A1",
@@ -113,6 +124,14 @@ const items = [
     label: c.label,
   })),
 ];
+if (selectedItems?.some((index) => index >= allItems.length)) {
+  throw new Error(
+    `--items indices must be less than the full item count (${allItems.length})`,
+  );
+}
+const items = allItems.filter(
+  (_, index) => selectedItems === null || selectedItems.includes(index),
+);
 mkdirSync(out, { recursive: true });
 if (dry) {
   const text = (
@@ -264,6 +283,7 @@ const meta = {
   ).trim(),
   label,
   limit: Number.isFinite(limit) ? limit : null,
+  items: selectedItems,
   marker: MARKER,
   judge: JUDGE,
   spentBefore,

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { z } from "zod";
+import { ZodError, type z } from "zod";
 
 import { callJson, type Message } from "@/lib/ai/openai";
 import { MODELS } from "@/lib/ai/prices";
@@ -34,7 +34,7 @@ import {
 } from "./schemas";
 
 export const MARKER = {
-  model: MODELS.strong,
+  model: MODELS.marker,
   effort: { grade: "low", check: "low", reconcile: "medium" },
 } as const;
 
@@ -58,14 +58,40 @@ export async function markWritten(
       fast: true,
       userId,
     };
-    let grade = await callJson<S>({ ...options, messages });
+    const call = async () => {
+      try {
+        return await callJson<S>({ ...options, messages });
+      } catch (error) {
+        if (!(error instanceof ZodError)) throw error;
+        console.warn({
+          task: options.task,
+          paths: error.issues.map((issue) => issue.path),
+        });
+        return callJson<S>({
+          ...options,
+          messages: [
+            ...messages,
+            {
+              role: "user",
+              content: `Fix ${error.issues
+                .slice(0, 3)
+                .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+                .join(
+                  "; ",
+                )} and return the complete JSON again meeting every required count.`,
+            },
+          ],
+        });
+      }
+    };
+    let grade = await call();
     let validation = validateGrade(q.criteria, q.marks, grade);
     if (!validation.ok) {
       messages.push(
         { role: "assistant", content: JSON.stringify(grade) },
         bandCorrection(validation.problem, q.criteria),
       );
-      grade = await callJson<S>({ ...options, messages });
+      grade = await call();
       validation = validateGrade(q.criteria, q.marks, grade);
     }
     const mark = validation.ok ? grade.mark : clampMark(grade.mark, q.marks);

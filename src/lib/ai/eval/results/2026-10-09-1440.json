@@ -1,0 +1,181 @@
+{
+  "meta": {
+    "stamp": "2026-10-09-1440",
+    "git": "0f0f088",
+    "dirty": true,
+    "label": "sonnet-format-correction-2",
+    "limit": null,
+    "items": [114, 209, 222],
+    "marker": {
+      "model": "anthropic/claude-sonnet-5.5",
+      "effort": {
+        "grade": "low",
+        "check": "low",
+        "reconcile": "medium"
+      }
+    },
+    "judge": {
+      "model": "gpt-6-astra",
+      "effort": "low"
+    },
+    "spentBefore": 70.837099,
+    "spentAfter": 70.944513,
+    "blocked": false
+  },
+  "headline": {
+    "n": 0,
+    "exact": null,
+    "within1": null,
+    "band": null,
+    "meanSigned": null,
+    "meanAbs": null,
+    "prosKept": null,
+    "consFixed": null,
+    "judgeMean": null,
+    "usdPerAnswer": null,
+    "secondsPerAnswer": null,
+    "judgeUsd": 0,
+    "blindAgreement": null,
+    "secondPass": 0,
+    "inReview": 0,
+    "firstPass": {
+      "n": 0,
+      "exact": null,
+      "within1": null,
+      "band": null,
+      "meanSigned": null,
+      "meanAbs": null,
+      "prosKept": null,
+      "consFixed": null,
+      "judgeMean": null,
+      "usdPerAnswer": null,
+      "secondsPerAnswer": null
+    }
+  },
+  "heldOut": {
+    "n": 2,
+    "exact": 1,
+    "within1": 1,
+    "band": 1,
+    "meanSigned": 0,
+    "meanAbs": 0,
+    "prosKept": null,
+    "consFixed": null,
+    "judgeMean": null,
+    "usdPerAnswer": 0.086274,
+    "secondsPerAnswer": 13.3404203355,
+    "judgeUsd": 0,
+    "blindAgreement": 1,
+    "secondPass": 0,
+    "inReview": 0,
+    "firstPass": {
+      "n": 2,
+      "exact": 1,
+      "within1": 1,
+      "band": 1,
+      "meanSigned": 0,
+      "meanAbs": 0,
+      "prosKept": null,
+      "consFixed": null,
+      "judgeMean": null,
+      "usdPerAnswer": 0.086274,
+      "secondsPerAnswer": 13.3404203355
+    }
+  },
+  "items": [
+    {
+      "id": "a1-m3-22c",
+      "section": "Held-out",
+      "label": "",
+      "marks": 4,
+      "expected": 0,
+      "mark": 0,
+      "band": "NO BAND SATISFIED",
+      "check": {
+        "status": "agreed",
+        "marks": [0, 0]
+      },
+      "delta": 0,
+      "flags": {
+        "validated": true
+      },
+      "usd": 0.10322,
+      "judgeUsd": 0,
+      "seconds": 15.261624223999998,
+      "verdict": null,
+      "feedback": null,
+      "error": null,
+      "score": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "a1-m5-22a",
+      "section": "Held-out",
+      "label": "",
+      "marks": 1,
+      "expected": 1,
+      "mark": 1,
+      "band": "Correctly defines the Trade Weighted Index",
+      "check": {
+        "status": "agreed",
+        "marks": [1, 1]
+      },
+      "delta": 0,
+      "flags": {
+        "validated": true
+      },
+      "usd": 0.069328,
+      "judgeUsd": 0,
+      "seconds": 11.419216447,
+      "verdict": null,
+      "feedback": null,
+      "error": null,
+      "score": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      },
+      "firstScore": {
+        "delta": 0,
+        "exact": true,
+        "within1": true,
+        "band": true
+      }
+    },
+    {
+      "id": "2024-q23a",
+      "section": "Claro",
+      "label": "imprecise",
+      "marks": 2,
+      "expected": [1, 2],
+      "mark": 2,
+      "band": "Outlines an environmental issue affecting the Australian economy",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.047334,
+      "judgeUsd": 0,
+      "seconds": 7.235944229,
+      "verdict": null,
+      "feedback": "The student identifies climate change and outlines its main features: warming and \"more droughts\". They tie it to Australian farmers' reduced output, which is an economic effect. This is enough for an outline of a single issue.\n1. [Strength · Knowledge] \"the earth gets hotter because of pollution\" — You correctly identify the cause of climate change in a clear sentence.\n2. [Strength · Analysis] \"this hurts farmers in Australia because of more droughts so they grow less\" — You link the environmental issue to an economic effect on Australian output, which is what the question asks for.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Name the issue: climate change\n- Cause: greenhouse gas emissions raise temperatures\n- Effect: droughts and extreme weather reduce farm output and exports\n- Link to the economy: lower GDP and rural incomes",
+      "error": null
+    }
+  ]
+}

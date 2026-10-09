@@ -11,6 +11,7 @@ import { admin } from "@/utils/supabase/admin";
 import { BUDGET_USD, costUsd, type Model } from "./prices";
 
 let openai: OpenAI | undefined;
+let openrouter: OpenAI | undefined;
 
 export type Message = ChatCompletionMessageParam;
 
@@ -30,17 +31,36 @@ export async function callJson<S extends z.ZodType>(opts: {
   if (error) throw new Error(`ai_spend failed: ${error.message}`);
   if (Number(spent) >= BUDGET_USD) throw new Error("AI budget reached");
 
-  openai ??= new OpenAI({
-    apiKey: serverEnv().OPENAI_API_KEY,
-    maxRetries: 1,
-    timeout: 90_000,
-  });
-  const res = await openai.chat.completions.parse(
+  const isAnthropic = opts.model.startsWith("anthropic/");
+  let client: OpenAI;
+  if (isAnthropic) {
+    if (!openrouter) {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) throw new Error("OPENROUTER_API_KEY is not set");
+      openrouter = new OpenAI({
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey,
+        maxRetries: 1,
+        timeout: 90_000,
+      });
+    }
+    client = openrouter;
+  } else {
+    openai ??= new OpenAI({
+      apiKey: serverEnv().OPENAI_API_KEY,
+      maxRetries: 1,
+      timeout: 90_000,
+    });
+    client = openai;
+  }
+  const res = await client.chat.completions.create(
     {
       model: opts.model,
       messages: opts.messages,
       reasoning_effort: opts.effort ?? "low",
-      ...(opts.fast && { service_tier: "priority" as const }),
+      ...(isAnthropic
+        ? { provider: { require_parameters: true } }
+        : opts.fast && { service_tier: "priority" as const }),
       response_format: zodResponseFormat(
         opts.schema,
         opts.task.replace(/\W/g, "_"),
@@ -62,10 +82,16 @@ export async function callJson<S extends z.ZodType>(opts: {
       });
     if (logError) console.error("ai_usage insert failed", logError.message);
   }
-  const parsed = res.choices[0]?.message.parsed;
-  if (!parsed)
+  const choice = res.choices[0];
+  const message = choice?.message;
+  if (
+    choice?.finish_reason === "length" ||
+    choice?.finish_reason === "content_filter" ||
+    message?.refusal ||
+    !message?.content
+  )
     throw new Error(
-      `No structured output (${res.choices[0]?.message.refusal ?? res.choices[0]?.finish_reason})`,
+      `No structured output (${message?.refusal ?? choice?.finish_reason})`,
     );
-  return parsed as z.infer<S>;
+  return opts.schema.parse(JSON.parse(message.content));
 }

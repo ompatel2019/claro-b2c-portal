@@ -4,8 +4,9 @@ How a written answer is marked. Code: `src/lib/marking/` (engine, examples, grad
 
 ## Model
 
-All three passes use **gpt-6.1-sol** (`MODELS.strong`) with Fast (priority) processing. OpenAI only for now.
-`gpt-6.1-astra` (named in the spec) is not available: the API returns `404 model_not_found` ("The model `gpt-6.1-astra` does not exist or you do not have access to it"). Om confirmed Sol on 9 Oct 2026.
+All three marker passes use **anthropic/claude-sonnet-5.5** through OpenRouter (`MARKER.model = MODELS.marker` in `src/lib/marking/engine.ts`): grader low, blind check low, reconcile medium. In `src/lib/ai/openai.ts`, `anthropic/` model ids use the OpenRouter baseURL (`https://openrouter.ai/api/v1`), `OPENROUTER_API_KEY` and `provider.require_parameters`, with no priority tier. `prices.ts` records $2 input / $0.10 cached input / $10 output per 1M tokens.
+
+Handwriting stays on **gpt-6.1-sol** and flashcards on **gpt-6-luna**; the eval judge stays **gpt-6-astra** (low). To switch marking back to Sol, change one line: `MARKER.model = MODELS.strong` (or `MODELS.marker = "gpt-6.1-sol"`), then update the engine and price tests that assert `MODELS.marker` / the Sonnet marker.
 
 ## The chain (`markWritten`)
 
@@ -16,7 +17,8 @@ All three passes use **gpt-6.1-sol** (`MODELS.strong`) with Fast (priority) proc
 | 3. Reconcile (only on disagreement) | the check prompt plus both assessments as Marker A / Marker B             | CheckSchema                                                                                               | medium   | `second_pass`   |
 
 - Passes 1 and 2 run in parallel, so the check adds no latency.
-- All three passes see the same band anchors (below), so they share one cacheable prompt prefix per question.
+- All three passes see the same band anchors (below), so they share one prompt prefix per question. The prefix is only cached on OpenAI models; the OpenRouter/Sonnet route sends no cache markers, so it is not cached.
+- Format retry: Anthropic structured outputs do not enforce array min/max counts. A reply that fails the Zod schema gets one retry on the same model, with a short user message naming up to three failing fields. Any other error or a second schema failure fails as before. The band-correction call gets its own schema retry, so one pass can make up to four calls.
 - Every pass gets one correction retry if its band or mark is invalid. After that the mark is clamped and the band is derived from it.
 - Feedback (comments, next band, outline) always comes from pass 1. The justification and band come from whichever pass settles the mark.
 - Thinking levels were picked by eval (CHANGELOG, 9 Oct). A medium check pass or a medium grader gave the same headline marks as low at more cost and time, and the medium grader's first pass alone was less accurate.
@@ -60,16 +62,18 @@ The NESA directive verb glossary, highest band fully satisfied, and the sample a
 
 ## Budget guard
 
-- Every call is costed (`PRICES`, standard rates ×2 for Fast) and logged to `ai_usage`.
+- Every reply is costed (`PRICES`) and logged to `ai_usage` before validation, including failed-format replies. OpenAI Fast calls cost standard rates ×2; Anthropic calls have no priority surcharge.
 - `callJson` refuses once total spend reaches `BUDGET_USD` ($90).
 - The eval refuses to start, and stops between items, once spend reaches `EVAL_BLOCK_USD` ($80). Eval calls are logged per item as task `eval:<stamp>:<item>:mark` or `:judge`, which is how each item is costed.
 
 ## Eval
 
-`npx tsx --conditions=react-server --env-file=.env.local src/lib/ai/eval/run.mts [--dry-run] [--limit=N] [--label=x]`
+`npx tsx --conditions=react-server --env-file=.env.local src/lib/ai/eval/run.mts [--dry-run] [--limit=N | --items=i,j] [--label=x]`
 
 - Runs A1's 20 answers with Karan's marks and critiques. Headline numbers exclude fm-1 (its answer duplicates fm-5) and ei-4 (3.5 is an invented midpoint), which are reported separately. It also runs our 10-answer Claro check.
 - **Held-out set**: the 196 `marking_examples` rows with `split = 'test'` on the `a1-m*` mock questions (up to 6 whole-mark answers per question spread across marks, fixed seed in `split.ts`). Reported as its own section with the same mark metrics. It has no judge, because there is no Karan critique for these answers. These questions were never used to tune the prompt.
 - Items run 6 at a time; `--limit=N` applies per section.
+- For small targeted runs, `--items=i,j` selects 0-based positions in the full array: A1, then Held-out, then Claro. It cannot be combined with `--limit`. The `ai_usage` task index `eval:<stamp>:<n>` is the position in the selected list, not the full-array index.
 - Feedback is judged by a pinned **gpt-6-astra** (low thinking), separate from the marker so runs stay comparable. The judge reports Pros kept and Cons fixed, the way A1's judge does.
 - Results: JSON in `src/lib/ai/eval/results/` (the `evals` bucket doesn't exist yet), plus a markdown summary in `/workspace/claro/eval-runs/`.
+- Stamps have minute resolution: two runs started in the same minute overwrite each other.

@@ -36,6 +36,7 @@ export function writeResults(
     dirty: boolean;
     label: string;
     limit: number | null;
+    items?: number[] | null;
     marker: typeof MARKER;
     judge: typeof JUDGE;
     spentBefore: number;
@@ -170,7 +171,7 @@ export function writeResults(
   const markdown =
     [
       `# Marking eval ${meta.stamp} (Sydney)`,
-      `Label: ${meta.label || "—"}. Git: ${meta.git}${meta.dirty ? " (dirty)" : ""}. Marker: ${meta.marker.model}/grade=${meta.marker.effort.grade}, check=${meta.marker.effort.check}, reconcile=${meta.marker.effort.reconcile} (priority). Judge: ${meta.judge.model}/${meta.judge.effort}.`,
+      `Label: ${meta.label || "—"}. Git: ${meta.git}${meta.dirty ? " (dirty)" : ""}. Marker: ${meta.marker.model}/grade=${meta.marker.effort.grade}, check=${meta.marker.effort.check}, reconcile=${meta.marker.effort.reconcile}${meta.marker.model.startsWith("anthropic/") ? "" : " (priority)"}. Judge: ${meta.judge.model}/${meta.judge.effort}.`,
       "## A1 headline",
       head,
       firstPass,

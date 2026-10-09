@@ -3,6 +3,13 @@
 export const PRICES = {
   "gpt-6-astra": { input: 10, cachedInput: 1, cacheWrite: 12.5, output: 50 },
   "gpt-6.1-sol": { input: 2, cachedInput: 0.1, cacheWrite: 2.5, output: 10 },
+  // OpenRouter pricing (openrouter.ai/anthropic/claude-sonnet-5.5, checked 9 Oct 2026); never priority-billed.
+  "anthropic/claude-sonnet-5.5": {
+    input: 2,
+    cachedInput: 0.1,
+    cacheWrite: 2.5,
+    output: 10,
+  },
   "gpt-6-luna": {
     input: 0.1,
     cachedInput: 0.01,
@@ -13,8 +20,9 @@ export const PRICES = {
 
 export type Model = keyof typeof PRICES;
 
-/** Strong model for marking and handwriting; cheap model for bulk and simple work. */
+/** Dedicated marker; strong model for handwriting; cheap model for bulk and simple work. */
 export const MODELS = {
+  marker: "anthropic/claude-sonnet-5.5",
   strong: "gpt-6.1-sol",
   cheap: "gpt-6-luna",
 } as const satisfies Record<string, Model>;

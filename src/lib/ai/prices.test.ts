@@ -2,6 +2,17 @@
 import { expect, it } from "vitest";
 import { costUsd, MODELS } from "./prices";
 
+it("prices Sonnet fresh, cached, written and output tokens", () => {
+  expect(MODELS.marker).toBe("anthropic/claude-sonnet-5.5");
+  expect(
+    costUsd(MODELS.marker, {
+      prompt_tokens: 1000,
+      completion_tokens: 100,
+      prompt_tokens_details: { cached_tokens: 200, cache_write_tokens: 300 },
+    }),
+  ).toBe(0.00277);
+});
+
 it("prices fresh and cached input tokens separately", () => {
   expect(
     costUsd(MODELS.strong, { prompt_tokens: 1000, completion_tokens: 100 }),

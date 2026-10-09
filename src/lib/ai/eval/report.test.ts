@@ -41,7 +41,7 @@ it("excludes fixture bugs and failures from headline metrics, but reports their 
       label: "Canned",
       limit: null,
       marker: {
-        model: "gpt-6.1-sol",
+        model: "anthropic/claude-sonnet-5.5",
         effort: { grade: "low", check: "low", reconcile: "medium" },
       },
       judge: { model: "gpt-6-astra", effort: "low" },
@@ -141,5 +141,40 @@ it("excludes fixture bugs and failures from headline metrics, but reports their 
   expect(markdown).toContain("1/1 in range");
   expect(markdown).toContain("Short \\| answer");
   expect(markdown).toContain("marking $0.0400, judge $0.0600");
+  vi.restoreAllMocks();
+});
+
+it.each([
+  ["gpt-6.1-sol", true],
+  ["anthropic/claude-sonnet-5.5", false],
+])("labels the %s marker as priority: %s", (model, priority) => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  vi.mocked(writeFileSync).mockClear();
+  writeResults(
+    {
+      stamp: "2026-10-09-2000",
+      git: "abc123",
+      dirty: false,
+      label: "",
+      limit: null,
+      marker: {
+        model,
+        effort: { grade: "low", check: "low", reconcile: "medium" },
+      } as Parameters<typeof writeResults>[0]["marker"],
+      judge: { model: "gpt-6-astra", effort: "low" },
+      spentBefore: 0,
+      spentAfter: 0,
+      blocked: false,
+    },
+    [],
+  );
+  const header = String(vi.mocked(writeFileSync).mock.calls[1][1]).split(
+    "\n",
+  )[2];
+  expect(header).toContain(`Marker: ${model}/grade=low`);
+  expect(header).toContain(
+    `reconcile=medium${priority ? " (priority)" : ""}. Judge:`,
+  );
+  expect(header.includes("(priority)")).toBe(priority);
   vi.restoreAllMocks();
 });

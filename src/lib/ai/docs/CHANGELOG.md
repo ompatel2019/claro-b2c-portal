@@ -1,6 +1,25 @@
 # Engine changelog
 
-Eval = A1 set, 18 headline items (fm-1 and ei-4 excluded). Signed error: + = lenient. Marker gpt-6.1-sol (Fast). Judge gpt-6-astra/low. Result files are in `src/lib/ai/eval/results/`. Runs marked dirty were made on an uncommitted change (the eval varied one setting), and the setting is recorded in the file.
+Eval = A1 set, 18 headline items (fm-1 and ei-4 excluded). Signed error: + = lenient. Marker anthropic/claude-sonnet-5.5 (OpenRouter); earlier runs used gpt-6.1-sol (Fast). Judge gpt-6-astra/low. Result files are in `src/lib/ai/eval/results/`. Runs marked dirty were made on an uncommitted change (the eval varied one setting), and the setting is recorded in the file.
+
+## 9 Oct 2026: Sonnet 5.5 via OpenRouter + field-naming format retry
+
+All three live marker passes now use `anthropic/claude-sonnet-5.5` (low / low / medium). Handwriting, flashcards and the judge are unchanged (ENGINE.md, Model). Compared with shipped Sol run 1211; Sonnet run 1415 was before the format retry:
+
+| Set                   | n       | Exact | Within-1 | Band  | Signed | Mean \|Δ\| | Judge | Marking $/answer | s/answer |
+| --------------------- | ------- | ----- | -------- | ----- | ------ | ---------- | ----- | ---------------- | -------- |
+| Sol 1211: A1          | 18      | 44.4% | —        | 50.0% | +0.44  | —          | 4.83  | 0.0198           | 12.5     |
+| Sol 1211: Held-out    | 196     | 45.9% | 95.4%    | 45.9% | +0.08  | 0.59       | —     | 0.0274           | 16.0     |
+| Sonnet 1415: A1       | 18      | 61.1% | 94.4%    | 72.2% | +0.39  | 0.39       | 5.11  | 0.0329           | 11.0     |
+| Sonnet 1415: Held-out | 194/196 | 45.9% | 96.9%    | 45.9% | +0.07  | 0.57       | —     | 0.0442           | 12.7     |
+
+3/226 answers in 1415 failed the format check (comments < 2 / outline < 3), including 2 held-out answers. Anthropic structured outputs do not enforce array min/max counts. Each schema-invalid reply now gets one retry on the same model, naming up to three failing fields; every reply is costed to `ai_usage` before validation. Targeted probes on those three answers (1439, 1440 ×2): an identical-request retry did not rescue `a1-m5-22a`; with the field-naming retry, all three marked in both probe runs (retry fired on two of three each run). The two 1440 probes started in the same minute, so the results file holds only the second; the first probe's outcome was taken from its console output.
+
+Held-out signed error by tutor mark (Sol 1211 → Sonnet 1415): 0: +0.74 → +0.77; 1: +0.60 → +0.57; 2: +0.07 → +0.06; 3: −0.31 → −0.29; 4: −0.74 → −0.79; 5: −0.67 → −0.75; 6: −2.00 → −1.00.
+
+Paired against 1211 (closer/further): A1 6/2, held-out 27/23. Held-out is a tie within noise; the A1 gain is the reason to switch. Sonnet marking costs about 60% more per answer (no prompt caching on the OpenRouter route) and is about 20% faster. Single run; no full eval after the format retry.
+
+To roll back to Sol, change one line: `MARKER.model = MODELS.strong` (or `MODELS.marker = "gpt-6.1-sol"`), then update the engine and price tests that assert `MODELS.marker` / the Sonnet marker.
 
 ## 9 Oct 2026: band-anchored examples (A1 tutor-marked answers in the grader prompt)
 

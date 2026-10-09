@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
+import a1 from "./a1-eval-set.json";
 import claro from "./claro-set.json";
 import questions from "./a1-questions.json";
 
@@ -116,6 +117,64 @@ afterEach(() => {
   process.argv = argv;
   process.exitCode = exitCode;
   vi.restoreAllMocks();
+});
+
+it.each([
+  ["--items="],
+  ["--items=-1"],
+  ["--items=1.5"],
+  ["--items=0,,1"],
+  ["--items=0,"],
+  ["--items=abc"],
+  ["--items=9007199254740992"],
+  ["--items=0", "--limit=1"],
+])("rejects invalid item arguments %j before DB calls", async (...args) => {
+  process.argv = ["node", "run.mts", ...args];
+  await expect(run()).rejects.toThrow("Use --dry-run");
+  expect(mocks.rpc).not.toHaveBeenCalled();
+  expect(mocks.from).not.toHaveBeenCalled();
+});
+
+// Full array with no --limit: every A1 item, the one mocked held-out row, every Claro item.
+const heldOutIndex = a1.length;
+const itemCount = a1.length + 1 + claro.length;
+
+it("rejects an out-of-range --items index before any marking call", async () => {
+  process.argv = ["node", "run.mts", `--items=0,${itemCount}`];
+  await expect(run()).rejects.toThrow(
+    `--items indices must be less than the full item count (${itemCount})`,
+  );
+  expect(mocks.mark).not.toHaveBeenCalled();
+  expect(mocks.judge).not.toHaveBeenCalled();
+  expect(mocks.write).not.toHaveBeenCalled();
+  expect(mocks.report).not.toHaveBeenCalled();
+});
+
+it("--items marks only the selected position and records it in the meta", async () => {
+  process.argv = ["node", "run.mts", `--items=${heldOutIndex}`];
+  await run();
+  expect(mocks.mark).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ id: "a1-m2-21a" }),
+    "x",
+    null,
+    expect.stringMatching(/^eval:\d{4}-\d{2}-\d{2}-\d{4}:0:mark$/),
+  );
+  expect(mocks.judge).not.toHaveBeenCalled();
+  expect(mocks.report).toHaveBeenCalledTimes(1);
+  const [meta, rows] = mocks.report.mock.calls[0];
+  expect(meta).toMatchObject({
+    items: [heldOutIndex],
+    limit: null,
+    blocked: false,
+  });
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({
+    id: "a1-m2-21a",
+    section: "Held-out",
+    expected: 2,
+    mark: 3,
+    error: null,
+  });
 });
 
 it("dry-run renders exact grader and judge messages without marking, judging or usage reads", async () => {
