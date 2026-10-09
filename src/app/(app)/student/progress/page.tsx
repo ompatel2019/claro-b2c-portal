@@ -149,7 +149,10 @@ async function HistoryCard({
       </Section>
     );
   const sessions = d.history.filter(
-    (s) => (!kind || s.kind === kind) && (!type || s.by_type[type] != null),
+    (s) =>
+      ["sprint", "flashcards", "single"].includes(s.kind) &&
+      (!kind || s.kind === kind) &&
+      (!type || s.by_type[type] != null),
   );
   const points = sessions.flatMap((s) => {
     const pct = type ? s.by_type[type] : s.pct;
@@ -462,7 +465,7 @@ export default async function Progress({
     today = progressToday(),
     scope = { range, today };
   const kind =
-    typeof p.kind === "string" && ["sprint", "paper", "single"].includes(p.kind)
+    typeof p.kind === "string" && ["sprint", "single"].includes(p.kind)
       ? p.kind
       : undefined;
   const type =

@@ -73,6 +73,13 @@ const request = (body?: unknown) =>
 
 function client(rows: unknown[], signedIn = true) {
   const chains = rows.map((data) => {
+    if (data && typeof data === "object") {
+      const row = data as Record<string, unknown>;
+      if (row.session && typeof row.session === "object")
+        row.session = { kind: "sprint", ...row.session };
+      if ("config" in row && !("session" in row) && !("kind" in row))
+        row.kind = "sprint";
+    }
     const chain = {
       select: vi.fn(),
       eq: vi.fn(),
@@ -252,7 +259,13 @@ it("stores an AI review against the caller and returns the card back", async () 
 });
 
 it("rejects an image path outside the caller's storage folder", async () => {
-  client([{ image_paths: ["another-user/image.jpg"], status: "pending" }]);
+  client([
+    {
+      image_paths: ["another-user/image.jpg"],
+      status: "pending",
+      session: { kind: "sprint" },
+    },
+  ]);
   expect((await transcribe(request(), ctx)).status).toBe(400);
   expect(admin().storage.from).not.toHaveBeenCalled();
 });
@@ -261,6 +274,7 @@ it("rejects photo pages when any page is outside the caller's folder", async () 
   client([
     {
       image_paths: [`${userId}/page-1.jpg`, "another-user/page-2.jpg"],
+      session: { kind: "sprint" },
       status: "pending",
     },
   ]);
@@ -269,7 +283,13 @@ it("rejects photo pages when any page is outside the caller's folder", async () 
 });
 
 it("does not reopen a marked attempt for transcription", async () => {
-  client([{ image_paths: [`${userId}/image.jpg`], status: "marked" }]);
+  client([
+    {
+      image_paths: [`${userId}/image.jpg`],
+      status: "marked",
+      session: { kind: "sprint" },
+    },
+  ]);
   expect((await transcribe(request(), ctx)).status).toBe(409);
   expect(admin().storage.from).not.toHaveBeenCalled();
 });
@@ -320,6 +340,7 @@ it("returns only the score and summary for an owned session", async () => {
   const { chains } = client([
     {
       id: "id",
+      kind: "sprint",
       session_id: sessionId,
       session: { finished_at: "2026-10-08" },
       question: { type: "mcq" },
@@ -673,129 +694,6 @@ it("rejects an override whose review is not owned or belongs to another session"
   expect(admin().from).toHaveBeenCalledTimes(1);
 });
 
-const paperConfig = {
-  time_limit_min: 180,
-  reading_min: 5,
-  strict: true,
-  sections: [
-    { position: 24, section: "III", choice_group: 1 },
-    { position: 25, section: "III", choice_group: 1 },
-  ],
-};
-const paperAttempts = [24, 25].map((position) => ({
-  id: String(position),
-  position,
-  choice_index: null,
-  answer_text: "Draft answer",
-  transcript: null,
-  question: { marks: 20 },
-}));
-it("requires a paper choice and does not trust an early automatic flag", async () => {
-  client([
-    {
-      id: "id",
-      kind: "paper",
-      config: paperConfig,
-      started_at: new Date().toISOString(),
-      finished_at: null,
-    },
-  ]);
-  vi.mocked(admin().from).mockReturnValueOnce(
-    adminQuery(paperAttempts) as never,
-  );
-  expect((await finish(request({ automatic: true }), ctx)).status).toBe(400);
-  expect(markAttempt).not.toHaveBeenCalled();
-  expect(finishSession).not.toHaveBeenCalled();
-});
-it("accepts an expired paper, skips the other choice, and scores only chosen rows", async () => {
-  client([
-    {
-      id: "id",
-      kind: "paper",
-      config: paperConfig,
-      started_at: "2020-01-01T00:00:00Z",
-      finished_at: null,
-    },
-  ]);
-  const skip = adminQuery(null);
-  const save = adminQuery(null);
-  for (const chain of [
-    adminQuery(paperAttempts),
-    skip,
-    adminQuery([{ id: "24", status: "pending", question: { marks: 20 } }]),
-    adminQuery([
-      {
-        id: "24",
-        status: "marked",
-        mark: 12,
-        max_marks: 20,
-        question: { marks: 20 },
-      },
-    ]),
-    save,
-  ])
-    vi.mocked(admin().from).mockReturnValueOnce(chain as never);
-  vi.mocked(markAttempt).mockResolvedValue({
-    status: "marked",
-    mark: 12,
-    max_marks: 20,
-  } as never);
-  const response = await finish(request(), ctx);
-  expect(await response.json()).toEqual({
-    finished: true,
-    score: 12,
-    max_score: 20,
-    summary: expect.objectContaining({
-      strengths: expect.any(Array),
-      improvements: expect.any(Array),
-      next_steps: expect.any(Array),
-    }),
-  });
-  expect(skip.in).toHaveBeenCalledWith("id", ["25"]);
-  expect(skip.update).toHaveBeenCalledWith(
-    expect.objectContaining({ status: "skipped", max_marks: 0 }),
-  );
-  expect(markAttempt).toHaveBeenCalledExactlyOnceWith("24");
-  expect(save.update).toHaveBeenCalledWith(
-    expect.objectContaining({
-      score: 12,
-      max_score: 20,
-      finished_at: expect.any(String),
-    }),
-  );
-  expect(finishSession).not.toHaveBeenCalled();
-});
-it("honours the selected paper draft without marking its alternative", async () => {
-  client([
-    {
-      id: "id",
-      kind: "paper",
-      config: paperConfig,
-      started_at: new Date().toISOString(),
-      finished_at: null,
-    },
-  ]);
-  const skip = adminQuery(null);
-  for (const chain of [
-    adminQuery(paperAttempts),
-    skip,
-    adminQuery([{ id: "25", status: "pending", question: { marks: 20 } }]),
-    adminQuery([
-      {
-        id: "25",
-        status: "marked",
-        mark: 0,
-        max_marks: 20,
-        question: { marks: 20 },
-      },
-    ]),
-    adminQuery(null),
-  ])
-    vi.mocked(admin().from).mockReturnValueOnce(chain as never);
-  expect((await finish(request({ choices: { 1: 25 } }), ctx)).status).toBe(200);
-  expect(markAttempt).toHaveBeenCalledExactlyOnceWith("25");
-  expect(skip.in).toHaveBeenCalledWith("id", ["24"]);
-});
 it("transcribes every photo page in its saved order", async () => {
   client([
     {
@@ -839,7 +737,6 @@ it("transcribes every photo page in its saved order", async () => {
 it.each([
   ["short", "sprint", 4, 3],
   ["extended", "sprint", 9, 8],
-  ["short", "paper", 9, 8],
 ])(
   "enforces the %s %s photo limit before AI calls",
   async (type, kind, count, limit) => {
@@ -863,52 +760,6 @@ it.each([
     expect(assertStudentAiRateLimit).not.toHaveBeenCalled();
   },
 );
-it("retries failed paper marking once, logs rejection, and scores the retry", async () => {
-  client([
-    {
-      kind: "paper",
-      config: paperConfig,
-      started_at: new Date().toISOString(),
-      finished_at: null,
-    },
-  ]);
-  const save = adminQuery(null);
-  for (const chain of [
-    adminQuery(paperAttempts),
-    adminQuery(null),
-    adminQuery([{ id: "24", status: "pending", question: { marks: 20 } }]),
-    adminQuery([{ id: "24", status: "failed", question: { marks: 20 } }]),
-    adminQuery([
-      {
-        id: "24",
-        status: "marked",
-        mark: 15,
-        max_marks: 20,
-        question: { marks: 20 },
-      },
-    ]),
-    save,
-  ])
-    vi.mocked(admin().from).mockReturnValueOnce(chain as never);
-  const error = new Error("Temporary marking failure");
-  vi.mocked(markAttempt)
-    .mockRejectedValueOnce(error)
-    .mockResolvedValueOnce({ status: "marked" } as never);
-  const response = await finish(request({ choices: { 1: 24 } }), ctx);
-  expect(await response.json()).toEqual({
-    score: 15,
-    max_score: 20,
-    finished: true,
-    summary: expect.objectContaining({
-      strengths: expect.any(Array),
-      improvements: expect.any(Array),
-      next_steps: expect.any(Array),
-    }),
-  });
-  expect(vi.mocked(markAttempt).mock.calls).toEqual([["24"], ["24"]]);
-  expect(console.error).toHaveBeenCalledWith(error);
-});
-
 it("marks a nullable-question single session through the same marking endpoint", async () => {
   const { markOwnCheck } = await import("@/lib/single-check-marking");
   const config = {
@@ -1205,3 +1056,23 @@ it("marks a bank single through the single pipeline and rescores its one questio
   expect(markAttempt).not.toHaveBeenCalled();
   expect(rescoreSession).not.toHaveBeenCalled();
 });
+
+it.each([mark, transcribe, finish])(
+  "rejects legacy paper sessions before marking or transcription %#",
+  async (handler) => {
+    client([
+      handler === finish
+        ? { kind: "paper", config: {} }
+        : {
+            session: { kind: "paper", config: {} },
+            status: "pending",
+            image_paths: [`${userId}/1.png`],
+          },
+    ]);
+    const response = await handler(request(), ctx);
+    expect(response.status).toBe(404);
+    expect(markAttempt).not.toHaveBeenCalled();
+    expect(transcribeImage).not.toHaveBeenCalled();
+    expect(finishSession).not.toHaveBeenCalled();
+  },
+);

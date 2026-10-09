@@ -60,7 +60,6 @@ export function ProgressControls({
       options: [
         ["all", "All"],
         ["sprint", "Sprints"],
-        ["paper", "Papers"],
         ["single", "Mark my answer"],
       ],
     },

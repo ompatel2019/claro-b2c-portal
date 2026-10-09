@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   from: vi.fn(),
   select: vi.fn(),
   eq: vi.fn(),
+  in: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ requireProfile: mocks.requireProfile }));
@@ -27,8 +28,9 @@ beforeEach(() => {
     school: null,
   });
   mocks.createClient.mockResolvedValue({ from: mocks.from });
-  mocks.from.mockReturnValue({ select: mocks.select });
-  mocks.select.mockReturnValue({ eq: mocks.eq });
+  mocks.from.mockReturnValue({ in: mocks.in, select: mocks.select });
+  mocks.in.mockReturnValue({ eq: mocks.eq });
+  mocks.select.mockReturnValue({ in: mocks.in, eq: mocks.eq });
 });
 
 it.each([0, 1, 50, null])(

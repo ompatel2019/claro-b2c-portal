@@ -95,6 +95,7 @@ async function History({
           .eq("user_id", p.id)
           .eq("reason", "student_dispute")
           .eq("attempts.user_id", p.id)
+          .in("attempts.sessions.kind", ["sprint", "single"])
           .eq("attempts.sessions.user_id", p.id);
   let result = await query
     .order(state.sort.id, { ascending: state.sort.dir === "asc" })

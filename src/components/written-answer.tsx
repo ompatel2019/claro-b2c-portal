@@ -33,14 +33,14 @@ export function WrittenAnswer({
   local,
   disabled,
   onBusy,
-  paper = false,
+  inputOnly = false,
   mode,
   onConfirmed,
   onModeChange,
   onError,
 }: {
   disabled: boolean;
-  paper?: boolean;
+  inputOnly?: boolean;
   mode?: "type" | "photo";
   onError?: (message: string) => void;
   onModeChange?: (mode: "type" | "photo") => void;
@@ -122,7 +122,7 @@ export function WrittenAnswer({
   }
   async function upload(files: File[]) {
     const pageLimit =
-      paper || a.question.type === "extended"
+      inputOnly || a.question.type === "extended"
         ? LONG_PHOTO_PAGE_LIMIT
         : SHORT_PHOTO_PAGE_LIMIT;
     if ((a.image_paths?.length ?? 0) + files.length > pageLimit)
@@ -470,7 +470,7 @@ export function WrittenAnswer({
               )}
             </>
           )}
-          {!paper && (
+          {!inputOnly && (
             <Button
               disabled={
                 busy ||

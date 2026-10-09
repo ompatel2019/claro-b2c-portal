@@ -7,7 +7,7 @@ import { DataTable, type Column } from "./data-table";
 import { FilterBar } from "./filter-bar";
 import { EmptyState } from "./empty-state";
 import { StatusPill } from "./status-pill";
-import { Sprint, Book, Cards, Pen, History, SearchOff, Close } from "./icons";
+import { Sprint, Cards, Pen, History, SearchOff, Close } from "./icons";
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent } from "./ui/popover";
@@ -20,7 +20,12 @@ import {
   type ActivityData,
   type ActivityRow,
 } from "@/lib/activity-filters";
-import { kindLabels, sessionScore, sessionHref } from "@/lib/session-summary";
+import {
+  kindLabels,
+  sessionScore,
+  sessionHref,
+  isStudentSession,
+} from "@/lib/session-summary";
 import {
   plural,
   dateLabel,
@@ -39,10 +44,10 @@ const subscribeOnline = (change: () => void) => {
 };
 const onlineSnapshot = () => navigator.onLine;
 const serverOnline = () => true;
-const icons = { sprint: Sprint, paper: Book, flashcards: Cards, single: Pen };
+const icons = { sprint: Sprint, flashcards: Cards, single: Pen };
 export function ActivityBrowser({
   filters: f,
-  data,
+  data: suppliedData,
   topics,
   today,
 }: {
@@ -51,6 +56,10 @@ export function ActivityBrowser({
   topics: Topic[];
   today: string;
 }) {
+  const data = {
+    ...suppliedData,
+    rows: suppliedData.rows.filter(isStudentSession),
+  };
   const router = useRouter();
   const online = useSyncExternalStore(
     subscribeOnline,
@@ -74,9 +83,7 @@ export function ActivityBrowser({
             <Icon aria-hidden className="size-4" />
             {r.kind === "sprint"
               ? "Sprint"
-              : r.kind === "paper"
-                ? "Paper"
-                : kindLabels[r.kind as keyof typeof kindLabels]}
+              : kindLabels[r.kind as keyof typeof kindLabels]}
           </span>
         );
       },
@@ -381,7 +388,7 @@ export function ActivityBrowser({
           description={
             data.all_total
               ? "Try a different filter to find your session."
-              : "Your sprints, papers and checks will appear here."
+              : "Your sprints, flashcards and checks will appear here."
           }
           action={
             <Link

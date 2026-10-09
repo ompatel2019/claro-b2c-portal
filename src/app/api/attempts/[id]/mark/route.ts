@@ -55,6 +55,8 @@ export async function POST(
       .in("status", ["pending", "transcribed", "failed"])
       .throwOnError();
   }
+  if (!session || !["sprint", "single"].includes(session.kind))
+    return Response.json({ error: "Attempt not found" }, { status: 404 });
   const finished = Boolean(session.finished_at);
   if (session.kind === "single") {
     if (!finished)

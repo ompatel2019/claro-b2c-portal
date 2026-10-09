@@ -40,24 +40,16 @@ const SHORTCUTS = [
 ];
 
 /** Countdown (amber ≤5:00, red ≤1:00, then "+m:ss over") or a muted count-up. Click hides the digits. */
-function Timer({
-  mode,
-  seconds,
-  paper,
-}: {
-  mode: "down" | "up";
-  seconds: number;
-  paper?: boolean;
-}) {
+function Timer({ mode, seconds }: { mode: "down" | "up"; seconds: number }) {
   const [hidden, setHidden] = useState(false);
   const prev = useRef(seconds);
   useEffect(() => {
     if (mode === "down")
-      for (const m of paper ? [30, 10, 5, 1] : [10, 5, 1])
+      for (const m of [10, 5, 1])
         if (prev.current > m * 60 && seconds <= m * 60)
           toast(`${m} ${m === 1 ? "minute" : "minutes"} left`);
     prev.current = seconds;
-  }, [mode, seconds, paper]);
+  }, [mode, seconds]);
   const over = mode === "down" && seconds < 0;
   return (
     <button
@@ -98,7 +90,7 @@ type SessionProps = {
   answered: number;
   saveState: SaveState;
   onRetry: () => void;
-  clock: { mode: "down" | "up"; seconds: number; paper?: boolean };
+  clock: { mode: "down" | "up"; seconds: number };
   busy?: boolean;
   onExit: () => void;
   onFinish: () => void;

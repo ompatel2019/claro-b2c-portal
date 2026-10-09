@@ -48,8 +48,6 @@ export function reviewHref(
   const path =
     session.kind === "sprint"
       ? `sprint/${session.id}/results`
-      : session.kind === "paper"
-        ? `papers/${session.id}/results`
-        : `activity/${session.id}`;
+      : `activity/${session.id}`;
   return `/student/${path}#q-${position}`;
 }

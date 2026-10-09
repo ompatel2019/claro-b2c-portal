@@ -39,3 +39,13 @@ it.each(
   expect(label).not.toMatch(/·\s*Claro/);
   expect(pageMetadata(label).title).toBe(label);
 });
+
+it("has no student Papers pages or links from student pages", () => {
+  const studentPages = Object.entries(pages).filter(([path]) =>
+    path.includes("/student/"),
+  );
+  for (const [path, source] of studentPages) {
+    expect(path).not.toContain("/student/papers/");
+    expect(source).not.toContain("/student/papers");
+  }
+});

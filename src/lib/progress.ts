@@ -42,8 +42,6 @@ export type HistoryScore = {
   config: { mode?: string; topics?: string[]; subtopics?: string[] };
   finished_at: string;
   elapsed_s: number;
-  paper_title: string | null;
-  paper_id?: string | null;
   pct: number | null;
   by_type: Record<string, number>;
 };
@@ -70,16 +68,14 @@ export type ProgressData = {
   missed: { id: string; name: string; missed: number }[];
   due: { day: string; count: number }[];
 };
-export function reportHref(s: Pick<HistoryScore, "id" | "kind" | "paper_id">) {
+export function reportHref(s: Pick<HistoryScore, "id" | "kind">) {
   return s.kind === "single"
     ? `/student/activity/${s.id}`
     : s.kind === "flashcards"
       ? `/student/flashcards/${s.id}`
-      : s.kind === "paper"
-        ? s.paper_id
-          ? `/student/papers/${s.paper_id}/results?sit=${s.id}`
-          : null
-        : `/student/sprint/${s.id}/results`;
+      : s.kind === "sprint"
+        ? `/student/sprint/${s.id}/results`
+        : null;
 }
 export function practiseHref(
   t: Pick<Topic, "id" | "parent_id">,

@@ -93,7 +93,7 @@ test.describe("Student profile (read only)", () => {
     const reviews = page.getByRole("table", { name: "Marks you questioned" });
     for (const link of await reviews.getByRole("link").all())
       expect(await link.getAttribute("href")).toMatch(
-        /^\/student\/(sprint|papers|activity)\/.+#q-\d+$/,
+        /^\/student\/(sprint|activity)\/.+#q-\d+$/,
       );
     const feedback = page.getByRole("table", { name: "Your feedback" });
     if (await feedback.count()) {

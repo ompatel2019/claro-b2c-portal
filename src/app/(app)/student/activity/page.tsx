@@ -7,6 +7,7 @@ import {
   type ActivityData,
   type SearchParams,
 } from "@/lib/activity-filters";
+import { studentActivity } from "@/lib/activity-data";
 import { sessionLabels } from "@/lib/session-summary";
 import { sydneyToday } from "@/lib/flashcards";
 import { type Topic } from "@/lib/practice";
@@ -21,17 +22,33 @@ export default async function Activity({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requireProfile();
+  const profile = await requireProfile();
   const today = sydneyToday();
   const filters = parseActivityFilters(await searchParams, today);
   const db = await createClient();
-  const [result, topics] = await Promise.all([
-    db.rpc("activity_stats", { p_filters: filters, p_labels: sessionLabels }),
+  const [total, topics] = await Promise.all([
+    db
+      .from("sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .in("kind", ["sprint", "flashcards", "single"]),
     db.from("topics").select("id,parent_id,name,sort").order("sort"),
   ]);
-  if (result.error || topics.error || !result.data)
+  if (total.error || topics.error || total.count === null)
     throw new Error("Couldn't load your activity.");
-  const data = result.data as ActivityData;
+  const data = await studentActivity(
+    filters,
+    async (page) => {
+      const result = await db.rpc("activity_stats", {
+        p_filters: { ...filters, page },
+        p_labels: sessionLabels,
+      });
+      if (result.error || !result.data)
+        throw new Error("Couldn't load your activity.");
+      return result.data as ActivityData;
+    },
+    total.count,
+  );
   const stats = data.stats;
   return (
     <div className="min-w-0 space-y-4">

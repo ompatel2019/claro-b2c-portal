@@ -15,10 +15,10 @@ const attempt = {
   transcript: null,
   image_paths: null,
 } as Attempt;
-function answer(paper = true, disabled = false) {
+function answer(inputOnly = true, disabled = false) {
   return render(
     <WrittenAnswer
-      paper={paper}
+      inputOnly={inputOnly}
       disabled={disabled}
       attempt={attempt}
       userId="u"
@@ -34,17 +34,17 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
-it("locks typing and photo upload together during reading", () => {
+it("locks typing and photo upload together while disabled", () => {
   answer(true, true);
   expect(screen.getByRole("textbox")).toBeDisabled();
   expect(screen.getByLabelText("Take photo / Upload")).toBeDisabled();
 });
-it("allows paper drafts without offering early marking", () => {
+it("embeds single-check input without offering a second submit action", () => {
   answer();
   expect(screen.getByRole("textbox")).toBeEnabled();
   expect(screen.queryByRole("button", { name: "Submit answer" })).toBeNull();
 });
-it("rejects more than eight paper pages before any upload or transcription", async () => {
+it("rejects more than eight single-check pages before any upload or transcription", async () => {
   answer();
   const files = Array.from(
     { length: 9 },
@@ -86,7 +86,7 @@ it("appends camera shots, flushes once per batch, and reads only on request", as
     return (
       <WrittenAnswer
         attempt={row}
-        paper
+        inputOnly
         disabled={false}
         userId="u"
         onBusy={vi.fn()}

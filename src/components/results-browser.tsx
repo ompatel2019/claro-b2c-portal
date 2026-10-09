@@ -1,16 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { McGridRow } from "@/lib/results";
 import { Check, Close } from "./icons";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "./ui/select";
 import { cn } from "@/lib/utils";
 import { isTyping } from "./session-shell";
 import { StatusPill, type Pill } from "./status-pill";
@@ -246,37 +238,5 @@ export function ResultsBrowser({
       )}
       <div key={index}>{views[index]}</div>
     </section>
-  );
-}
-
-export function SitSelect({
-  paperId,
-  value,
-  sits,
-}: {
-  paperId: string;
-  value: string;
-  sits: { id: string; label: string }[];
-}) {
-  const router = useRouter();
-  return (
-    <Select
-      value={value}
-      items={sits.map((s) => ({ value: s.id, label: s.label }))}
-      onValueChange={(id) => {
-        if (id) router.push(`/student/papers/${paperId}/results?sit=${id}`);
-      }}
-    >
-      <SelectTrigger aria-label="Switch sit" className="h-9 max-w-full">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {sits.map((s) => (
-          <SelectItem key={s.id} value={s.id}>
-            {s.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
   );
 }

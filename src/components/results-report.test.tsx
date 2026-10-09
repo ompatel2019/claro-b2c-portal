@@ -100,13 +100,18 @@ it("reuses the MC review and selects the first lost-mark question with original 
   ).toBeVisible();
 });
 
-it("uses real section headings and context-specific unavailable copy without skeletons", () => {
+it("uses real section headings and sprint unavailable copy without skeletons", () => {
   const { container } = render(
-    <OverallFeedback summary={null} pending={false} context="paper" />,
+    <OverallFeedback summary={null} pending={false} />,
   );
   expect(
     screen.getByRole("heading", { level: 2, name: "Overall feedback" }),
   ).toBeVisible();
-  expect(screen.getByText(/isn’t available for this paper/)).toBeVisible();
+  expect(screen.getByText(/isn’t available for this sprint/)).toBeVisible();
   expect(container.querySelector(".animate-pulse")).toBeNull();
+});
+
+it("retains the context used by admin historical reports", () => {
+  render(<OverallFeedback summary={null} pending={false} context="paper" />);
+  expect(screen.getByText(/isn’t available for this paper/)).toBeVisible();
 });

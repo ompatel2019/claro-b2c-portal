@@ -24,7 +24,6 @@ const filters = parseActivityFilters({}, "2026-10-09");
 const row: ActivityRow = {
   id: "s",
   kind: "sprint",
-  paper_id: null,
   title: "Short answer sprint · Inflation",
   status: "Finished",
   provisional: false,
@@ -130,30 +129,6 @@ it("links a single-answer session to its own report", () => {
   for (const link of screen.getAllByRole("link", { name: /Mark my answer/ }))
     expect(link).toHaveAttribute("href", "/student/activity/s");
 });
-it("links papers by paper ID and sit, and in-progress sessions to the runner", () => {
-  show({ ...data, rows: [{ ...row, kind: "paper", paper_id: "paper" }] });
-  expect(screen.getByRole("link", { name: row.title })).toHaveAttribute(
-    "href",
-    "/student/papers/paper/results?sit=s",
-  );
-  cleanup();
-  show({
-    ...data,
-    rows: [
-      {
-        ...row,
-        kind: "paper",
-        paper_id: "paper",
-        finished_at: null,
-        status: "In progress",
-      },
-    ],
-  });
-  expect(screen.getByRole("link", { name: row.title })).toHaveAttribute(
-    "href",
-    "/student/papers/paper",
-  );
-});
 it("sorts on the server, resets paging and clears every external filter", () => {
   show(
     data,
@@ -181,4 +156,19 @@ it("toggles the default date order to oldest and back to newest", () => {
   show(data, { ...filters, sort: "oldest" });
   fireEvent.click(screen.getByRole("button", { name: "Date" }));
   expect(push).toHaveBeenCalledWith("/student/activity");
+});
+
+it("ignores a legacy paper session alongside supported activity", () => {
+  show({
+    ...data,
+    rows: [
+      row,
+      { ...row, id: "old-paper", kind: "paper", title: "Removed session" },
+    ],
+  });
+  expect(screen.queryByText("Removed session")).toBeNull();
+  expect(screen.getAllByRole("link", { name: row.title })[0]).toHaveAttribute(
+    "href",
+    "/student/sprint/s/results",
+  );
 });

@@ -56,7 +56,6 @@ it("marks the section root only on an exact match", () => {
     "/student",
     "/student/sprint",
     "/student/flashcards",
-    "/student/papers",
     "/student/mark",
     "/student/activity",
     "/student/progress",

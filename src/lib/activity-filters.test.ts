@@ -69,7 +69,7 @@ describe("Activity filters", () => {
   });
 });
 describe("Shared session summary", () => {
-  it("derives each kind's title, preferring subtopics and paper titles", () => {
+  it("derives each kind's title, preferring subtopics", () => {
     expect(
       sessionTitle(
         {
@@ -92,9 +92,6 @@ describe("Shared session summary", () => {
         topics,
       ),
     ).toBe("Mark my answer · Inflation");
-    expect(sessionTitle({ kind: "paper", config: {} }, [], "Trial 2026")).toBe(
-      "Trial 2026",
-    );
   });
   it("distinguishes pending marking from provisional and reviewed marks", () => {
     const s = { config: {}, finished_at: today };
@@ -123,19 +120,14 @@ describe("Shared session summary", () => {
 it.each([
   ["sprint", null, null, "/student/sprint/s"],
   ["sprint", null, today, "/student/sprint/s/results"],
-  ["paper", "p", null, "/student/papers/p"],
-  ["paper", "p", today, "/student/papers/p/results?sit=s"],
-  ["paper", null, today, null],
   ["flashcards", null, null, "/student/flashcards/s"],
   ["flashcards", null, today, "/student/flashcards/s"],
   ["single", null, null, "/student/activity/s"],
   ["single", null, today, "/student/activity/s"],
 ])(
   "links %s to an existing runner or report",
-  (kind, paper_id, finished_at, expected) => {
-    expect(sessionHref({ id: "s", kind: kind!, paper_id, finished_at })).toBe(
-      expected,
-    );
+  (kind, _unused, finished_at, expected) => {
+    expect(sessionHref({ id: "s", kind: kind!, finished_at })).toBe(expected);
   },
 );
 it("bounds pages, ignores duplicate parameters, and never interprets malformed days", () => {
@@ -147,4 +139,12 @@ it("bounds pages, ignores duplicate parameters, and never interprets malformed d
   expect(
     parseActivityFilters({ topic: ["a", "b"], status: ["finished"] }, today),
   ).toMatchObject({ topic: "", status: "" });
+});
+
+it("ignores the removed session kind in filters and links", () => {
+  expect(parseActivityFilters({ kind: "paper" }, today).kind).toBe("");
+  expect(sessionHref({ id: "old", kind: "paper" })).toBeNull();
+  expect(
+    sessionHref({ id: "old", kind: "paper", finished_at: today }),
+  ).toBeNull();
 });

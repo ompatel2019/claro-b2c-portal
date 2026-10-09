@@ -57,7 +57,6 @@ export const nav: Record<
         { label: "Home", href: "/student", icon: Dashboard },
         { label: "Topic Sprint", href: "/student/sprint", icon: Sprint },
         { label: "Flashcards", href: "/student/flashcards", icon: Cards },
-        { label: "Mock papers", href: "/student/papers", icon: QuestionFile },
         { label: "Mark my answer", href: "/student/mark", icon: Pen },
       ],
     },

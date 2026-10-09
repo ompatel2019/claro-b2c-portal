@@ -138,17 +138,12 @@ it("ignores J/K in flashcards while preserving arrow navigation", () => {
   expect(props.onMove).toHaveBeenCalledWith(1);
 });
 
-it("warns papers at thirty minutes and keeps Finish visible", () => {
+it("warns sprints at ten minutes and keeps Finish visible", () => {
   const { rerender, props } = shell({
-    clock: { mode: "down", seconds: 1801, paper: true },
+    clock: { mode: "down", seconds: 601 },
   });
-  rerender(
-    <SessionShell
-      {...props}
-      clock={{ mode: "down", seconds: 1800, paper: true }}
-    />,
-  );
-  expect(toast).toHaveBeenCalledWith("30 minutes left");
+  rerender(<SessionShell {...props} clock={{ mode: "down", seconds: 600 }} />);
+  expect(toast).toHaveBeenCalledWith("10 minutes left");
   expect(screen.getByRole("button", { name: "Finish" })).toBeVisible();
 });
 
@@ -177,4 +172,21 @@ it("renders a read-only booklet without marking, saving or timer controls", () =
   expect(screen.queryByRole("dialog")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Close preview" }));
   expect(onExit).toHaveBeenCalledOnce();
+});
+
+it("opens the sprint calculator from More tools and keeps Finish available", async () => {
+  const { props } = shell();
+  fireEvent.click(screen.getByRole("button", { name: "More tools" }));
+  const calculator = await screen.findByRole("menuitem", {
+    name: "Calculator",
+  });
+  fireEvent.click(calculator);
+  expect(
+    await screen.findByRole("dialog", { name: "Calculator" }),
+  ).toBeVisible();
+  fireEvent.keyDown(screen.getByRole("dialog", { name: "Calculator" }), {
+    key: "Escape",
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+  expect(props.onFinish).toHaveBeenCalled();
 });

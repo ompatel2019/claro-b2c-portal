@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   replace: vi.fn(),
-  query: "range=90&kind=paper",
+  query: "range=90&kind=sprint",
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mocks.replace }),
@@ -12,14 +12,14 @@ vi.mock("next/navigation", () => ({
 import { ProgressControls } from "./progress-controls";
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.query = "range=90&kind=paper";
+  mocks.query = "range=90&kind=sprint";
 });
 afterEach(cleanup);
 it("reflects history filters in the URL while preserving the range", () => {
   render(<ProgressControls range="90" filters />);
   fireEvent.click(screen.getByRole("button", { name: "MC" }));
   expect(mocks.replace).toHaveBeenCalledWith(
-    "/student/progress?range=90&kind=paper&type=mcq",
+    "/student/progress?range=90&kind=sprint&type=mcq",
     { scroll: false },
   );
   fireEvent.click(screen.getByRole("button", { name: "All" }));
@@ -34,7 +34,7 @@ it("uses the page range selector to refresh all range-scoped cards", async () =>
   fireEvent.pointerDown(option);
   fireEvent.click(option);
   expect(mocks.replace).toHaveBeenCalledWith(
-    "/student/progress?range=year&kind=paper",
+    "/student/progress?range=year&kind=sprint",
     { scroll: false },
   );
 });

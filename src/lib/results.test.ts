@@ -3,11 +3,7 @@ import type { ReviewRow } from "./feedback";
 import {
   delta,
   resultsState,
-  sectionBreakdown,
   mcGridRows,
-  selectSit,
-  sitLabel,
-  rankLabel,
   visibleResults,
   firstBelow,
   kpis,
@@ -108,116 +104,7 @@ describe("results", () => {
   });
 });
 
-describe("paper results", () => {
-  const sections = [
-    { position: 1, section: "Section I", choice_group: null },
-    { position: 24, section: "Section III", choice_group: 1 },
-    { position: 25, section: "Section III", choice_group: 1 },
-  ];
-  it("counts only the chosen question, retaining Not chosen and the original marks", () => {
-    const result = sectionBreakdown(
-      sections,
-      [
-        row({
-          position: 1,
-          type: "mcq",
-          marks: 1,
-          max_marks: 1,
-          mark: 1,
-          check_status: "skipped",
-        }),
-        row({ position: 24, marks: 20, max_marks: 20, mark: 14 }),
-        row({
-          position: 25,
-          marks: 20,
-          max_marks: 0,
-          mark: 0,
-          status: "skipped",
-        }),
-      ],
-      180,
-    );
-    expect(result[0]).toMatchObject({
-      mark: 1,
-      outOf: 1,
-      percentage: 100,
-      notChosen: [],
-    });
-    expect(result[1]).toMatchObject({
-      mark: 14,
-      outOf: 20,
-      percentage: 70,
-      notChosen: [25],
-    });
-    expect(result.reduce((n, s) => n + s.outOf, 0)).toBe(21);
-    expect(result.reduce((n, s) => n + s.suggestedMin, 0)).toBe(180);
-  });
-  it("keeps an unanswered choice in the denominator and hides its unchosen partner", () => {
-    expect(
-      sectionBreakdown(
-        sections.slice(1),
-        [
-          row({
-            position: 24,
-            marks: 20,
-            max_marks: 20,
-            mark: 0,
-            feedback: { note: "No answer" },
-          }),
-          row({ position: 25, marks: 20, max_marks: 0, status: "skipped" }),
-        ],
-        35,
-      )[0],
-    ).toMatchObject({
-      mark: 0,
-      outOf: 20,
-      percentage: 0,
-      pending: false,
-      notChosen: [25],
-    });
-  });
-  it("hides marks during checking and shows provisional and failed states", () => {
-    expect(
-      sectionBreakdown(
-        sections.slice(1),
-        [
-          row({
-            position: 24,
-            check_status: "pending",
-            marks: 20,
-            max_marks: 20,
-            mark: 19,
-          }),
-          row({ position: 25, status: "skipped", marks: 20, max_marks: 0 }),
-        ],
-        35,
-      )[0],
-    ).toMatchObject({ mark: null, outOf: 20, percentage: null, pending: true });
-    expect(
-      sectionBreakdown(
-        sections.slice(1),
-        [
-          row({
-            position: 24,
-            check_status: "in_review",
-            marks: 20,
-            max_marks: 20,
-            mark: 14,
-          }),
-          row({ position: 25, status: "skipped", marks: 20, max_marks: 0 }),
-        ],
-        35,
-      )[0],
-    ).toMatchObject({ mark: 14, provisional: true });
-    expect(
-      sectionBreakdown([], [row({ position: 1, status: "failed" })], 60)[0],
-    ).toMatchObject({
-      name: "Questions",
-      mark: null,
-      pending: false,
-      outOf: 4,
-    });
-  });
+describe("MC results", () => {
   it("builds compact MC rows, including unanswered, wrong and unavailable keys", () => {
     expect(
       mcGridRows([
@@ -241,48 +128,7 @@ describe("paper results", () => {
       { position: 4, your: "A", correct: "Unavailable", right: null },
     ]);
   });
-  const sits = [
-    {
-      id: "one",
-      started_at: "2026-10-09T00:00:00Z",
-      finished_at: "2026-10-09T03:00:00Z",
-    },
-    {
-      id: "two",
-      started_at: "2026-10-11T14:00:00Z",
-      finished_at: "2026-10-12T03:00:00Z",
-    },
-    { id: "open", started_at: "2026-10-13T00:00:00Z", finished_at: null },
-  ];
-  it("labels sits chronologically using Sydney dates", () => {
-    expect(sitLabel(sits[0], [...sits].reverse())).toBe("Sit 1 · Fri 9 Oct");
-    expect(sitLabel(sits[1], sits)).toBe("Sit 2 · Mon 12 Oct");
-  });
-  it("defaults to the latest finished sit and honours an explicit sit without falling back", () => {
-    expect(selectSit(sits)?.id).toBe("two");
-    expect(selectSit(sits, "one")?.id).toBe("one");
-    expect(selectSit(sits, "open")?.finished_at).toBeNull();
-    expect(selectSit(sits, "someone-elses-sit")).toBeNull();
-    expect(selectSit([sits[2]])).toBeNull();
-    expect(selectSit([])).toBeNull();
-    expect(
-      selectSit([{ ...sits[0], finished_at: "2026-10-15T00:00:00Z" }, sits[1]])
-        ?.id,
-    ).toBe("one");
-  });
-  it("shows a rank only with ranks enabled, a qualifying RPC row and the first sit", () => {
-    expect(rankLabel(true, { percentile: 70, cohort: 84 }, true)).toBe(
-      "Top 30% of first sits (n = 84)",
-    );
-    expect(rankLabel(false, { percentile: 70, cohort: 84 }, true)).toBeNull();
-    expect(rankLabel(true, null, true)).toBeNull();
-    expect(rankLabel(true, { percentile: 70, cohort: 19 }, true)).toBeNull();
-    expect(rankLabel(true, { percentile: 70, cohort: 84 }, false)).toBeNull();
-    expect(rankLabel(true, { percentile: 100, cohort: 20 }, true)).toBe(
-      "Top 1% of first sits (n = 20)",
-    );
-  });
-  it("distinguishes a skipped choice from skipped blind checking on a marked MC", () => {
+  it("keeps a marked MC answer whose blind check was skipped", () => {
     expect(
       visibleResults([
         row({ status: "skipped" }),

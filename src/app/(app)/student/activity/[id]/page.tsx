@@ -47,7 +47,6 @@ export default async function Page({
   if (!s) notFound();
   if (s.kind !== "single") {
     if (s.kind === "sprint") redirect(`/student/sprint/${id}/results`);
-    if (s.kind === "paper") redirect(`/student/papers/${id}/results`);
     if (s.kind === "flashcards") redirect(`/student/flashcards/${id}`);
     notFound();
   }

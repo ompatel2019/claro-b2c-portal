@@ -84,7 +84,6 @@ it("shows pending, unchanged and changed review outcomes including zero", () => 
 });
 it.each([
   ["sprint", "/student/sprint/sit/results#q-2"],
-  ["paper", "/student/papers/sit/results#q-2"],
   ["single", "/student/activity/sit#q-2"],
 ])("links %s reviews to the question in their report", (kind, href) => {
   expect(reviewHref({ kind, id: "sit" }, 2)).toBe(href);

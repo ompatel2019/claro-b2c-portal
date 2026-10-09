@@ -35,6 +35,14 @@ export async function POST(
     .maybeSingle();
   if (!attempt)
     return Response.json({ error: "Attempt not found" }, { status: 404 });
+  const session = attempt.session as unknown as {
+    kind: string;
+    started_at: string;
+    finished_at?: string | null;
+    config: { question?: { stem: string } };
+  } | null;
+  if (!session || !["sprint", "single"].includes(session.kind))
+    return Response.json({ error: "Attempt not found" }, { status: 404 });
   if (!["pending", "transcribed", "unreadable"].includes(attempt.status))
     return Response.json(
       { error: "Attempt is already being marked or marked" },
@@ -46,12 +54,6 @@ export async function POST(
   const question = attempt.question as unknown as {
     type: string;
     stem: string;
-  } | null;
-  const session = attempt.session as unknown as {
-    kind: string;
-    started_at: string;
-    finished_at?: string | null;
-    config: { question?: { stem: string } };
   } | null;
   if (
     session?.kind === "single" &&
@@ -69,7 +71,7 @@ export async function POST(
   const questionType = question?.type;
   const kind = (attempt.session as unknown as { kind: string } | null)?.kind;
   const pageLimit =
-    kind === "paper" || kind === "single" || questionType === "extended"
+    kind === "single" || questionType === "extended"
       ? LONG_PHOTO_PAGE_LIMIT
       : SHORT_PHOTO_PAGE_LIMIT;
   if (pages.length > pageLimit)

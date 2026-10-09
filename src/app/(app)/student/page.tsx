@@ -81,9 +81,12 @@ const load = {
     const db = await createClient();
     const { data, error } = await db
       .from("attempts")
-      .select("mark,max_marks,marked_at,question:questions(type)")
+      .select(
+        "mark,max_marks,marked_at,question:questions(type),session:sessions!inner(kind)",
+      )
       .eq("user_id", userId)
       .eq("status", "marked")
+      .in("session.kind", ["sprint", "single"])
       .not("marked_at", "is", null)
       .order("marked_at");
     if (error) throw new Error("marked");
@@ -244,7 +247,8 @@ async function Recent({ userId }: { userId: string }) {
   const [sessions, topics] = await Promise.all([
     db
       .from("sessions")
-      .select("*,attempts(status,check_status),papers(title)")
+      .select("*,attempts(status,check_status)")
+      .in("kind", ["sprint", "flashcards", "single"])
       .eq("user_id", userId)
       .not("finished_at", "is", null)
       .order("finished_at", { ascending: false })
@@ -273,15 +277,16 @@ async function Recent({ userId }: { userId: string }) {
   );
 }
 
-const KIND_ICON = { sprint: Sprint, paper: Sprint, flashcards: Cards };
+const KIND_ICON = { sprint: Sprint, flashcards: Cards };
 
 async function Continue({ userId }: { userId: string }) {
   const db = await createClient();
   const { data, error } = await db
     .from("sessions")
     .select(
-      "id,kind,config,elapsed_s,started_at,attempts(choice_index,answer_text,transcript,image_paths),flashcard_reviews(flashcard_id),papers(title)",
+      "id,kind,config,elapsed_s,started_at,attempts(choice_index,answer_text,transcript,image_paths),flashcard_reviews(flashcard_id)",
     )
+    .in("kind", ["sprint", "flashcards", "single"])
     .eq("user_id", userId)
     .is("finished_at", null)
     .order("started_at", { ascending: false })
@@ -318,7 +323,6 @@ async function Continue({ userId }: { userId: string }) {
           const config = s.config as Session["config"] & {
             card_ids?: string[];
           };
-          const paper = s.papers as unknown as { title: string } | null;
           const cards = s.kind === "flashcards";
           const done = cards
             ? new Set(s.flashcard_reviews.map((r) => r.flashcard_id)).size
@@ -336,9 +340,7 @@ async function Continue({ userId }: { userId: string }) {
                 className="text-muted-foreground size-5 shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <p className="font-semibold">
-                  {sessionTitle(s, topics, paper?.title)}
-                </p>
+                <p className="font-semibold">{sessionTitle(s, topics)}</p>
                 <p className="text-muted-foreground text-[13px]">
                   {done}/{total} {cards ? "cards" : "answered"}
                   {` · ${time}`}
@@ -432,6 +434,7 @@ export default async function Home() {
     const { count, error } = await db
       .from("sessions")
       .select("id", { count: "exact", head: true })
+      .in("kind", ["sprint", "flashcards", "single"])
       .eq("user_id", id);
     if (error) throw new Error("Couldn't check first visit.");
     sessionCount = count;

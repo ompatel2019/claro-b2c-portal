@@ -30,7 +30,9 @@ test.describe("Sprint session", () => {
   }) => {
     await setUp(page, ["After each question (check as you go)"]);
     await expect(
-      page.getByText(/^Question 1 · Multiple choice · 1 mark · \d{4} HSC Q\d+/),
+      page.getByText(
+        /^Question 1 · Multiple choice · 1 mark · (\d{4} HSC Q\d+|Practice)/,
+      ),
     ).toBeVisible();
     const check = page.getByRole("button", { name: "Check answer" });
     await expect(check).toBeDisabled();

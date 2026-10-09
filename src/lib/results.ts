@@ -1,4 +1,3 @@
-import { paperSections } from "./paper-session";
 import { timer, type SprintConfig, type Topic } from "./practice";
 import { markingState, type MarkingState, type ReviewRow } from "./feedback";
 
@@ -126,52 +125,10 @@ export function nextActions(
   ];
 }
 
-/** Only status=skipped means an unchosen paper answer; MC checks are skipped too. */
+/** Exclude skipped rows; a skipped MC check can still have a marked answer. */
 export const visibleResults = (rows: ReviewRow[]) =>
   rows.filter((r) => markingState(r) !== "skipped");
 
-export type ResultSit = {
-  id: string;
-  started_at: string;
-  finished_at: string | null;
-};
-export function selectSit<T extends ResultSit>(sits: T[], requested?: string) {
-  if (requested) return sits.find((s) => s.id === requested) ?? null;
-  return (
-    sits
-      .filter((s) => s.finished_at)
-      .sort(
-        (a, b) =>
-          b.finished_at!.localeCompare(a.finished_at!) ||
-          b.id.localeCompare(a.id),
-      )[0] ?? null
-  );
-}
-export function sitLabel(sit: ResultSit, sits: ResultSit[]) {
-  const ordered = [...sits].sort(
-    (a, b) =>
-      a.started_at.localeCompare(b.started_at) || a.id.localeCompare(b.id),
-  );
-  const date = new Intl.DateTimeFormat("en-AU", {
-    timeZone: "Australia/Sydney",
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  })
-    .format(new Date(sit.started_at))
-    .replace(",", "");
-  return `Sit ${ordered.findIndex((s) => s.id === sit.id) + 1} · ${date}`;
-}
-export type PaperRank = { percentile: number; cohort: number };
-export function rankLabel(
-  enabled: boolean,
-  rank: PaperRank | null,
-  firstSit: boolean,
-) {
-  return enabled && firstSit && rank && rank.cohort >= 20
-    ? `Top ${Math.max(1, 100 - rank.percentile)}% of first sits (n = ${rank.cohort})`
-    : null;
-}
 export function mcGridRows(rows: ReviewRow[]) {
   const letter = (i: number | null) =>
     i == null ? "Not answered" : "ABCDEFGH"[i];
@@ -188,60 +145,7 @@ export function mcGridRows(rows: ReviewRow[]) {
 }
 export type McGridRow = ReturnType<typeof mcGridRows>[number];
 
-/** Section totals use the sit's snapshot and count each choice group once. */
-export function sectionBreakdown(
-  sections: import("./paper-session").PaperSection[],
-  rows: ReviewRow[],
-  timeLimitMin: number,
-) {
-  const visible = visibleResults(rows);
-  // Reuse the booklet's section/choice grouping and its suggested time estimates.
-  const grouped = paperSections(
-    sections.length
-      ? sections
-      : rows.map((r) => ({
-          position: r.position,
-          section: null,
-          choice_group: null,
-        })),
-    rows.map((r) => ({
-      position: r.position,
-      marks: r.marks,
-      answered: scored(r),
-      type: r.type,
-    })),
-    timeLimitMin,
-  );
-  return grouped.map((s) => {
-    const selected = s.units.flatMap((u) =>
-      visible.filter((r) => u.positions.includes(r.position)).slice(0, 1),
-    );
-    const done = selected.filter(scored);
-    const mark = done.length ? tally(done).mark : null;
-    const outOf = selected.reduce(
-      (n, r) => n + Number(r.max_marks ?? r.marks),
-      0,
-    );
-    return {
-      name: s.name,
-      mark,
-      outOf,
-      percentage: mark == null || !outOf ? null : (mark / outOf) * 100,
-      pending: selected.some((r) => markingState(r) === "marking"),
-      provisional: selected.some((r) => markingState(r) === "in_review"),
-      suggestedMin: s.aboutMin,
-      notChosen: rows
-        .filter(
-          (r) =>
-            markingState(r) === "skipped" &&
-            s.units.some((u) => u.positions.includes(r.position)),
-        )
-        .map((r) => r.position),
-    };
-  });
-}
-
-/** One read-side state for both results pages; failures are terminal, not marks. */
+/** One read-side state for results; failures are terminal, not marks. */
 export function resultsState(rows: ReviewRow[], summary: unknown) {
   const visible = visibleResults(rows);
   const marking = visible.filter((r) => markingState(r) === "marking").length;

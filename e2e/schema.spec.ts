@@ -149,10 +149,6 @@ test.describe("Schema and RLS", () => {
     const review = await db.rpc("session_review", { p_session: id });
     expect(review.error).toBeNull();
     expect(review.data).toEqual([]);
-    const paper = await db.rpc("start_paper", {
-      p_paper: "00000000-0000-4000-8000-000000000000",
-    });
-    expect(paper.error?.message).toMatch(/paper not found/);
   });
 
   test("activity days and streaks: students read only their own", async () => {
@@ -203,10 +199,29 @@ test.describe("Schema and RLS", () => {
       .not("id", "like", "a1-p-%")
       .not("id", "like", "a1-x-%");
     expect(evalQuestions.data).toEqual(Array(61).fill({ status: "retired" }));
+    // Students never see the retired eval/mock questions; published A1 practice (a1-p-*, a1-x-*)
+    // is visible, but only the live ones.
     const hidden = await student.db
       .from("questions")
       .select("id")
-      .like("id", "a1-%");
+      .like("id", "a1-%")
+      .not("id", "like", "a1-p-%")
+      .not("id", "like", "a1-x-%");
     expect(hidden.data).toEqual([]);
+    const seenPractice = await student.db
+      .from("questions")
+      .select("id")
+      .like("id", "a1-p-%")
+      .limit(1000);
+    const practiceStatus = await db
+      .from("questions")
+      .select("id,status")
+      .in(
+        "id",
+        (seenPractice.data ?? []).map((r) => r.id),
+      );
+    expect(
+      (practiceStatus.data ?? []).filter((r) => r.status !== "live"),
+    ).toEqual([]);
   });
 });

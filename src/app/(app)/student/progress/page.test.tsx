@@ -144,7 +144,6 @@ it("links each finished session to its correct report and scopes type chips to s
     config: { mode: "short" },
     finished_at: "2026-10-09T01:00:00Z",
     elapsed_s: 100,
-    paper_title: null,
     pct: 80,
     by_type: { short: 60 },
   };
@@ -156,8 +155,6 @@ it("links each finished session to its correct report and scopes type chips to s
         ...base,
         id: "sit",
         kind: "paper",
-        paper_id: "paper",
-        paper_title: "Trial paper",
       },
       { ...base, id: "cards", kind: "flashcards", by_type: {} },
       { ...base, id: "single", kind: "single" },
@@ -169,8 +166,8 @@ it("links each finished session to its correct report and scopes type chips to s
     ),
   );
   expect(
-    screen.getAllByRole("link", { name: /Trial paper/ })[0],
-  ).toHaveAttribute("href", "/student/papers/paper/results?sit=sit");
+    screen.getAllByRole("link", { name: /Short answer sprint/ })[0],
+  ).toHaveAttribute("href", "/student/sprint/sprint/results");
   expect(
     screen.getAllByRole("link", { name: /Flashcards/ })[0],
   ).toHaveAttribute("href", "/student/flashcards/cards");
@@ -195,7 +192,5 @@ it("links each finished session to its correct report and scopes type chips to s
   expect(
     screen.getAllByRole("link", { name: /Short answer sprint/ })[0],
   ).toHaveAccessibleName(/60%/);
-  expect(
-    screen.queryByRole("link", { name: /Trial paper|Flashcards/ }),
-  ).toBeNull();
+  expect(screen.queryByRole("link", { name: /Flashcards/ })).toBeNull();
 });

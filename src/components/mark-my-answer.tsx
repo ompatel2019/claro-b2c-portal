@@ -752,7 +752,7 @@ export function MarkMyAnswer({
               flush={async () => {
                 await save({});
               }}
-              paper
+              inputOnly
               mode={mode}
               disabled={
                 busy ||

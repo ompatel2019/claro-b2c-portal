@@ -3,6 +3,7 @@ import {
   sessionStatus,
   sessionScore,
   sessionHref,
+  isStudentSession,
 } from "@/lib/session-summary";
 import Link from "next/link";
 import { Cards, History, Pen, Sprint } from "@/components/icons";
@@ -12,18 +13,17 @@ import { EmptyState } from "./empty-state";
 import { Badge } from "./ui/badge";
 import { Card } from "./ui/card";
 export function SessionList({
-  sessions,
+  sessions: suppliedSessions,
   topics,
   empty = "No sessions yet. Start a sprint to make your first next step.",
 }: {
   sessions: (Session & {
     attempts?: { status: string; check_status?: string }[];
-    papers?: { title: string } | null;
-    paper_id?: string | null;
   })[];
   topics: Topic[];
   empty?: string;
 }) {
+  const sessions = suppliedSessions.filter(isStudentSession);
   if (!sessions.length)
     return (
       <EmptyState icon={History} title="No sessions" description={empty} />
@@ -53,9 +53,7 @@ export function SessionList({
                   />
                 )}
                 <div className="min-w-0">
-                  <p className="font-semibold">
-                    {sessionTitle(s, topics, s.papers?.title)}
-                  </p>
+                  <p className="font-semibold">{sessionTitle(s, topics)}</p>
                   <p className="text-muted-foreground text-[13px]">
                     {dateLabel(s.started_at)}
                   </p>

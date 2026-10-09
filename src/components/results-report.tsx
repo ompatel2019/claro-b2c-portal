@@ -18,7 +18,7 @@ import { statePill } from "./status-pill";
 import { buttonVariants } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
-/** Shared results composition for sprint and paper pages, using the existing kit. */
+/** Results composition for sprint and single-answer pages, using the existing kit. */
 export function ResultsAnswers({
   rows,
   id,
@@ -138,6 +138,7 @@ export function OverallFeedback({
   pending: boolean;
   actions?: { label: string; href: string }[];
   section?: string;
+  /** Admin historical reports still describe their original session kind. */
   context?: "paper" | "sprint";
 }) {
   const actionLinks = actions && actions.length > 0 && (

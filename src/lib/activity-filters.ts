@@ -78,7 +78,6 @@ export function activityHref(
 export type ActivityRow = {
   id: string;
   kind: string;
-  paper_id: string | null;
   title: string;
   status: SessionStatus;
   provisional: boolean;

@@ -170,7 +170,7 @@ test.describe("Activity browser", () => {
     test.skip((await row.count()) === 0, "No existing reports to view");
     const href = await row.getAttribute("href");
     expect(href).toMatch(
-      /^\/student\/(?:sprint\/[^/]+\/results|papers\/[^/]+\/results\?sit=[^/]+|flashcards\/[^/]+)$/,
+      /^\/student\/(?:sprint\/[^/]+\/results|flashcards\/[^/]+)$/,
     );
     await row.click();
     await expect(page).toHaveURL(new URL(href!, page.url()).href);

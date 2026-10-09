@@ -134,11 +134,9 @@ export function sessionTitle(
   session: {
     kind?: string;
     config: { mode?: string; topics?: string[]; subtopics?: string[] };
-    paper_title?: string | null;
   },
   topics: import("./practice").Topic[],
 ) {
-  if (session.kind === "paper") return session.paper_title ?? "Mock paper";
   if (session.kind === "single") return "Mark my answer";
   if (session.kind === "flashcards")
     return `Flashcards · ${session.config.mode === "test" ? "Test" : "Study"}`;
