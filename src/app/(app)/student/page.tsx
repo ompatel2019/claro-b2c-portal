@@ -9,13 +9,13 @@ import {
   averages,
   greeting,
   longDate,
-  sydneyDay,
   weekCounts,
   type Marked,
 } from "@/lib/home";
 import {
   answered,
   modeLabel,
+  plural,
   scoreTone,
   timeLimit,
   timer,
@@ -54,16 +54,21 @@ const load = {
   due: cache(async (userId: string) => {
     const db = await createClient();
     const today = sydneyToday();
-    const { data, error } = await db
-      .from("flashcard_progress")
-      .select("due_on")
-      .eq("user_id", userId)
-      .lte("due_on", addDays(today, 1));
-    if (error) throw new Error("due");
-    return {
-      today: data.filter((p) => p.due_on <= today).length,
-      tomorrow: data.filter((p) => p.due_on > today).length,
+    const count = (from: string | null, to: string) => {
+      let q = db
+        .from("flashcard_progress")
+        .select("flashcard_id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .lte("due_on", to);
+      if (from) q = q.gt("due_on", from);
+      return q;
     };
+    const [due, tomorrow] = await Promise.all([
+      count(null, today),
+      count(today, addDays(today, 1)),
+    ]);
+    if (due.error || tomorrow.error) throw new Error("due");
+    return { today: due.count ?? 0, tomorrow: tomorrow.count ?? 0 };
   }),
   marked: cache(async (userId: string): Promise<Marked[]> => {
     const db = await createClient();
@@ -86,7 +91,7 @@ const load = {
       a.question && Number(a.max_marks) > 0
         ? [
             {
-              day: sydneyDay(a.marked_at),
+              day: sydneyToday(new Date(a.marked_at)),
               type: a.question.type,
               mark: Number(a.mark),
               max: Number(a.max_marks),
@@ -106,24 +111,21 @@ const load = {
   }),
 };
 
-const Skeleton = ({ className = "h-32" }: { className?: string }) => (
+const Skeleton = ({ className }: { className: string }) => (
   <Card aria-hidden className={`bg-muted animate-pulse ${className}`} />
 );
 const Section = ({
   title,
-  action,
   children,
 }: {
   title: string;
-  action?: React.ReactNode;
   children: React.ReactNode;
 }) => (
   <Card>
-    <CardHeader className="flex flex-row items-center justify-between gap-3">
+    <CardHeader>
       <CardTitle>
         <h2>{title}</h2>
       </CardTitle>
-      {action}
     </CardHeader>
     <CardContent>{children}</CardContent>
   </Card>
@@ -183,10 +185,13 @@ async function Kpis({ userId }: { userId: string }) {
       />
       <StatCard
         label="Streak"
-        value={`${activity.current_streak} ${activity.current_streak === 1 ? "day" : "days"}`}
+        value={plural(activity.current_streak, "day")}
         caption={`Longest ${activity.longest_streak}`}
       />
-      <Link href="/flashcards" className="rounded-xl">
+      <Link
+        href="/flashcards"
+        className="focus-visible:ring-ring/50 rounded-lg outline-none focus-visible:ring-3"
+      >
         <StatCard
           label="Flashcards due"
           value={due.today}
@@ -299,6 +304,7 @@ async function Continue({ userId }: { userId: string }) {
               due
               label={`Review due flashcards (${due.today})`}
               variant="outline"
+              className="w-full justify-start"
             />
           )}
         </div>

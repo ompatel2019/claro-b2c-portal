@@ -79,7 +79,7 @@ test.describe("Student flashcards", () => {
   });
   test("dashboard shows cards due today", async ({ page }) => {
     await expect(
-      page.getByRole("link", { name: "Due today", exact: true }),
+      page.getByRole("link", { name: /^Flashcards due \d+/ }),
     ).toBeVisible();
   });
   test("study recycles a missed card and scores only first tries", async ({

@@ -28,8 +28,6 @@ test.describe("Real sign up", () => {
       .getByRole("button", { name: "Create account", exact: true })
       .click();
     await expect(page).toHaveURL(/\/student$/);
-    await expect(
-      page.getByText("No scores yet", { exact: true }),
-    ).toBeVisible();
+    await expect(page.getByText("No marks yet", { exact: true })).toBeVisible();
   });
 });

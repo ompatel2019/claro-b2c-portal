@@ -26,7 +26,7 @@ export type SaveState = "saved" | "saving" | "error";
 export const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement &&
   !!t.closest(
-    "input:not([type=radio]), textarea, select, [contenteditable], [role=dialog]",
+    "input:not([type=radio]), textarea, select, [contenteditable], [role=dialog], [role=menu]",
   );
 
 const SHORTCUTS = [

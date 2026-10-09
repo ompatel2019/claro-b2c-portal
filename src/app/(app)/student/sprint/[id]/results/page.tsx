@@ -242,7 +242,7 @@ export default async function Results({
       <MarkingProgress done={done} total={rows.length} />
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard
-          className="col-span-2 sm:col-span-1"
+          className="col-span-2 whitespace-nowrap sm:col-span-1"
           label={
             <span className="flex items-center gap-2">
               Score {provisional && <StatusPill pill="Provisional" />}

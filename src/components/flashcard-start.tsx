@@ -9,6 +9,7 @@ export function FlashcardStart({
   label = "Start deck",
   settings = false,
   variant,
+  className,
 }: {
   topic?: string;
   due?: boolean;
@@ -16,6 +17,7 @@ export function FlashcardStart({
   label?: string;
   settings?: boolean;
   variant?: "outline";
+  className?: string;
 }) {
   const [state, action, pending] = useActionState(startFlashcards, {});
   return (
@@ -59,7 +61,12 @@ export function FlashcardStart({
           <input type="hidden" name="type" value="both" />
         </>
       )}
-      <Button type="submit" variant={variant} disabled={pending}>
+      <Button
+        type="submit"
+        variant={variant}
+        className={className}
+        disabled={pending}
+      >
         {pending ? "Starting…" : label}
       </Button>
       {state.error && (

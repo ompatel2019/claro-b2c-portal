@@ -8,7 +8,8 @@ export function Shortcut({ k, href }: { k: string; href: string }) {
   const router = useRouter();
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey || e.repeat) return;
+      if (isTyping(e.target)) return;
       if (e.key.toLowerCase() === k) router.push(href);
     }
     window.addEventListener("keydown", onKey);

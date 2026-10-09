@@ -63,9 +63,12 @@ export function ScoreTrend({ rows, today }: { rows: Marked[]; today: string }) {
         <svg
           viewBox={`0 0 ${W} ${H}`}
           className="h-44 w-full overflow-visible"
-          role="img"
-          aria-label={`Score trend, ${RANGES.find((r) => r.value === range)!.label}`}
+          aria-labelledby="score-trend-title"
+          data-range={range}
         >
+          <title id="score-trend-title">
+            {`Score trend, ${RANGES.find((r) => r.value === range)!.label}`}
+          </title>
           {[0, 50, 100].map((g) => (
             <line
               key={g}
@@ -97,18 +100,18 @@ export function ScoreTrend({ rows, today }: { rows: Marked[]; today: string }) {
           {t.points.map((p) => (
             <Link
               key={p.day}
-              href={`/activity?day=${p.day}`}
+              href={`/activity?date=${p.day}`}
               aria-label={`${p.day}: ${Math.round(p.pct)}%`}
+              className="group outline-none"
             >
+              <circle cx={x(p.day)} cy={y(p.pct)} r={14} fill="transparent" />
               <circle
                 cx={x(p.day)}
                 cy={y(p.pct)}
                 r={4}
-                className="fill-primary hover:r-6 stroke-white"
+                className="fill-primary group-focus-visible:stroke-ink stroke-white"
                 strokeWidth={2}
-              >
-                <title>{`${p.day}: ${Math.round(p.pct)}%`}</title>
-              </circle>
+              />
             </Link>
           ))}
         </svg>

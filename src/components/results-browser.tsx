@@ -60,7 +60,7 @@ export function ResultsBrowser({
         </Toggle>
       </div>
       {table ? (
-        <Table>
+        <Table aria-label="Questions">
           <TableHeader>
             <TableRow>
               {["#", "Type", "Topic", "Source", "Mark", "Status"].map((h) => (

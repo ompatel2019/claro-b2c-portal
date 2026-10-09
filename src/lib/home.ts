@@ -1,9 +1,6 @@
 import { addDays, type ActivityDay } from "./activity";
 
 const SYDNEY = "Australia/Sydney";
-/** Sydney calendar day (YYYY-MM-DD) of an instant. */
-export const sydneyDay = (iso: string | Date) =>
-  new Date(iso).toLocaleDateString("en-CA", { timeZone: SYDNEY });
 
 /** "Good morning" before 12, afternoon before 17, else evening (Sydney time). */
 export function greeting(now = new Date()) {
@@ -71,7 +68,6 @@ export function averages(rows: Marked[], today: string) {
 }
 
 export type Range = "30" | "90" | "all";
-export type TrendPoint = { day: string; pct: number };
 
 /** Daily % for the range, the same-length previous period shifted onto it, and per-type % for the range. */
 export function trend(rows: Marked[], today: string, range: Range) {

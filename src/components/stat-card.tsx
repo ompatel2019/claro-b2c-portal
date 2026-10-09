@@ -19,7 +19,7 @@ export function StatCard({
         <dt className="text-muted-foreground text-[13px] font-medium">
           {label}
         </dt>
-        <dd className="mt-2 text-2xl leading-9 font-semibold tracking-[-0.01em] whitespace-nowrap tabular-nums sm:text-3xl">
+        <dd className="mt-2 text-2xl leading-9 font-semibold tracking-[-0.01em] tabular-nums sm:text-3xl">
           {value}
         </dd>
         {caption && (

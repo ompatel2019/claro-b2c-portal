@@ -60,7 +60,7 @@ test.describe("Student home", () => {
   });
 
   test("score trend switches range", async ({ page }) => {
-    const chart = page.getByRole("img", { name: /^Score trend/ });
+    const chart = page.locator("svg[data-range]");
     if (!(await page.getByRole("heading", { name: "Score trend" }).isVisible()))
       return expect(
         page.getByText("Finish a sprint to see your trend."),
@@ -70,9 +70,7 @@ test.describe("Student home", () => {
     ).toBeVisible();
     await page.getByRole("combobox", { name: "Range" }).click();
     await page.getByRole("option", { name: "All time" }).click();
-    await expect(
-      page.getByRole("img", { name: "Score trend, All time" }),
-    ).toBeVisible();
+    await expect(page.locator('svg[data-range="all"]')).toBeVisible();
     await expect(page.getByTestId("previous-period")).toHaveCount(0);
   });
 

@@ -3,7 +3,6 @@ import {
   averages,
   greeting,
   longDate,
-  sydneyDay,
   trend,
   weekCounts,
   type Marked,
@@ -23,9 +22,8 @@ describe("home", () => {
     expect(greeting(new Date("2026-10-09T02:00:00Z"))).toBe("Good afternoon");
     expect(greeting(new Date("2026-10-09T07:00:00Z"))).toBe("Good evening");
   });
-  it("formats the eyebrow date and Sydney days", () => {
+  it("formats the eyebrow date", () => {
     expect(longDate(new Date("2026-10-08T22:00:00Z"))).toBe("Friday 9 October");
-    expect(sydneyDay("2026-10-08T13:30:00Z")).toBe("2026-10-09");
   });
   it("counts questions Mon–Sun this week and last", () => {
     const days = [

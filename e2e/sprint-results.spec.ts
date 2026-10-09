@@ -82,7 +82,9 @@ test.describe("Sprint results", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Table view" }).click();
-    await expect(page.getByRole("row")).toHaveCount(6);
+    await expect(
+      page.getByRole("table", { name: "Questions" }).getByRole("row"),
+    ).toHaveCount(6);
     await expect(
       page.getByRole("columnheader", { name: "Status" }),
     ).toBeVisible();
