@@ -78,13 +78,15 @@ test.describe("Topic Sprint setup", () => {
     await expect(
       page.getByRole("button", { name: /^Time remaining 4:5\d$/ }),
     ).toBeVisible();
-    // The setup page now offers to continue it.
+    // The setup page offers to continue an unfinished sprint. Other runs share
+    // the account, so the banner may point at a different one: resume ours by id.
     await page.goto("/student/sprint");
-    await expect(
-      page.getByText(/unfinished Multiple choice sprint · 0\/5 answered/),
-    ).toBeVisible();
-    await page.getByRole("link", { name: "Continue" }).click();
-    await expect(page).toHaveURL(new RegExp(`/student/sprint/${ids.at(-1)}$`));
+    await expect(page.getByRole("link", { name: "Continue" })).toHaveAttribute(
+      "href",
+      /\/student\/sprint\/[^/]+$/,
+    );
+    await page.goto(`/student/sprint/${ids.at(-1)}`);
+    await expect(page.getByText("Q 1 of 5")).toBeVisible();
   });
 
   test("no matches offers one-click fixes with counts", async ({ page }) => {

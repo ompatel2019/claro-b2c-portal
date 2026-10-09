@@ -44,11 +44,9 @@ test.describe("Student flashcards", () => {
       page.getByRole("heading", { name: "Flashcards", exact: true }),
     ).toBeVisible({ timeout: 60000 });
     await expect(
-      page
-        .locator("form")
-        .filter({
-          has: page.getByRole("button", { name: "Start", exact: true }),
-        }),
+      page.locator("form").filter({
+        has: page.getByRole("button", { name: "Start", exact: true }),
+      }),
     ).toContainText("Inflation ·");
     await page.getByRole("button", { name: /^Terms \(\d+\)$/ }).click();
     await page
