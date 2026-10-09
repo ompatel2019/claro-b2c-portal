@@ -29,6 +29,7 @@ vi.mock("@/lib/marking/engine", () => ({
   transcribeImage: vi.fn(),
   markFlashcard: vi.fn(),
   finishSession: vi.fn(),
+  summariseSession: vi.fn(),
 }));
 
 import { createClient } from "@/utils/supabase/server";
@@ -734,6 +735,11 @@ it("accepts an expired paper, skips the other choice, and scores only chosen row
     finished: true,
     score: 12,
     max_score: 20,
+    summary: expect.objectContaining({
+      strengths: expect.any(Array),
+      improvements: expect.any(Array),
+      next_steps: expect.any(Array),
+    }),
   });
   expect(skip.in).toHaveBeenCalledWith("id", ["25"]);
   expect(skip.update).toHaveBeenCalledWith(
@@ -883,6 +889,11 @@ it("retries failed paper marking once, logs rejection, and scores the retry", as
     score: 15,
     max_score: 20,
     finished: true,
+    summary: expect.objectContaining({
+      strengths: expect.any(Array),
+      improvements: expect.any(Array),
+      next_steps: expect.any(Array),
+    }),
   });
   expect(vi.mocked(markAttempt).mock.calls).toEqual([["24"], ["24"]]);
   expect(console.error).toHaveBeenCalledWith(error);

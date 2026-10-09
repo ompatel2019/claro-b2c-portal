@@ -74,6 +74,7 @@ export function markingState(
   if (a.status === "failed") return "failed";
   if (a.status === "unreadable") return "unreadable";
   if (a.status !== "marked") return "marking";
+  if (a.check_status === "pending") return "marking";
   if (a.feedback?.note === "No answer") return "not_answered";
   if (a.check_status === "in_review") return "in_review";
   if (a.check_status === "reviewed") return "reviewed";

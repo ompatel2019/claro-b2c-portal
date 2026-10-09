@@ -7,9 +7,11 @@ import {
 import { type Attempt } from "@/lib/practice";
 import {
   finishSession,
+  summariseSession,
   markAttempt,
   STALE_CLAIM_MS,
 } from "@/lib/marking/engine";
+import { topicSummary, type MarkableQuestion } from "@/lib/marking/grade";
 import { createClient } from "@/utils/supabase/server";
 
 export const maxDuration = 300;
@@ -77,14 +79,16 @@ export async function POST(
       const readMarks = async () => {
         const { data } = await admin()
           .from("attempts")
-          .select(
-            "id,status,claimed_at,mark,max_marks,question:questions(marks)",
-          )
+          .select("*,question:questions(*,topic:topics(name))")
           .eq("session_id", id)
           .eq("user_id", user.id)
           .neq("status", "skipped")
           .throwOnError();
-        return data ?? [];
+        return (data ?? []) as (Awaited<ReturnType<typeof markAttempt>> & {
+          check_status: string;
+          claimed_at: string | null;
+          question: MarkableQuestion & { topic?: { name: string } | null };
+        })[];
       };
       let marked = await readMarks();
       const settleDeadline = Date.now() + 90_000;
@@ -112,7 +116,41 @@ export async function POST(
         marked = await readMarks();
       }
       await settle();
-      // sessions.summary is produced by the paper results work in §3.10.
+      // Use the same summary inputs and deterministic fallback as sprint finishing.
+      let summary = null;
+      const completed = marked.filter((a) => a.status === "marked");
+      if (
+        !marked.some(
+          (a) =>
+            ["pending", "transcribed", "marking"].includes(a.status) ||
+            (a.status === "marked" && a.check_status === "pending"),
+        ) &&
+        completed.length
+      ) {
+        try {
+          summary = completed.some((a) => a.feedback?.analysis)
+            ? await summariseSession(
+                completed.map((a) => ({
+                  source: a.question.source,
+                  stem: a.question.stem,
+                  mark: Number(a.mark ?? 0),
+                  max: a.max_marks ?? a.question.marks,
+                  band: a.band,
+                  strengths: a.feedback?.analysis?.strengths ?? [],
+                  improvements: a.feedback?.missing_points ?? [],
+                })),
+                user.id,
+              )
+            : topicSummary(
+                completed.map((a) => ({
+                  topic: a.question.topic?.name ?? "this topic",
+                  correct: Number(a.mark) === (a.max_marks ?? a.question.marks),
+                })),
+              );
+        } catch (error) {
+          console.error(error);
+        }
+      }
       const score = marked.reduce(
         (sum, a) => sum + (a.status === "marked" ? Number(a.mark ?? 0) : 0),
         0,
@@ -140,11 +178,12 @@ export async function POST(
           ),
           score,
           max_score,
+          summary,
         })
         .eq("id", id)
         .eq("user_id", user.id)
         .throwOnError();
-      return Response.json({ score, max_score, finished: true });
+      return Response.json({ score, max_score, summary, finished: true });
     }
     const finished = await finishSession(id);
     return Response.json({

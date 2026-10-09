@@ -22,6 +22,7 @@ describe("markingState", () => {
     ["transcribed", "skipped", "marking"],
     ["marking", "skipped", "marking"],
     ["marked", "skipped", "marked"],
+    ["marked", "pending", "marking"],
     ["marked", "agreed", "marked"],
     ["marked", "second_pass", "marked"],
     ["marked", "in_review", "in_review"],

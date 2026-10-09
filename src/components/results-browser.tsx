@@ -1,5 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { McGridRow } from "@/lib/results";
+import { Check, Close } from "./icons";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "./ui/select";
 import { cn } from "@/lib/utils";
 import { isTyping } from "./session-shell";
 import { StatusPill, type Pill } from "./status-pill";
@@ -14,6 +25,7 @@ import {
 } from "./ui/table";
 
 export type ResultItem = {
+  position?: number;
   type: string;
   topic: string;
   source: string;
@@ -27,16 +39,27 @@ export function ResultsBrowser({
   items,
   views,
   initial,
+  mcGrid,
 }: {
   items: ResultItem[];
   views: React.ReactNode[];
   initial: number;
+  mcGrid?: McGridRow[];
 }) {
   const [index, setIndex] = useState(initial);
   const [table, setTable] = useState(false);
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      if (
+        e.defaultPrevented ||
+        (e.target instanceof Element &&
+          e.target.closest("[data-comment-navigation]")) ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey ||
+        isTyping(e.target)
+      )
+        return;
       const step = { j: -1, k: 1 }[e.key.toLowerCase()];
       if (!step) return;
       setIndex((i) => Math.min(items.length - 1, Math.max(0, i + step)));
@@ -45,10 +68,95 @@ export function ResultsBrowser({
     return () => window.removeEventListener("keydown", onKey);
   }, [items.length]);
   const label = (it: ResultItem, i: number) =>
-    `Question ${i + 1}${it.mark ? `, ${it.mark} marks` : ""}${it.pill ? `, ${it.pill}` : ""}`;
+    `Question ${it.position ?? i + 1}${it.mark ? `, ${it.mark} marks` : ""}${it.pill ? `, ${it.pill}` : ""}`;
   return (
     <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {mcGrid && mcGrid.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2>Multiple choice answers</h2>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-4">
+              {Array.from(
+                { length: Math.ceil(mcGrid.length / 5) },
+                (_, group) => (
+                  <Table
+                    className="[&_td]:px-1 [&_th]:px-1"
+                    key={group}
+                    aria-label={`Multiple choice answers ${group + 1}`}
+                  >
+                    <TableHeader>
+                      <TableRow>
+                        {["Q", "Your", "Correct", "Result"].map((h) => (
+                          <TableHead key={h} scope="col">
+                            {h}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {mcGrid.slice(group * 5, group * 5 + 5).map((r) => (
+                        <TableRow
+                          key={r.position}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setIndex(
+                              items.findIndex(
+                                (it) => it.position === r.position,
+                              ),
+                            );
+                            document
+                              .getElementById("results-questions")
+                              ?.scrollIntoView({ block: "start" });
+                          }}
+                        >
+                          <TableCell>
+                            <button
+                              type="button"
+                              aria-label={`Review question ${r.position}`}
+                              className="flex min-h-9 min-w-9 items-center justify-center rounded-full border font-semibold focus-visible:ring-2"
+                            >
+                              {r.position}
+                            </button>
+                          </TableCell>
+                          <TableCell>{r.your}</TableCell>
+                          <TableCell>{r.correct}</TableCell>
+                          <TableCell>
+                            {r.right == null ? (
+                              "Pending"
+                            ) : (
+                              <span
+                                className={cn(
+                                  "flex items-center gap-1 text-xs",
+                                  r.right ? "text-success" : "text-destructive",
+                                )}
+                              >
+                                {r.right ? (
+                                  <Check aria-hidden className="size-4" />
+                                ) : (
+                                  <Close aria-hidden className="size-4" />
+                                )}
+                                {r.right ? "Correct" : "Incorrect"}
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ),
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      <div
+        id="results-questions"
+        className="flex scroll-mt-20 flex-wrap items-center justify-between gap-3"
+      >
         <h2>Your answers</h2>
         <Toggle
           variant="outline"
@@ -82,13 +190,15 @@ export function ResultsBrowser({
                     aria-label={label(it, i)}
                     className="font-medium"
                   >
-                    {i + 1}
+                    {it.position ?? i + 1}
                   </button>
                 </TableCell>
                 <TableCell>{it.type}</TableCell>
                 <TableCell>{it.topic}</TableCell>
                 <TableCell>{it.source}</TableCell>
-                <TableCell className="tabular-nums">{it.mark ?? "–"}</TableCell>
+                <TableCell className="tabular-nums">
+                  {it.mark ?? "Pending"}
+                </TableCell>
                 <TableCell>
                   {it.pill && <StatusPill pill={it.pill} />}
                 </TableCell>
@@ -112,12 +222,44 @@ export function ResultsBrowser({
                 i === index && "ring-primary ring-2 ring-offset-2",
               )}
             >
-              {i + 1}
+              {it.position ?? i + 1}
             </button>
           ))}
         </nav>
       )}
       <div key={index}>{views[index]}</div>
     </section>
+  );
+}
+
+export function SitSelect({
+  paperId,
+  value,
+  sits,
+}: {
+  paperId: string;
+  value: string;
+  sits: { id: string; label: string }[];
+}) {
+  const router = useRouter();
+  return (
+    <Select
+      value={value}
+      items={sits.map((s) => ({ value: s.id, label: s.label }))}
+      onValueChange={(id) => {
+        if (id) router.push(`/student/papers/${paperId}/results?sit=${id}`);
+      }}
+    >
+      <SelectTrigger aria-label="Switch sit" className="h-9 max-w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {sits.map((s) => (
+          <SelectItem key={s.id} value={s.id}>
+            {s.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

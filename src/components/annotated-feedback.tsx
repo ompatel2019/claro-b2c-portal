@@ -685,7 +685,12 @@ export function AnnotatedFeedback({
   const popComment = comments.find((c) => c.id === popover?.id);
 
   return (
-    <div ref={root} className="space-y-4" onKeyDown={onKey}>
+    <div
+      ref={root}
+      data-comment-navigation
+      className="space-y-4"
+      onKeyDown={onKey}
+    >
       <Card>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
