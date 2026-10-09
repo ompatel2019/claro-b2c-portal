@@ -216,3 +216,26 @@ it("keeps the other profile table's page when sorting or paging a namespaced tab
     { scroll: false },
   );
 });
+
+it.each([
+  [0, "rows"],
+  [1, "row"],
+  [2, "rows"],
+])("pluralises the shared pager for %s rows", (total, noun) => {
+  nav.router.mockReturnValue({ push: nav.push });
+  nav.path.mockReturnValue("/student/profile");
+  nav.search.mockReturnValue(new URLSearchParams());
+  render(
+    <DataTable
+      label="Feedback"
+      columns={columns}
+      rows={rows.slice(0, total)}
+      pager={{ page: 1, pages: 1, total, sort: { id: "value", dir: "asc" } }}
+    />,
+  );
+  expect(
+    screen
+      .getByRole("navigation", { name: "Feedback pagination" })
+      .querySelector('[aria-live="polite"]'),
+  ).toHaveTextContent(new RegExp(`^Page 1 of 1 · ${total} ${noun}$`));
+});

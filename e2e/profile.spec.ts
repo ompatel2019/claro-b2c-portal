@@ -98,10 +98,19 @@ test.describe("Student profile (read only)", () => {
     const feedback = page.getByRole("table", { name: "Your feedback" });
     if (await feedback.count()) {
       await expect(async () => {
-        if (new URL(page.url()).searchParams.get("feedback_sort") !== "status")
-          await feedback
-            .getByRole("button", { name: "Status", exact: true })
-            .click();
+        if (
+          new URL(page.url()).searchParams.get("feedback_sort") !== "status"
+        ) {
+          const button = feedback.getByRole("button", {
+            name: "Status",
+            exact: true,
+          });
+          if (await button.isVisible()) await button.click();
+          else
+            await page
+              .getByRole("combobox", { name: "Sort your feedback" })
+              .selectOption("status:asc");
+        }
         await expect(page).toHaveURL(/[?&]feedback_sort=status(?:&|$)/, {
           timeout: 1000,
         });
@@ -111,6 +120,52 @@ test.describe("Student profile (read only)", () => {
       }).toPass({ timeout: 20000 });
     }
   });
+  for (const width of [360, 400])
+    test(`${width}px history cards fit without scrolling and show details`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      for (const [label, empty] of [
+        ["Your feedback", "Nothing sent yet."],
+        ["Marks you questioned", "No marks questioned yet."],
+      ]) {
+        const table = page.getByRole("table", { name: label, exact: true });
+        await expect(
+          table.or(page.getByText(empty, { exact: true })),
+        ).toBeVisible();
+        if (!(await table.count())) continue;
+        const card = table.locator('xpath=ancestor::*[@data-slot="card"]');
+        const container = card.locator('[data-slot="table-container"]');
+        for (const element of [card, container])
+          await expect
+            .poll(() =>
+              element.evaluate((node) => node.scrollWidth <= node.clientWidth),
+            )
+            .toBe(true);
+        const rows = table.locator("tbody tr");
+        expect(await rows.count()).toBeGreaterThan(0);
+        for (const row of await rows.all()) {
+          const cell = row.locator("td").nth(label === "Your feedback" ? 2 : 1);
+          const status = (await row.locator("td").nth(3).textContent())!.trim();
+          expect(status).not.toBe("");
+          await expect(
+            cell.getByText(`Status: ${status}`, { exact: false }),
+          ).toBeVisible();
+          if (label === "Your feedback") {
+            const reply = (await row
+              .locator("td")
+              .nth(4)
+              .textContent())!.trim();
+            expect(reply).not.toBe("");
+            await expect(
+              cell.getByText(`Reply from the team: ${reply}`, { exact: true }),
+            ).toBeVisible();
+          } else {
+            await expect(cell.getByText(/^Your note:/)).toBeVisible();
+          }
+        }
+      }
+    });
   test("profile menu uses the moved route", async ({ page }) => {
     await expect(async () => {
       const profile = page.getByRole("menuitem", {

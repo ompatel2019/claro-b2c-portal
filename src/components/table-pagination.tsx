@@ -28,7 +28,8 @@ export function TablePagination({
       className="flex flex-wrap items-center justify-between gap-2 text-sm"
     >
       <span aria-live="polite">
-        Page {pager.page} of {pager.pages} · {pager.total} rows
+        Page {pager.page} of {pager.pages} · {pager.total}{" "}
+        {pager.total === 1 ? "row" : "rows"}
       </span>
       <div className="flex gap-2">
         <Button

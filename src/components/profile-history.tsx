@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DataTable, type Column } from "./data-table";
 import { StatusPill, STATUS_PILL } from "./status-pill";
 import { Card } from "./ui/card";
@@ -35,33 +35,48 @@ const kinds: Record<string, string> = {
   marking: "Marking",
   feature: "Feature idea",
 };
-const wrap = "max-w-64 min-w-40 whitespace-normal [overflow-wrap:anywhere]";
+const labelClass = "w-full max-w-0 whitespace-normal wrap-anywhere";
+const hiddenColumn = "hidden @min-[640px]:table-cell";
+const wrap = `${hiddenColumn} max-w-64 min-w-40 whitespace-normal wrap-anywhere`;
+const detailsClass = "text-muted-foreground text-xs @min-[640px]:hidden";
 const feedbackColumns: Column<FeedbackRow>[] = [
   {
     id: "created_at",
     header: "Date",
+    className: hiddenColumn,
     sort: true,
     cell: (r) => dateLabel(r.created_at, true),
   },
   {
     id: "kind",
     header: "Type",
+    className: hiddenColumn,
     sort: true,
     cell: (r) => kinds[r.kind] ?? r.kind,
   },
   {
     id: "message",
     header: "Message",
-    className: wrap,
+    className: labelClass,
     cell: (r) => (
-      <span title={r.message}>
-        {r.message.length > 160 ? `${r.message.slice(0, 160)}…` : r.message}
-      </span>
+      <>
+        <div title={r.message}>
+          {r.message.length > 160 ? `${r.message.slice(0, 160)}…` : r.message}
+        </div>
+        <div className={detailsClass}>
+          {dateLabel(r.created_at, true)} · {kinds[r.kind] ?? r.kind} · Status:{" "}
+          {STATUS_PILL[r.status]}
+        </div>
+        <div className={detailsClass}>
+          Reply from the team: {r.admin_note || "No reply yet"}
+        </div>
+      </>
     ),
   },
   {
     id: "status",
     header: "Status",
+    className: hiddenColumn,
     sort: true,
     cell: (r) => <StatusPill pill={STATUS_PILL[r.status]} />,
   },
@@ -76,21 +91,31 @@ const reviewColumns: Column<ReviewRow>[] = [
   {
     id: "created_at",
     header: "Date",
+    className: hiddenColumn,
     sort: true,
     cell: (r) => dateLabel(r.created_at, true),
   },
   {
     id: "question",
     header: "Question",
-    className: wrap,
-    cell: (r) =>
-      r.href ? (
-        <Link href={r.href} className="underline underline-offset-4">
-          {r.question}
-        </Link>
-      ) : (
-        r.question
-      ),
+    className: labelClass,
+    cell: (r) => (
+      <>
+        <div>
+          {r.href ? (
+            <Link href={r.href} className="underline underline-offset-4">
+              {r.question}
+            </Link>
+          ) : (
+            r.question
+          )}
+        </div>
+        <div className={detailsClass}>
+          {dateLabel(r.created_at, true)} · Status: {reviewOutcome(r)}
+        </div>
+        <div className={detailsClass}>Your note: {r.student_note || "—"}</div>
+      </>
+    ),
   },
   {
     id: "student_note",
@@ -101,6 +126,7 @@ const reviewColumns: Column<ReviewRow>[] = [
   {
     id: "status",
     header: "Status",
+    className: hiddenColumn,
     sort: true,
     cell: (r) => {
       const outcome = reviewOutcome(r);
@@ -130,6 +156,54 @@ export function ProfileLoadError() {
     </div>
   );
 }
+function HistorySort({
+  kind,
+  title,
+  pager,
+}: {
+  kind: "feedback" | "reviews";
+  title: string;
+  pager: Pager;
+}) {
+  const router = useRouter();
+  const path = usePathname();
+  const params = useSearchParams();
+  const columns = kind === "feedback" ? feedbackColumns : reviewColumns;
+  return (
+    <label className="flex min-w-0 flex-wrap items-center gap-2 @min-[640px]:hidden">
+      <span>Sort {title.toLowerCase()}</span>
+      <select
+        className="bg-background min-h-11 max-w-full min-w-0 rounded-md border px-3 text-sm"
+        value={`${pager.sort.id}:${pager.sort.dir}`}
+        onChange={(event) => {
+          const [id, dir] = event.target.value.split(":");
+          const next = new URLSearchParams(params.toString());
+          next.set(`${kind}_sort`, id);
+          next.set(`${kind}_dir`, dir);
+          next.set(`${kind}_page`, "1");
+          router.push(`${path}?${next}`, { scroll: false });
+        }}
+      >
+        {columns
+          .filter((column) => column.sort)
+          .flatMap((column) =>
+            (["asc", "desc"] as const).map((dir) => (
+              <option key={`${column.id}:${dir}`} value={`${column.id}:${dir}`}>
+                {column.header} ·{" "}
+                {column.id === "created_at"
+                  ? dir === "asc"
+                    ? "oldest first"
+                    : "newest first"
+                  : dir === "asc"
+                    ? "ascending"
+                    : "descending"}
+              </option>
+            )),
+          )}
+      </select>
+    </label>
+  );
+}
 export function ProfileHistory({
   kind,
   rows,
@@ -143,7 +217,7 @@ export function ProfileHistory({
 }) {
   const title = kind === "feedback" ? "Your feedback" : "Marks you questioned";
   return (
-    <Card className="min-w-0 p-5">
+    <Card className="@container min-w-0 p-5">
       <h2 className="text-base font-semibold">{title}</h2>
       {error ? (
         <ProfileLoadError />
@@ -163,6 +237,7 @@ export function ProfileHistory({
         />
       ) : (
         <>
+          <HistorySort kind={kind} title={title} pager={pager} />
           {kind === "feedback" ? (
             <DataTable
               student
