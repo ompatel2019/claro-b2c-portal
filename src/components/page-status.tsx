@@ -12,7 +12,13 @@ import {
 import { Button, buttonVariants } from "./ui/button";
 
 /** Opt-in page states, without changing the shipped shells. */
-export function PageStatus({ children }: { children: React.ReactNode }) {
+export function PageStatus({
+  children,
+  shortcutsCopy,
+}: {
+  children: React.ReactNode;
+  shortcutsCopy?: string;
+}) {
   const path = usePathname();
   const [offline, setOffline] = useState(false);
   const [expired, setExpired] = useState(false);
@@ -56,8 +62,8 @@ export function PageStatus({ children }: { children: React.ReactNode }) {
         <DialogContent>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
           <DialogDescription>
-            {path !== "/admin/content/questions" ? "⌘S / Ctrl+S: Save. " : ""}?:
-            Show shortcuts. Esc: Close overlays.
+            {shortcutsCopy ??
+              `${path !== "/admin/content/questions" ? "⌘S / Ctrl+S: Save. " : ""}?: Show shortcuts. Esc: Close overlays.`}
           </DialogDescription>
         </DialogContent>
       </Dialog>

@@ -120,3 +120,12 @@ export function csv(rows: (string | number | null | undefined)[][]) {
 /** Rounded percentage; absent when there are no possible marks. */
 export const pctOf = (earned: number, possible: number) =>
   possible > 0 ? Math.round((100 * earned) / possible) : null;
+
+/** Feedback labels shared by the inbox and student detail. */
+export const FEEDBACK_KIND = {
+  general: "General",
+  bug: "Bug",
+  content: "Content",
+  marking: "Marking",
+  feature: "Feature",
+} as const;

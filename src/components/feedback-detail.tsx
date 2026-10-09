@@ -1,9 +1,11 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { undoFeedback } from "@/app/admin/feedback/actions";
 import { updateStudentFeedback } from "@/app/admin/students/actions";
 import { safeLocalPath } from "@/lib/students";
+import { SpotCheck } from "./student-actions";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
@@ -23,9 +25,13 @@ export type FeedbackDetailRow = {
 export function FeedbackDetail({
   row,
   photos,
+  attempt,
+  draftKey,
 }: {
   row: FeedbackDetailRow;
   photos: string[];
+  draftKey?: string;
+  attempt?: { id: string; status: string } | null;
 }) {
   const [status, setStatus] = useState(row.status);
   const [reply, setReply] = useState(row.admin_note ?? "");
@@ -33,18 +39,60 @@ export function FeedbackDetail({
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const page = safeLocalPath(row.page_path);
+  useEffect(() => {
+    if (!draftKey) return;
+    const timer = window.setTimeout(() => {
+      try {
+        const draft = localStorage.getItem(draftKey);
+        if (draft !== null) setReply(draft.slice(0, 2000));
+      } catch {
+        /* Storage is optional. */
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [draftKey]);
   function save(resolve: boolean) {
     start(async () => {
       setError(null);
       try {
-        await updateStudentFeedback(
+        const result = await updateStudentFeedback(
           row.id,
           row.user_id,
           resolve ? "resolved" : status,
           reply,
         );
         if (resolve) setStatus("resolved");
-        toast.success("Feedback saved");
+        if (draftKey) {
+          try {
+            localStorage.removeItem(draftKey);
+          } catch {
+            /* Storage is optional. */
+          }
+        }
+        toast.success("Feedback saved", {
+          duration: 4000,
+          action: {
+            label: "Undo",
+            onClick: () =>
+              start(async () => {
+                try {
+                  const undone = await undoFeedback(result.undo);
+                  if ("error" in undone) {
+                    setError(undone.error);
+                    return;
+                  }
+                  const restored = undone.restored.find((r) => r.id === row.id);
+                  if (restored) {
+                    setStatus(restored.status);
+                    setReply(restored.admin_note ?? "");
+                  }
+                  toast.success("Feedback change undone");
+                } catch {
+                  setError("Couldn't undo this. Try again.");
+                }
+              }),
+          },
+        });
       } catch {
         setError("Couldn't save this. Try again.");
       }
@@ -52,7 +100,7 @@ export function FeedbackDetail({
   }
   return (
     <>
-      <p className="whitespace-pre-wrap">{row.message}</p>
+      <p className="break-words whitespace-pre-wrap">{row.message}</p>
       <div className="flex flex-wrap gap-2">
         {photos.map((url, i) => (
           <Button key={url} variant="outline" onClick={() => setPhoto(url)}>
@@ -75,17 +123,17 @@ export function FeedbackDetail({
         </DialogContent>
       </Dialog>
       {page && (
-        <Link href={page} className="block underline">
+        <Link href={page} className="block break-all underline">
           Page: {page}
         </Link>
       )}
-      <p className="text-muted-foreground text-sm">
+      <p className="text-muted-foreground text-sm break-all">
         User agent: {row.user_agent || "Not supplied"}
       </p>
       {row.question_id && (
         <Link
           href={`/admin/content/questions/${encodeURIComponent(row.question_id)}`}
-          className="block underline"
+          className="block break-all underline"
         >
           Open in editor
         </Link>
@@ -93,11 +141,12 @@ export function FeedbackDetail({
       {row.session_id && (
         <Link
           href={`/admin/students/${row.user_id}?tab=sessions&session=${row.session_id}`}
-          className="block underline"
+          className="block break-all underline"
         >
           Open report
         </Link>
       )}
+      {attempt?.status === "marked" && <SpotCheck attemptId={attempt.id} />}
       <label className="grid gap-1">
         Status
         <select
@@ -114,11 +163,23 @@ export function FeedbackDetail({
       </label>
       <label className="grid gap-1">
         Reply to student
+        <span className="text-muted-foreground text-xs">
+          Shown on their profile. Maximum 2,000 characters.
+        </span>
         <Textarea
           aria-label="Reply to student"
           maxLength={2000}
           value={reply}
-          onChange={(e) => setReply(e.target.value)}
+          onChange={(e) => {
+            setReply(e.target.value);
+            if (draftKey) {
+              try {
+                localStorage.setItem(draftKey, e.target.value);
+              } catch {
+                /* Storage is optional. */
+              }
+            }
+          }}
           disabled={pending}
         />
       </label>

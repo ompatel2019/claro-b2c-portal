@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
+import { contentUndoToken } from "@/lib/admin-content";
 import { admin } from "@/utils/supabase/admin";
 
 /** "Block sign-in" / "Unblock": an auth ban, no data touched (§4.3, Q9). */
@@ -48,7 +49,7 @@ export async function updateStudentFeedback(
   status: string,
   reply: string,
 ) {
-  await requireAdmin();
+  const adminProfile = await requireAdmin();
   const value = z
     .object({
       id: z.uuid(),
@@ -58,6 +59,14 @@ export async function updateStudentFeedback(
     })
     .parse({ id, userId, status, reply });
   const db = await createClient();
+  const { data: previous } = await db
+    .from("feedback")
+    .select("id,status,admin_note,resolved_at")
+    .eq("id", value.id)
+    .eq("user_id", value.userId)
+    .maybeSingle()
+    .throwOnError();
+  if (!previous) throw new Error("Feedback missing.");
   const { data } = await db
     .from("feedback")
     .update({
@@ -68,10 +77,21 @@ export async function updateStudentFeedback(
     })
     .eq("id", value.id)
     .eq("user_id", value.userId)
-    .select("id")
+    .select("id,status,admin_note,resolved_at")
     .maybeSingle()
     .throwOnError();
   if (!data) throw new Error("Feedback missing.");
   revalidatePath(`/admin/students/${value.userId}`);
   revalidatePath("/admin/feedback");
+  revalidatePath("/student/profile");
+  revalidatePath("/admin");
+  const { status: writtenStatus, admin_note, resolved_at } = data;
+  return {
+    undo: contentUndoToken("feedback", adminProfile.id, [
+      {
+        ...previous,
+        expected: { status: writtenStatus, admin_note, resolved_at },
+      },
+    ]),
+  };
 }

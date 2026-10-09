@@ -8,6 +8,7 @@ import {
   loadStudentFeedback,
 } from "@/lib/admin-data";
 import {
+  FEEDBACK_KIND,
   pageOf,
   pctOf,
   singleParams,
@@ -59,13 +60,6 @@ const REASON = {
   check_disagreed: "Check disagreed",
   student_dispute: "Student dispute",
   spot_check: "Spot check",
-} as const;
-const KIND = {
-  general: "General",
-  bug: "Bug",
-  content: "Content error",
-  marking: "Marking",
-  feature: "Feature idea",
 } as const;
 const pct = (n: number | null) => (n == null ? null : Math.round(n));
 const SESSION_KEYS: Record<string, (s: SessionItem) => string | number | null> =
@@ -654,11 +648,12 @@ export default async function StudentDetail({
             id: f.id,
             cells: {
               when: dateLabel(f.created_at, true),
-              kind: KIND[f.kind as keyof typeof KIND] ?? f.kind,
+              kind:
+                FEEDBACK_KIND[f.kind as keyof typeof FEEDBACK_KIND] ?? f.kind,
               message: (
                 <Link
                   className="line-clamp-1 max-w-md whitespace-normal underline"
-                  href={`${base}?tab=feedback&feedback=${f.id}`}
+                  href={`/admin/feedback?status=${f.status}&id=${f.id}`}
                 >
                   {f.message}
                 </Link>
@@ -671,7 +666,8 @@ export default async function StudentDetail({
             },
             keys: {
               when: f.created_at,
-              kind: KIND[f.kind as keyof typeof KIND] ?? f.kind,
+              kind:
+                FEEDBACK_KIND[f.kind as keyof typeof FEEDBACK_KIND] ?? f.kind,
               status: f.status,
               message: f.message,
             },
