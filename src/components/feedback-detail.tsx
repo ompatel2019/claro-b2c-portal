@@ -25,11 +25,13 @@ export type FeedbackDetailRow = {
 export function FeedbackDetail({
   row,
   photos,
+  missingScreenshots = 0,
   attempt,
   draftKey,
 }: {
   row: FeedbackDetailRow;
   photos: string[];
+  missingScreenshots?: number;
   draftKey?: string;
   attempt?: { id: string; status: string } | null;
 }) {
@@ -108,6 +110,13 @@ export function FeedbackDetail({
           </Button>
         ))}
       </div>
+      {missingScreenshots > 0 && (
+        <p className="text-muted-foreground text-sm">
+          {missingScreenshots}{" "}
+          {missingScreenshots === 1 ? "screenshot is" : "screenshots are"} no
+          longer available.
+        </p>
+      )}
       <Dialog open={!!photo} onOpenChange={(open) => !open && setPhoto(null)}>
         <DialogContent className="sm:max-w-4xl">
           <DialogTitle>Screenshot</DialogTitle>

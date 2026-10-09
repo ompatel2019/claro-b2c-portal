@@ -13,6 +13,103 @@ import {
   loadFeedbackList,
 } from "./admin-feedback";
 beforeEach(() => vi.resetAllMocks());
+
+function itemClient(paths: string[], linked = false) {
+  const row = {
+    id: "feedback",
+    user_id: "user",
+    message: "Please fix this",
+    status: "new",
+    screenshots: paths,
+    session_id: linked ? "session" : null,
+    question_id: linked ? "question" : null,
+  };
+  const feedback = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockReturnThis(),
+    throwOnError: vi.fn().mockResolvedValue({ data: row }),
+  };
+  const attempts = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    throwOnError: vi.fn().mockResolvedValue({ data: [] }),
+  };
+  const sign = vi.fn();
+  mocks.client.mockResolvedValue({
+    from: (table: string) => (table === "feedback" ? feedback : attempts),
+    storage: { from: vi.fn().mockReturnValue({ createSignedUrls: sign }) },
+  });
+  return { sign, attempts };
+}
+
+it("loads feedback with the URLs that signed when one screenshot is missing", async () => {
+  const { sign } = itemClient(["user/available.png", "user/missing.png"]);
+  sign.mockResolvedValue({
+    data: [
+      { signedUrl: "https://storage/available", error: null },
+      { signedUrl: "", error: "Object not found" },
+    ],
+    error: null,
+  });
+  await expect(loadFeedbackItem("feedback")).resolves.toMatchObject({
+    id: "feedback",
+    screenshots: ["https://storage/available"],
+    missingScreenshots: 1,
+  });
+  expect(sign).toHaveBeenCalledWith(
+    ["user/available.png", "user/missing.png"],
+    3600,
+  );
+});
+
+it("loads feedback when the entire screenshot signing call errors", async () => {
+  const { sign } = itemClient(["user/one.png", "user/two.png"]);
+  sign.mockResolvedValue({
+    data: null,
+    error: new Error("Storage unavailable"),
+  });
+  await expect(loadFeedbackItem("feedback")).resolves.toMatchObject({
+    screenshots: [],
+    missingScreenshots: 2,
+  });
+});
+
+it("loads feedback when screenshot signing rejects", async () => {
+  const { sign } = itemClient(["user/one.png"]);
+  sign.mockRejectedValue(new Error("Storage unavailable"));
+  await expect(loadFeedbackItem("feedback")).resolves.toMatchObject({
+    screenshots: [],
+    missingScreenshots: 1,
+  });
+});
+
+it("uses the first ordered attempt when two rows match the session and question", async () => {
+  const { attempts, sign } = itemClient([], true);
+  attempts.throwOnError.mockResolvedValue({
+    data: [
+      { id: "first", status: "marked", question: { type: "short" } },
+      { id: "second", status: "pending", question: { type: "short" } },
+    ],
+  });
+  await expect(loadFeedbackItem("feedback")).resolves.toMatchObject({
+    attempt: { id: "first", status: "marked" },
+    screenshots: [],
+    missingScreenshots: 0,
+  });
+  expect(attempts.eq.mock.calls).toEqual([
+    ["session_id", "session"],
+    ["question_id", "question"],
+  ]);
+  expect(attempts.order.mock.calls).toEqual([
+    ["created_at", { ascending: true }],
+    ["id", { ascending: true }],
+  ]);
+  expect(attempts.limit).toHaveBeenCalledWith(1);
+  expect(sign).not.toHaveBeenCalled();
+});
 it.each([
   loadFeedbackCounts,
   () => loadFeedbackItem("id"),

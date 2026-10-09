@@ -121,7 +121,10 @@ export async function loadFeedbackItem(id: string) {
   const paths = data.screenshots as string[];
   const [signed, attempt] = await Promise.all([
     paths.length
-      ? db.storage.from("reports").createSignedUrls(paths, 3600)
+      ? db.storage
+          .from("reports")
+          .createSignedUrls(paths, 3600)
+          .catch(() => null)
       : null,
     data.session_id && data.question_id
       ? db
@@ -129,13 +132,16 @@ export async function loadFeedbackItem(id: string) {
           .select("id,status,question:questions(type)")
           .eq("session_id", data.session_id)
           .eq("question_id", data.question_id)
-          .maybeSingle()
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true })
+          .limit(1)
           .throwOnError()
       : null,
   ]);
-  if (signed?.error || signed?.data?.some((s) => s.error))
-    throw new Error("Couldn't load screenshots. Try again.");
-  const linkedAttempt = attempt?.data;
+  const screenshots = (signed?.data ?? []).flatMap((s) =>
+    !s.error && s.signedUrl ? [s.signedUrl] : [],
+  );
+  const linkedAttempt = attempt?.data?.[0];
   const question = linkedAttempt?.question as unknown as {
     type: string;
   } | null;
@@ -154,7 +160,8 @@ export async function loadFeedbackItem(id: string) {
     name:
       (data.profile as unknown as { full_name: string | null } | null)
         ?.full_name ?? "Student",
-    screenshots: (signed?.data ?? []).flatMap((s) => s.signedUrl ?? []),
+    screenshots,
+    missingScreenshots: paths.length - screenshots.length,
     attempt:
       linkedAttempt && question && ["short", "extended"].includes(question.type)
         ? { id: linkedAttempt.id, status: linkedAttempt.status }

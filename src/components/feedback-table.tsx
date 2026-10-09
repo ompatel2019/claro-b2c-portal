@@ -103,6 +103,7 @@ export type FeedbackItem = FeedbackDetailRow & {
   name: string;
   kind: string;
   screenshots: string[];
+  missingScreenshots: number;
   created_at: string;
   attempt: { id: string; status: string } | null;
 };
@@ -230,6 +231,7 @@ export function FeedbackTable({
                   draftKey={`claro.feedback.${adminId}.${item.id}`}
                   row={item}
                   photos={item.screenshots}
+                  missingScreenshots={item.missingScreenshots}
                   attempt={item.attempt}
                 />
               </div>

@@ -78,6 +78,50 @@ test.describe("Admin feedback inbox", () => {
       );
   });
 
+  test("opens a deep-linked feedback sheet when its screenshot object is missing", async ({
+    page,
+  }) => {
+    const db = adminClient()!;
+    const user = await studentId();
+    const message = `${tag} Unavailable screenshot ${randomUUID()}`;
+    const { data, error } = await db
+      .from("feedback")
+      .insert({
+        user_id: user,
+        kind: "bug",
+        message,
+        screenshots: [`${user}/${randomUUID()}-missing.png`],
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    try {
+      await signInAdmin(page);
+      await page.goto(`/admin/feedback?id=${data.id}`);
+      const sheet = page.getByRole("dialog").filter({
+        has: page.getByRole("heading", { name: /Bug from/ }),
+      });
+      await expect(sheet.getByText(message, { exact: true })).toBeVisible({
+        timeout: 60000,
+      });
+      await expect(
+        sheet.getByText("1 screenshot is no longer available.", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByText("Couldn't load this", { exact: false }),
+      ).toHaveCount(0);
+    } finally {
+      const { error: cleanupError } = await db
+        .from("feedback")
+        .delete()
+        .eq("id", data.id)
+        .eq("message", message);
+      if (cleanupError) throw cleanupError;
+    }
+  });
+
   test("filters, screenshot lightbox, reply/status and bulk resolution", async ({
     page,
   }) => {

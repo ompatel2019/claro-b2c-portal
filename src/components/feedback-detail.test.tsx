@@ -38,6 +38,26 @@ const row = {
   session_id: null,
 };
 
+it.each([
+  [1, "1 screenshot is no longer available."],
+  [2, "2 screenshots are no longer available."],
+])("shows the unavailable note for %i missing screenshots", (count, note) => {
+  render(
+    <FeedbackDetail
+      row={row}
+      photos={["https://storage/available"]}
+      missingScreenshots={count}
+    />,
+  );
+  expect(screen.getByText(note)).toHaveClass("text-muted-foreground");
+  expect(screen.getByRole("button", { name: "Screenshot 1" })).toBeVisible();
+});
+
+it("omits the unavailable note when no screenshots are missing", () => {
+  render(<FeedbackDetail row={row} photos={[]} missingScreenshots={0} />);
+  expect(screen.queryByText(/no longer available/)).not.toBeInTheDocument();
+});
+
 it("keeps reply B and its status when undo A is rejected", async () => {
   mocks.save
     .mockResolvedValueOnce({ undo: "A" })
