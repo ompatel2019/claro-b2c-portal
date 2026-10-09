@@ -120,8 +120,8 @@ it.each([
 ] as const)("uses exact score threshold %s", (pct, tone) =>
   expect(scoreTone(pct)).toBe(tone),
 );
-it("builds existing report and setup routes without linking single-answer sessions", () => {
-  expect(reportHref({ id: "a", kind: "single" })).toBeNull();
+it("builds existing report and setup routes including single-answer sessions", () => {
+  expect(reportHref({ id: "a", kind: "single" })).toBe("/student/activity/a");
   expect(reportHref({ id: "a", kind: "sprint" })).toBe(
     "/student/sprint/a/results",
   );

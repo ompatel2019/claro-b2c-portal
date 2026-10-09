@@ -115,7 +115,7 @@ it.each([
   expect(screen.getByText(`${pct}%`)).toHaveTextContent(word);
   expect(container.querySelector("svg")).not.toBeNull();
 });
-it("reuses the score plot for session tooltips and avoids a single-answer report link", () => {
+it("reuses the score plot and links single-answer reports", () => {
   render(
     <SessionScoreTrend
       points={[
@@ -131,7 +131,7 @@ it("reuses the score plot for session tooltips and avoids a single-answer report
           day: "2026-10-09",
           pct: 50,
           label: "Mark my answer · Fri 9 Oct · 50%",
-          href: null,
+          href: "/student/activity/a",
         },
       ]}
       from="2026-07-12"
@@ -142,10 +142,10 @@ it("reuses the score plot for session tooltips and avoids a single-answer report
   expect(
     screen.getByRole("link", { name: "MC sprint · Thu 8 Oct · 80%" }),
   ).toHaveAttribute("href", "/student/sprint/s/results");
-  expect(screen.getAllByRole("link")).toHaveLength(1);
+  expect(screen.getAllByRole("link")).toHaveLength(2);
   expect(
-    screen.getByLabelText("Mark my answer · Fri 9 Oct · 50%"),
-  ).toBeInTheDocument();
+    screen.getByRole("link", { name: "Mark my answer · Fri 9 Oct · 50%" }),
+  ).toHaveAttribute("href", "/student/activity/a");
 });
 
 it("positions sessions by finish time, including distinct sessions on one Sydney day", () => {

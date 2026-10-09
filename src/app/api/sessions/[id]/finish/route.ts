@@ -34,6 +34,11 @@ export async function POST(
     .maybeSingle();
   if (!session)
     return Response.json({ error: "Session not found" }, { status: 404 });
+  if (session.kind === "single")
+    return Response.json(
+      { error: "Submit this check from Mark my answer." },
+      { status: 409 },
+    );
   try {
     if (session.kind === "paper" && !session.finished_at) {
       const config = session.config as PaperConfig;

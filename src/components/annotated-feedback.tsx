@@ -34,7 +34,7 @@ const reduced = () =>
 const WIDE = 1100;
 
 /** Opens and closes like <details>, remembering the choice per browser. */
-function Remembered({
+export function FeedbackDetails({
   name,
   title,
   children,
@@ -46,15 +46,23 @@ function Remembered({
   const ref = useRef<HTMLDetailsElement>(null);
   const key = `claro-feedback-${name}`;
   useEffect(() => {
-    if (ref.current) ref.current.open = localStorage.getItem(key) === "1";
+    try {
+      if (ref.current) ref.current.open = localStorage.getItem(key) === "1";
+    } catch {
+      /* Keep the default when browser storage is unavailable. */
+    }
   }, [key]);
   return (
     <details
       ref={ref}
       className="group rounded-xl border bg-white"
-      onToggle={(e) =>
-        localStorage.setItem(key, e.currentTarget.open ? "1" : "0")
-      }
+      onToggle={(e) => {
+        try {
+          localStorage.setItem(key, e.currentTarget.open ? "1" : "0");
+        } catch {
+          /* The control still works without persisted preferences. */
+        }
+      }}
     >
       <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
         {title}
@@ -912,7 +920,7 @@ export function AnnotatedFeedback({
       {showMark && (
         <div className="space-y-2">
           {showReferences && !!row.criteria?.length && (
-            <Remembered name="guidelines" title="Marking guidelines">
+            <FeedbackDetails name="guidelines" title="Marking guidelines">
               <table className="w-full text-left">
                 <thead className="text-muted-foreground text-xs uppercase">
                   <tr>
@@ -944,24 +952,24 @@ export function AnnotatedFeedback({
                   ))}
                 </tbody>
               </table>
-            </Remembered>
+            </FeedbackDetails>
           )}
           {showReferences && row.sample_answer && (
-            <Remembered name="model" title="Model answer">
+            <FeedbackDetails name="model" title="Model answer">
               <p className="whitespace-pre-wrap">{row.sample_answer}</p>
               <p className="text-muted-foreground mt-2 text-[13px]">
                 One strong answer. Other answers can earn the same marks.
               </p>
-            </Remembered>
+            </FeedbackDetails>
           )}
           {outline.length > 0 && (
-            <Remembered name="outline" title="How to reach full marks">
+            <FeedbackDetails name="outline" title="How to reach full marks">
               <ul className="list-disc space-y-1 pl-5">
                 {outline.map((t, i) => (
                   <li key={i}>{t}</li>
                 ))}
               </ul>
-            </Remembered>
+            </FeedbackDetails>
           )}
         </div>
       )}

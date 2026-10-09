@@ -72,7 +72,7 @@ export type ProgressData = {
 };
 export function reportHref(s: Pick<HistoryScore, "id" | "kind" | "paper_id">) {
   return s.kind === "single"
-    ? null
+    ? `/student/activity/${s.id}`
     : s.kind === "flashcards"
       ? `/student/flashcards/${s.id}`
       : s.kind === "paper"

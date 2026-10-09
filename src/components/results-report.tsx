@@ -8,7 +8,7 @@ import {
   TYPE_LABEL,
   type McGridRow,
 } from "@/lib/results";
-import { RichText } from "./rich-text";
+import { QuestionView } from "./question-view";
 import { AnnotatedFeedback } from "./annotated-feedback";
 import { ReportProblem } from "./feedback-widget";
 import { QuestionMark } from "./question-mark";
@@ -62,15 +62,9 @@ export function ResultsAnswers({
               </span>
             )}
           </p>
-          <RichText className="block" text={r.stem} />
+          <QuestionView question={r} />
         </CardHeader>
         <CardContent className="space-y-4">
-          {r.stimulus && (
-            <RichText
-              className="bg-paper space-y-3 rounded-xl p-4"
-              text={r.stimulus}
-            />
-          )}
           {r.type === "mcq" ? (
             <>
               <McReview row={r} />

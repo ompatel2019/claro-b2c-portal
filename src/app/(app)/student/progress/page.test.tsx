@@ -174,7 +174,9 @@ it("links each finished session to its correct report and scopes type chips to s
   expect(
     screen.getAllByRole("link", { name: /Flashcards/ })[0],
   ).toHaveAttribute("href", "/student/flashcards/cards");
-  expect(screen.queryByRole("link", { name: /Mark my answer/ })).toBeNull();
+  expect(
+    screen.getAllByRole("link", { name: /Mark my answer/ })[0],
+  ).toHaveAttribute("href", "/student/activity/single");
   view.unmount();
   render(
     await resolve(

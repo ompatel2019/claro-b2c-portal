@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Cards, History, Sprint } from "@/components/icons";
+import { Cards, History, Sprint, Pen } from "@/components/icons";
 import {
   modeLabel,
   dateLabel,
@@ -30,9 +30,11 @@ export function SessionList({
       <ul className="divide-y divide-dashed">
         {sessions.map((s) => {
           const href =
-            s.kind === "flashcards"
-              ? `/student/flashcards/${s.id}`
-              : `/student/sprint/${s.id}${s.finished_at ? "/results" : ""}`;
+            s.kind === "single"
+              ? `/student/activity/${s.id}`
+              : s.kind === "flashcards"
+                ? `/student/flashcards/${s.id}`
+                : `/student/sprint/${s.id}${s.finished_at ? "/results" : ""}`;
           return (
             <li key={s.id}>
               <Link
@@ -46,6 +48,11 @@ export function SessionList({
                       aria-hidden
                       className="text-muted-foreground size-5 shrink-0"
                     />
+                  ) : s.kind === "single" ? (
+                    <Pen
+                      aria-hidden
+                      className="text-muted-foreground size-5 shrink-0"
+                    />
                   ) : (
                     <Sprint
                       aria-hidden
@@ -54,9 +61,11 @@ export function SessionList({
                   )}
                   <div className="min-w-0">
                     <p className="font-semibold">
-                      {s.kind === "flashcards"
-                        ? `Flashcards: ${String(s.config.mode) === "test" ? "Test" : "Study"}`
-                        : modeLabel(s.config.mode)}
+                      {s.kind === "single"
+                        ? "Mark my answer"
+                        : s.kind === "flashcards"
+                          ? `Flashcards: ${String(s.config.mode) === "test" ? "Test" : "Study"}`
+                          : modeLabel(s.config.mode)}
                     </p>
                     <p className="text-muted-foreground text-[13px]">
                       {topicNames(s.config.topics, topics)} ·{" "}
@@ -72,7 +81,10 @@ export function SessionList({
                         : "secondary"
                     }
                   >
-                    {`${s.score}/${s.max_score} · ${percentage(s.score, s.max_score)}`}
+                    {s.kind === "single" &&
+                    (s.score === null || s.max_score === null)
+                      ? "Marking…"
+                      : `${s.score}/${s.max_score} · ${percentage(s.score, s.max_score)}`}
                   </Badge>
                 ) : (
                   <Badge variant="outline">In progress</Badge>

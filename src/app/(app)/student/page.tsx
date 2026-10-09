@@ -331,9 +331,11 @@ async function Continue({ userId }: { userId: string }) {
                 <p className="font-semibold">
                   {cards
                     ? `Flashcards · ${String(config.mode) === "test" ? "Test" : "Study"}`
-                    : s.kind === "paper"
-                      ? "Paper"
-                      : `${modeLabel(config.mode)} sprint`}
+                    : s.kind === "single"
+                      ? "Mark my answer"
+                      : s.kind === "paper"
+                        ? "Paper"
+                        : `${modeLabel(config.mode)} sprint`}
                 </p>
                 <p className="text-muted-foreground text-[13px]">
                   {done}/{total} {cards ? "cards" : "answered"}
@@ -341,7 +343,11 @@ async function Continue({ userId }: { userId: string }) {
                 </p>
               </div>
               <Link
-                href={`/${cards ? "student/flashcards" : "student/sprint"}/${s.id}`}
+                href={
+                  s.kind === "single"
+                    ? `/student/activity/${s.id}`
+                    : `/${cards ? "student/flashcards" : "student/sprint"}/${s.id}`
+                }
                 className={buttonVariants({ size: "sm" })}
               >
                 Continue

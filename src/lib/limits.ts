@@ -1,3 +1,9 @@
 export const OWN_FLASHCARD_LIMIT = 2_000;
 export const CARD_IMPORT_ROW_LIMIT = 500;
 export const CARD_IMPORT_BYTE_LIMIT = 1_048_576;
+export const MARK_MY_ANSWER_DAILY_LIMIT = 20;
+export const WRITTEN_WORD_LIMIT = 3_000;
+export const WRITTEN_WORD_WARNING = 2_500;
+export const ANSWER_PHOTO_BYTE_LIMIT = 10 * 1024 * 1024;
+export const SHORT_PHOTO_PAGE_LIMIT = 3;
+export const LONG_PHOTO_PAGE_LIMIT = 8;

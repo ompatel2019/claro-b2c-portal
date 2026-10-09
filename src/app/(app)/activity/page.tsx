@@ -16,9 +16,10 @@ export default async function Activity({
     .from("sessions")
     .select("*")
     .eq("user_id", profile.id)
-    .in("kind", ["sprint", "flashcards"])
+    .in("kind", ["sprint", "flashcards", "single"])
     .order("started_at", { ascending: false });
-  if (
+  if (filters.mode === "single") query = query.eq("kind", "single");
+  else if (
     filters.mode &&
     (filters.mode in modes || ["study", "test"].includes(filters.mode))
   )
@@ -47,6 +48,7 @@ export default async function Activity({
               })),
               { value: "study", label: "Flashcards: Study" },
               { value: "test", label: "Flashcards: Test" },
+              { value: "single", label: "Mark my answer" },
             ],
           },
           {

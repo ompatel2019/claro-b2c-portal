@@ -152,7 +152,10 @@ export function uncertainParts(text: string) {
 }
 
 /** "4 / 6", or a range "3–4 / 6" while a disagreement is being checked. */
-export function markLabel(row: ReviewRow, state: MarkingState) {
+export function markLabel(
+  row: Pick<ReviewRow, "mark" | "max_marks" | "marks" | "review">,
+  state: MarkingState,
+) {
   const max = row.max_marks ?? row.marks;
   const r = row.review;
   if (

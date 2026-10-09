@@ -1,12 +1,17 @@
 // @vitest-environment node
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { singleSlotIds } from "@/lib/single-check";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/utils/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/utils/supabase/admin", () => {
-  const client = { from: vi.fn(), storage: { from: vi.fn() } };
+  const client = { from: vi.fn(), rpc: vi.fn(), storage: { from: vi.fn() } };
   return { admin: () => client };
 });
+vi.mock("@/lib/single-check-marking", () => ({
+  markOwnCheck: vi.fn(),
+  markBankCheck: vi.fn(),
+}));
 vi.mock("@/lib/ai/rate-limit", () => ({
   assertStudentAiRateLimit: vi.fn(async () => ({ ok: true })),
   rateLimitedResponse: (result: { error: string; retryAfterSec: number }) =>
@@ -50,6 +55,10 @@ import { assertStudentAiRateLimit } from "@/lib/ai/rate-limit";
 
 const userId = "d0d38222-b9bb-4089-81d5-383878dd9d9d";
 const sessionId = "75f2a40b-3e20-4a56-9e14-1b237cfc8396";
+const singleStarted = "2026-10-09T01:00:00Z";
+const singleSessionId = (
+  await singleSlotIds(userId, new Date(singleStarted))
+)[0];
 const ctx = { params: Promise.resolve({ id: "id" }) };
 const request = (body?: unknown) =>
   new Request("http://localhost/api", {
@@ -91,6 +100,7 @@ function client(rows: unknown[], signedIn = true) {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(admin().rpc).mockResolvedValue({ data: 0, error: null } as never);
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 afterEach(() => vi.restoreAllMocks());
@@ -270,7 +280,7 @@ it("downloads handwriting and saves the transcript for confirmation", async () =
       image_paths: [`${userId}/image.png`],
       status: "pending",
       question_id: "q",
-      question: { type: "short" },
+      question: { type: "short", stem: "Explain" },
       session: { kind: "sprint" },
     },
     { stem: "Explain" },
@@ -792,7 +802,7 @@ it("transcribes every photo page in its saved order", async () => {
       image_paths: [`${userId}/2.png`, `${userId}/1.png`],
       status: "pending",
       question_id: "q",
-      question: { type: "short" },
+      question: { type: "short", stem: "Explain" },
       session: { kind: "sprint" },
     },
     { stem: "Explain" },
@@ -897,4 +907,301 @@ it("retries failed paper marking once, logs rejection, and scores the retry", as
   });
   expect(vi.mocked(markAttempt).mock.calls).toEqual([["24"], ["24"]]);
   expect(console.error).toHaveBeenCalledWith(error);
+});
+
+it("marks a nullable-question single session through the same marking endpoint", async () => {
+  const { markOwnCheck } = await import("@/lib/single-check-marking");
+  const config = {
+    question: {
+      stem: "Explain inflation.",
+      marks: 4,
+      verb: "explain",
+      topic_id: null,
+      criteria_text: null,
+    },
+  };
+  client([
+    {
+      session_id: singleSessionId,
+      question_id: null,
+      question: null,
+      session: {
+        kind: "single",
+        started_at: singleStarted,
+        finished_at: "2026-10-09",
+        config,
+      },
+    },
+  ]);
+  vi.mocked(admin().from).mockReturnValue(adminQuery(null) as never);
+  vi.mocked(markOwnCheck).mockResolvedValue({
+    mark: 3,
+    max_marks: 4,
+    status: "marked",
+    feedback: null,
+  } as never);
+  expect((await mark(request(), ctx)).status).toBe(200);
+  expect(markOwnCheck).toHaveBeenCalledWith("id", userId, config);
+  expect(markAttempt).not.toHaveBeenCalled();
+  expect(rescoreSession).not.toHaveBeenCalled();
+  expect(admin().from).toHaveBeenCalledWith("sessions");
+});
+it("refuses marking at the AI budget without invoking the engine", async () => {
+  vi.mocked(admin().from).mockReturnValue(adminQuery(null) as never);
+  client([
+    {
+      session_id: singleSessionId,
+      question: { type: "short" },
+      session: {
+        kind: "single",
+        started_at: singleStarted,
+        finished_at: singleStarted,
+      },
+    },
+  ]);
+  vi.mocked(admin().rpc).mockResolvedValue({ data: 90, error: null } as never);
+  const response = await mark(request(), ctx);
+  expect(response.status).toBe(503);
+  expect(await response.json()).toMatchObject({
+    error: expect.stringContaining("Marking is paused"),
+  });
+  expect(markAttempt).not.toHaveBeenCalled();
+});
+it("handles an own-question photo without dereferencing a bank row", async () => {
+  client([
+    {
+      session_id: singleSessionId,
+      question_id: null,
+      question: null,
+      status: "pending",
+      image_paths: [`${userId}/1.png`],
+      session: {
+        kind: "single",
+        started_at: singleStarted,
+        config: { question: { stem: "Explain inflation." } },
+      },
+    },
+  ]);
+  const download = vi.fn().mockResolvedValue({
+    data: new Blob(["image"], { type: "image/png" }),
+    error: null,
+  });
+  vi.mocked(admin().storage.from).mockReturnValue({ download } as never);
+  vi.mocked(admin().from).mockReturnValue(adminQuery(null) as never);
+  vi.mocked(transcribeImage).mockResolvedValue({
+    transcript: "Some answer",
+    lines: ["Some answer"],
+    notes: "",
+  });
+  expect((await transcribe(request(), ctx)).status).toBe(200);
+  expect(transcribeImage).toHaveBeenCalledWith(
+    expect.any(ArrayBuffer),
+    "image/png",
+    "Explain inflation.",
+    userId,
+  );
+});
+it("allows up to eight pages for a short single check", async () => {
+  client([
+    {
+      session_id: singleSessionId,
+      question_id: null,
+      question: null,
+      status: "pending",
+      image_paths: Array.from({ length: 9 }, (_, i) => `${userId}/${i}.png`),
+      session: {
+        kind: "single",
+        started_at: singleStarted,
+        config: { question: { stem: "Explain inflation." } },
+      },
+    },
+  ]);
+  const response = await transcribe(request(), ctx);
+  expect(response.status).toBe(400);
+  expect(await response.json()).toEqual({
+    error: "Upload up to 8 pages per question.",
+  });
+  expect(transcribeImage).not.toHaveBeenCalled();
+});
+
+it("rejects unsubmitted single checks before any AI or rate-limit call", async () => {
+  client([
+    {
+      session_id: singleSessionId,
+      question: null,
+      session: { kind: "single", started_at: singleStarted, finished_at: null },
+    },
+  ]);
+  expect((await mark(request(), ctx)).status).toBe(409);
+  expect(markAttempt).not.toHaveBeenCalled();
+  expect(assertStudentAiRateLimit).not.toHaveBeenCalled();
+});
+it("rejects single sessions created outside the daily reservation path", async () => {
+  client([
+    {
+      session_id: sessionId,
+      question: null,
+      session: {
+        kind: "single",
+        started_at: singleStarted,
+        finished_at: singleStarted,
+      },
+    },
+  ]);
+  expect((await mark(request(), ctx)).status).toBe(404);
+  expect(markAttempt).not.toHaveBeenCalled();
+  expect(assertStudentAiRateLimit).not.toHaveBeenCalled();
+});
+
+it("keeps single checks out of the generic finish engine", async () => {
+  client([{ kind: "single", finished_at: null }]);
+  expect((await finish(request(), ctx)).status).toBe(409);
+  expect(finishSession).not.toHaveBeenCalled();
+  expect(markAttempt).not.toHaveBeenCalled();
+});
+it("rejects an unreserved single photo before downloading or transcribing", async () => {
+  client([
+    {
+      session_id: sessionId,
+      status: "pending",
+      image_paths: [`${userId}/1.png`],
+      question: null,
+      session: {
+        kind: "single",
+        started_at: singleStarted,
+        config: { question: { stem: "Explain inflation." } },
+      },
+    },
+  ]);
+  expect((await transcribe(request(), ctx)).status).toBe(404);
+  expect(transcribeImage).not.toHaveBeenCalled();
+  expect(admin().storage.from).not.toHaveBeenCalled();
+});
+it("validates every stored photo before spending on transcription", async () => {
+  client([
+    {
+      status: "pending",
+      image_paths: [`${userId}/1.png`, `${userId}/2.png`],
+      question: { type: "short", stem: "Explain inflation." },
+      session: { kind: "sprint" },
+    },
+  ]);
+  const download = vi
+    .fn()
+    .mockResolvedValueOnce({ data: new Blob(["photo"], { type: "image/png" }) })
+    .mockResolvedValueOnce({ data: new Blob(["bad"], { type: "text/plain" }) });
+  vi.mocked(admin().storage.from).mockReturnValue({ download } as never);
+  expect((await transcribe(request(), ctx)).status).toBe(400);
+  expect(transcribeImage).not.toHaveBeenCalled();
+});
+
+it("persists the unreadable state for a single photo with no usable transcript", async () => {
+  client([
+    {
+      session_id: singleSessionId,
+      status: "pending",
+      image_paths: [`${userId}/1.png`],
+      question: null,
+      session: {
+        kind: "single",
+        started_at: singleStarted,
+        config: { question: { stem: "Explain inflation." } },
+      },
+    },
+  ]);
+  const download = vi
+    .fn()
+    .mockResolvedValue({ data: new Blob(["photo"], { type: "image/png" }) });
+  vi.mocked(admin().storage.from).mockReturnValue({ download } as never);
+  const save = adminQuery(null);
+  vi.mocked(admin().from).mockReturnValue(save as never);
+  vi.mocked(transcribeImage).mockResolvedValue({
+    transcript: "",
+    lines: [],
+    notes: "",
+  });
+  expect(await (await transcribe(request(), ctx)).json()).toMatchObject({
+    status: "unreadable",
+    unreadable: true,
+  });
+  expect(save.update).toHaveBeenCalledWith({
+    transcript: "",
+    status: "unreadable",
+  });
+});
+
+it("checks the AI rate limit again before transcribing another page", async () => {
+  client([
+    {
+      status: "pending",
+      image_paths: [`${userId}/1.png`, `${userId}/2.png`],
+      question: { type: "short", stem: "Explain inflation." },
+      session: { kind: "sprint" },
+    },
+  ]);
+  const download = vi
+    .fn()
+    .mockResolvedValue({ data: new Blob(["photo"], { type: "image/png" }) });
+  vi.mocked(admin().storage.from).mockReturnValue({ download } as never);
+  vi.mocked(assertStudentAiRateLimit)
+    .mockResolvedValueOnce({ ok: true })
+    .mockResolvedValueOnce({
+      ok: false,
+      error: "You're going a bit fast, try again in a minute",
+      retryAfterSec: 60,
+    });
+  vi.mocked(transcribeImage).mockResolvedValue({
+    transcript: "First page",
+    lines: ["First page"],
+    notes: "",
+  });
+  expect((await transcribe(request(), ctx)).status).toBe(429);
+  expect(transcribeImage).toHaveBeenCalledTimes(1);
+});
+
+it("rejects transcription of a submitted single before any AI call", async () => {
+  client([
+    {
+      session_id: singleSessionId,
+      status: "pending",
+      image_paths: [`${userId}/page.png`],
+      question: { type: "short", stem: "Explain" },
+      session: {
+        kind: "single",
+        started_at: singleStarted,
+        finished_at: singleStarted,
+      },
+    },
+  ]);
+  expect((await transcribe(request(), ctx)).status).toBe(409);
+  expect(transcribeImage).not.toHaveBeenCalled();
+  expect(assertStudentAiRateLimit).not.toHaveBeenCalled();
+  expect(admin().storage.from).not.toHaveBeenCalled();
+});
+
+it("marks a bank single through the single pipeline and rescores its one question", async () => {
+  const { markBankCheck } = await import("@/lib/single-check-marking");
+  client([
+    {
+      session_id: singleSessionId,
+      question_id: "q",
+      question: { type: "short" },
+      session: {
+        kind: "single",
+        started_at: singleStarted,
+        finished_at: singleStarted,
+      },
+    },
+  ]);
+  vi.mocked(admin().from).mockReturnValue(adminQuery(null) as never);
+  vi.mocked(markBankCheck).mockResolvedValue({
+    mark: 3,
+    max_marks: 4,
+    status: "marked",
+    feedback: null,
+  } as never);
+  expect((await mark(request(), ctx)).status).toBe(200);
+  expect(markBankCheck).toHaveBeenCalledWith("id", userId, "q");
+  expect(markAttempt).not.toHaveBeenCalled();
+  expect(rescoreSession).not.toHaveBeenCalled();
 });

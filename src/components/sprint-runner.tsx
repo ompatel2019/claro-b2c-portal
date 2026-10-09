@@ -24,6 +24,7 @@ import {
 } from "./ui/dialog";
 import { Logo } from "./logo";
 import { RichText } from "./rich-text";
+import { QuestionView } from "./question-view";
 import { isTyping, SessionShell, type SaveState } from "./session-shell";
 import { WrittenAnswer } from "./written-answer";
 import { markTone, TYPE_LABEL } from "@/lib/results";
@@ -696,16 +697,7 @@ export function SprintRunner({
             Flag for review
           </Button>
         </div>
-        <RichText
-          className="text-base leading-6 font-medium"
-          text={a.question.stem}
-        />
-        {a.question.stimulus && (
-          <RichText
-            className="bg-paper space-y-3 rounded-xl p-4"
-            text={a.question.stimulus}
-          />
-        )}
+        <QuestionView question={a.question} />
         {a.question.type === "mcq" ? (
           <fieldset className="space-y-2">
             <legend className="mb-2 font-semibold">Choose your answer</legend>

@@ -58,6 +58,7 @@ export const nav: Record<
         { label: "Topic Sprint", href: "/student/sprint", icon: Sprint },
         { label: "Flashcards", href: "/student/flashcards", icon: Cards },
         { label: "Mock papers", href: "/student/papers", icon: QuestionFile },
+        { label: "Mark my answer", href: "/student/mark", icon: Pen },
       ],
     },
     {
@@ -110,6 +111,8 @@ export const nav: Record<
 
 /** The nav item a path belongs to: exact for section roots, prefix otherwise. */
 export function activeItem(kind: keyof typeof nav, path: string) {
+  if (kind === "student" && path.startsWith("/student/activity/"))
+    path = "/activity";
   const items = nav[kind].flatMap((g) => g.items);
   const root = items[0].href;
   return items.find((i) =>

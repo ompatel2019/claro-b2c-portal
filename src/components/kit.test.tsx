@@ -49,6 +49,21 @@ it("marks the section root only on an exact match", () => {
       ?.href,
   ).toBe("/student/flashcards");
   expect(activeItem("student", "/profile")).toBeUndefined();
+  expect(activeItem("student", "/student/activity/check-id")?.label).toBe(
+    "Activity",
+  );
+  expect(nav.student.flatMap((g) => g.items).map((i) => i.href)).toEqual([
+    "/student",
+    "/student/sprint",
+    "/student/flashcards",
+    "/student/papers",
+    "/student/mark",
+    "/activity",
+    "/student/progress",
+  ]);
+  expect(
+    nav.admin.find((g) => g.label === "Marking")?.items.map((i) => i.label),
+  ).toEqual(["Review queue", "Accuracy", "Engine"]);
   expect(activeItem("admin", "/admin")?.label).toBe("Dashboard");
   expect(activeItem("admin", "/admin/students/x")?.label).toBe("All students");
   expect(activeItem("admin", "/admin/marking/review/x")?.label).toBe(
