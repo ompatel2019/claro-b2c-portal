@@ -1,4 +1,6 @@
 import { pageMetadata } from "@/lib/page-metadata";
+import { WelcomeDialog } from "@/components/welcome-dialog";
+import { needsWelcome } from "@/lib/welcome";
 import { sessionTitle, sessionHref } from "@/lib/session-summary";
 import { cache, Suspense } from "react";
 import Link from "next/link";
@@ -424,9 +426,21 @@ export default async function Home() {
   const profile = await requireProfile();
   const first = profile.full_name?.trim().split(/\s+/)[0];
   const id = profile.id;
+  let sessionCount: number | null = null;
+  if (profile.role === "student" && profile.year_level === null) {
+    const db = await createClient();
+    const { count, error } = await db
+      .from("sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", id);
+    if (error) throw new Error("Couldn't check first visit.");
+    sessionCount = count;
+  }
+  const showWelcome = needsWelcome(profile, sessionCount);
   return (
     <div className="space-y-4">
-      <Shortcut k="s" href="/student/sprint" />
+      {showWelcome && <WelcomeDialog profile={profile} />}
+      {!showWelcome && <Shortcut k="s" href="/student/sprint" />}
       <PageHeader
         eyebrow={longDate()}
         title={`${greeting()}${first ? `, ${first}` : ""}`}

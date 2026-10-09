@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createClient as createAuthClient } from "@supabase/supabase-js";
 import { clientEnv } from "@/env/client";
 import { profileSchema, passwordSchema } from "@/lib/profile";
+import { welcomeProfileSchema } from "@/lib/welcome";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 export type FormState = {
@@ -82,7 +83,9 @@ export async function saveProfile(
       error: "Your session expired. Sign in again.",
       sessionExpired: true,
     };
-  const parsed = profileSchema.safeParse(Object.fromEntries(form));
+  const parsed = (
+    form.get("welcome") === "true" ? welcomeProfileSchema : profileSchema
+  ).safeParse(Object.fromEntries(form));
   if (!parsed.success)
     return {
       error: parsed.error.issues[0].message,

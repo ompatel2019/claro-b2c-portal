@@ -12,7 +12,7 @@ export async function requireProfile() {
   if (!userId) redirect("/sign-in");
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, role")
+    .select("id, full_name, role, year_level, school")
     .eq("id", userId)
     .single();
   if (!profile) redirect("/sign-in");
