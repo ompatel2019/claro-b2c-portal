@@ -6,6 +6,7 @@ vi.mock("next/form", () => ({
   default: (props: React.ComponentProps<"form">) => <form {...props} />,
 }));
 vi.mock("@/app/(auth)/actions", () => ({ signOut: vi.fn() }));
+vi.mock("@/utils/supabase/client", () => ({ createClient: vi.fn() }));
 import { activeItem, nav } from "./app-shell";
 import { DataTable, sortRows, type Column } from "./data-table";
 import { EmptyState } from "./empty-state";

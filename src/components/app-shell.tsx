@@ -17,6 +17,7 @@ import {
 } from "@/components/icons";
 import { signOut } from "@/app/(auth)/actions";
 import { Logo } from "@/components/logo";
+import { HeaderFeedback } from "@/components/feedback-widget";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -225,10 +226,11 @@ export function AppShell({
         <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-white px-4 md:px-6">
           <SidebarTrigger className="-ml-1" />
           <p className="truncate text-sm font-semibold">{pageLabel}</p>
+          {kind === "student" && <HeaderFeedback />}
           <form ref={signOutForm} action={signOut} className="hidden" />
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="ml-auto rounded-full"
+              className={`ml-auto rounded-full ${kind === "student" ? "max-lg:ml-0" : ""}`}
               aria-label="Account menu"
             >
               <Avatar className="size-9">

@@ -1,7 +1,14 @@
 import { test, expect } from "@playwright/test";
 import path from "node:path";
 test.describe.configure({ mode: "serial" });
-import { signIn, start, finish, cleanupSessions, pick } from "./helpers";
+import {
+  adminClient,
+  signIn,
+  start,
+  finish,
+  cleanupSessions,
+  pick,
+} from "./helpers";
 test.describe("Student practice", () => {
   test.skip(
     !process.env.STUDENT_EMAIL || !process.env.STUDENT_PASSWORD,
@@ -97,7 +104,33 @@ test.describe("AI backed written practice", () => {
   test("typed answer is marked with a band and highlighted comments", async ({
     page,
   }) => {
-    await start(page, "Short answer", ids);
+    const id = await start(page, "Short answer", ids);
+    // Pin this run's sprint to one question the fixed answer fits, so it can't
+    // score 0 (no Band line) on a random calculation question.
+    const db = adminClient()!;
+    const { data: first, error } = await db
+      .from("attempts")
+      .select("id")
+      .eq("session_id", id)
+      .order("position")
+      .limit(1)
+      .single();
+    if (error) throw error;
+    await db
+      .from("attempts")
+      .delete()
+      .eq("session_id", id)
+      .neq("id", first.id)
+      .throwOnError();
+    await db
+      .from("attempts")
+      .update({ question_id: "2024-q22a" }) // Outline ONE cause of inflation in Australia. (2)
+      .eq("id", first.id)
+      .throwOnError();
+    await page.reload();
+    await expect(
+      page.getByText("Outline ONE cause of inflation in Australia."),
+    ).toBeVisible();
     await page
       .getByRole("textbox", { name: "Your answer" })
       .fill(

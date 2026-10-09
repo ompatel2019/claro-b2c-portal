@@ -28,17 +28,17 @@ export default async function Layout({
     cookies(),
   ]);
   return (
-    <AppShell
-      kind="student"
-      name={profile.full_name}
-      badges={{ "/student/flashcards": count ?? 0 }}
-      defaultOpen={jar.get("sidebar_state")?.value !== "false"}
-    >
-      <FlashcardPersistDrain />
-      <div className="pb-[var(--feedback-clearance)] [--feedback-clearance:6rem]">
-        <FeedbackWidget userId={profile.id}>{children}</FeedbackWidget>
-      </div>
-      <Toaster position="bottom-center" />
-    </AppShell>
+    <FeedbackWidget userId={profile.id}>
+      <AppShell
+        kind="student"
+        name={profile.full_name}
+        badges={{ "/student/flashcards": count ?? 0 }}
+        defaultOpen={jar.get("sidebar_state")?.value !== "false"}
+      >
+        <FlashcardPersistDrain />
+        <div className="pb-0 lg:pb-24">{children}</div>
+        <Toaster position="bottom-center" />
+      </AppShell>
+    </FeedbackWidget>
   );
 }

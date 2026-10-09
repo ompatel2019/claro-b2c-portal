@@ -37,6 +37,23 @@ const Open = createContext<(preset?: Preset) => void>(() => {});
 /** Opens the feedback dialog, optionally preset with a kind and linked item. */
 export const useFeedback = () => useContext(Open);
 
+/** Narrow screens keep feedback in the app header, clear of page controls. */
+export function HeaderFeedback() {
+  const open = useFeedback();
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      aria-label="Feedback"
+      className="ml-auto shrink-0 lg:hidden"
+      onClick={() => open()}
+    >
+      <Message aria-hidden className="size-5" />
+    </Button>
+  );
+}
+
 function Thumb({ file, onRemove }: { file: File; onRemove: () => void }) {
   const url = useMemo(() => URL.createObjectURL(file), [file]);
   useEffect(() => () => URL.revokeObjectURL(url), [url]);
@@ -162,7 +179,7 @@ export function FeedbackWidget({
           type="button"
           onClick={() => show()}
           aria-label="Feedback"
-          className="group bg-ink fixed right-6 bottom-6 z-40 flex h-12 min-w-12 items-center justify-center gap-2 rounded-full px-3.5 text-white shadow-lg print:hidden"
+          className="group bg-ink fixed right-6 bottom-6 z-40 hidden h-12 min-w-12 items-center justify-center gap-2 rounded-full px-3.5 text-white shadow-lg lg:flex print:hidden"
         >
           <Message aria-hidden className="size-5" />
           <span className="hidden text-sm font-medium group-hover:inline group-focus-visible:inline">

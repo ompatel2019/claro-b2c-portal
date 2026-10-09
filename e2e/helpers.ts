@@ -1,5 +1,41 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
+
+export async function expectStackedBelow(text: Locator, button: Locator) {
+  await expect(text).toBeVisible();
+  await expect(button).toBeVisible();
+  await expect
+    .poll(async () => {
+      const [copy, control] = await Promise.all([
+        text.boundingBox(),
+        button.boundingBox(),
+      ]);
+      return !!copy && !!control && control.y >= copy.y + copy.height;
+    })
+    .toBe(true);
+}
+
+/** Retry geometry while async pool counts and wrapped summaries settle. */
+export async function expectNoOverlap(a: Locator, b: Locator) {
+  await expect(a).toBeVisible();
+  await expect(b).toBeVisible();
+  await expect
+    .poll(async () => {
+      const [first, second] = await Promise.all([
+        a.boundingBox(),
+        b.boundingBox(),
+      ]);
+      if (!first || !second) return true;
+      return (
+        first.x < second.x + second.width &&
+        first.x + first.width > second.x &&
+        first.y < second.y + second.height &&
+        first.y + first.height > second.y
+      );
+    })
+    .toBe(false);
+}
+
 export async function signIn(page: Page) {
   await page.goto("/sign-in");
   await page.getByLabel("Email").fill(process.env.STUDENT_EMAIL!);

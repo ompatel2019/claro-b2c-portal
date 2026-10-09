@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { cleanupSessions, signIn } from "./helpers";
+import {
+  cleanupSessions,
+  expectNoOverlap,
+  expectStackedBelow,
+  signIn,
+} from "./helpers";
 
 test.describe("Flashcard deck builder", () => {
   test.skip(
@@ -12,6 +17,42 @@ test.describe("Flashcard deck builder", () => {
   });
   test.beforeEach(async ({ page }) => {
     await signIn(page);
+  });
+
+  test("400px builder controls clear feedback and the sticky summary at page end", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 400, height: 800 });
+    await page.goto("/student/flashcards?topic=t3");
+    await page.getByRole("button", { name: "Study", exact: true }).click();
+    const start = page.getByRole("button", { name: "Start", exact: true });
+    const bar = page.locator("form").filter({ has: start });
+    await expect(bar).toContainText("Economic Issues · Study");
+    await expect(
+      page.locator('button.fixed[aria-label="Feedback"]'),
+    ).toBeHidden();
+    await expect(
+      page
+        .locator("header")
+        .getByRole("button", { name: "Feedback", exact: true }),
+    ).toBeVisible();
+
+    // An unrelated Continue banner is allowed; do not finish or delete its session.
+    const resume = page.getByRole("link", { name: "Continue", exact: true });
+    if (await resume.count()) {
+      const text = page.getByText(/^You have an unfinished/);
+      await expectStackedBelow(text, resume);
+    }
+
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
+    const last = page.locator("label").filter({
+      has: page.getByRole("switch", { name: "Repeat missed cards" }),
+    });
+    await expect(last).toBeInViewport({ ratio: 1 });
+    await expectNoOverlap(bar, last);
+    await expect(start).toBeInViewport({ ratio: 1 });
   });
 
   test("header, due strip and all builder controls render; a subtopic updates the count", async ({

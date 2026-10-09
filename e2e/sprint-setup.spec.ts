@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { cleanupSessions, signIn } from "./helpers";
+import {
+  cleanupSessions,
+  expectNoOverlap,
+  expectStackedBelow,
+  signIn,
+} from "./helpers";
 
 test.describe("Topic Sprint setup", () => {
   test.skip(!process.env.STUDENT_EMAIL, "Needs a student account");
@@ -9,6 +14,52 @@ test.describe("Topic Sprint setup", () => {
   });
   test.beforeEach(async ({ page }) => {
     await signIn(page);
+  });
+
+  test("400px controls clear feedback and the sticky summary at page end", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 400, height: 800 });
+    await page.goto("/student/sprint?type=mcq&size=5");
+    const start = page.getByRole("button", { name: /^Start (sprint|with)/ });
+    const bar = page.locator("form").filter({ has: start });
+    await expect(bar.getByText(/^\d+ questions match/)).toBeVisible();
+    await expect(
+      page.locator('button.fixed[aria-label="Feedback"]'),
+    ).toBeHidden();
+    await expect(
+      page
+        .locator("header")
+        .getByRole("button", { name: "Feedback", exact: true }),
+    ).toBeVisible();
+
+    // A shared account can have someone else's unfinished sprint. Leave it alone.
+    const resume = page.getByRole("link", { name: "Continue", exact: true });
+    if (await resume.count()) {
+      const text = page.getByText(/^You have an unfinished/);
+      await expectStackedBelow(text, resume);
+    }
+
+    const topic = page.getByRole("button", {
+      name: /^Economic Policies and Management/,
+    });
+    await topic.evaluate((element) =>
+      element.scrollIntoView({ block: "center" }),
+    );
+    await expect(topic).toBeInViewport({ ratio: 1 });
+    await expectNoOverlap(bar, topic);
+    await page.getByRole("button", { name: "More filters" }).click();
+    await page.evaluate(() =>
+      window.scrollTo(0, document.documentElement.scrollHeight),
+    );
+    const last = page.locator("label").filter({
+      has: page.getByRole("radio", {
+        name: "After each question (check as you go)",
+      }),
+    });
+    await expect(last).toBeInViewport({ ratio: 1 });
+    await expectNoOverlap(bar, last);
+    await expect(start).toBeInViewport({ ratio: 1 });
   });
 
   test("filters update the live pool and summary; topics cap at two", async ({

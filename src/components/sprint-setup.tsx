@@ -214,7 +214,7 @@ export function SprintSetup({
     : [];
 
   return (
-    <div className="mx-auto max-w-[720px] space-y-4 pb-32">
+    <div className="mx-auto max-w-[720px] space-y-4 pb-8">
       {prefilled && (
         <p className="text-muted-foreground text-sm" role="status">
           Prefilled from a link.{" "}
@@ -720,10 +720,11 @@ export function SprintSetup({
       <form
         ref={form}
         action={action}
-        className="bg-background/95 fixed inset-x-0 bottom-[var(--feedback-clearance,0px)] z-30 border-t backdrop-blur lg:bottom-0"
+        // Sticky stays in flow, reserving its full height even when the summary wraps.
+        className="bg-background/95 sticky bottom-4 z-30 rounded-2xl border backdrop-blur lg:bottom-24"
       >
         <input type="hidden" name="config" value={JSON.stringify(c)} />
-        <div className="mx-auto flex max-w-[720px] flex-wrap items-center gap-3 px-4 py-3 md:pl-[calc(var(--sidebar-width,0px)+1rem)]">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3">
           <div className="min-w-0 flex-1 text-sm">
             <p className="font-medium text-pretty">
               {summary(c, names, years)}
@@ -749,7 +750,7 @@ export function SprintSetup({
           </Button>
         </div>
         {(shortfall || state.error) && (
-          <div className="mx-auto max-w-[720px] px-4 pb-3 text-sm">
+          <div className="px-4 pb-3 text-sm">
             {shortfall && (
               <p role="alert" className="text-warning">
                 Only {available} {unit} match. Start with {available} {unit} or

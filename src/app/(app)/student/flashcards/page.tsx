@@ -105,8 +105,8 @@ export default async function Flashcards({
       </Card>
       {open && (
         <Card className="mx-auto max-w-[720px]">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+          <CardContent className="flex flex-col items-start gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3 sm:flex-1">
               <Cards
                 aria-hidden
                 className="text-muted-foreground size-5 shrink-0"

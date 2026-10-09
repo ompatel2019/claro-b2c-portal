@@ -427,7 +427,8 @@ export function FlashcardBuilder({
             set({ size: customNumber });
           }
         }}
-        className="bg-background sticky bottom-[max(1rem,var(--feedback-clearance,0px))] z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 lg:bottom-4"
+        // Keep the bar's height in flow; the outer gutter clears its sticky offset.
+        className="bg-background sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 lg:bottom-24"
       >
         <input
           type="hidden"
