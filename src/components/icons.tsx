@@ -123,6 +123,10 @@ export const ImagePlus = icon(
     d={`M21 12v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h8M3 16l5-5 5 5 2-2 6 6M18 3v6M15 6h6${dot(8.5, 8)}`}
   />,
 );
+export const Paperclip = icon(
+  "paperclip",
+  <path d="m20 11-8.6 8.6a5 5 0 0 1-7-7l8.8-8.8a3.3 3.3 0 0 1 4.7 4.7l-8.9 8.9a1.7 1.7 0 0 1-2.4-2.4l8-8" />,
+);
 export const Message = icon(
   "message",
   <path d="M20 4H4a1 1 0 0 0-1 1v15l4-3h13a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1ZM8 9h8M8 12.5h5" />,

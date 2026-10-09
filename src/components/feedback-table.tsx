@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Message } from "@/components/icons";
+import { Message, Paperclip } from "@/components/icons";
 import { bulkFeedback, undoFeedback } from "@/app/admin/feedback/actions";
 import { DataTable, type Column } from "@/components/data-table";
 import { ago, FEEDBACK_KIND, type Pager } from "@/lib/admin";
@@ -88,7 +88,18 @@ const columns = (
     className: "hidden sm:table-cell",
     header: "Screenshots",
     sort: true,
-    cell: (r) => (r.screenshots ? `📎 ${r.screenshots}` : ""),
+    cell: (r) =>
+      r.screenshots ? (
+        <span className="inline-flex items-center gap-1">
+          <Paperclip className="size-4" />
+          {r.screenshots}
+          <span className="sr-only">
+            {r.screenshots === 1 ? " screenshot" : " screenshots"}
+          </span>
+        </span>
+      ) : (
+        ""
+      ),
   },
   {
     id: "status",
