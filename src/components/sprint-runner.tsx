@@ -27,21 +27,10 @@ import { Logo } from "./logo";
 import { RichText } from "./rich-text";
 import { isTyping, SessionShell, type SaveState } from "./session-shell";
 import { WrittenAnswer } from "./written-answer";
+import { markTone, TYPE_LABEL } from "@/lib/results";
 
 const LETTERS = "ABCD";
-const TYPE_LABEL = {
-  mcq: "Multiple choice",
-  short: "Short answer",
-  extended: "Extended response",
-};
 const draftKey = (id: string) => `claro-draft-${id}`;
-/** Booklet chip colour once a question is checked: full, part or no marks. */
-const markTone = (row: Attempt) =>
-  Number(row.mark) >= Number(row.max_marks)
-    ? "bg-success border-success text-white"
-    : Number(row.mark) > 0
-      ? "bg-warning border-warning text-white"
-      : "bg-destructive border-destructive text-white";
 
 export function SprintRunner({
   session,
@@ -444,7 +433,8 @@ export function SprintRunner({
                         ? "bg-ink border-ink text-white"
                         : "bg-white",
                       index === i && "ring-primary ring-2 ring-offset-2",
-                      row.status === "marked" && markTone(row),
+                      row.status === "marked" &&
+                        markTone(row.mark, row.max_marks),
                     )}
                   >
                     {i + 1}

@@ -47,10 +47,9 @@ test.describe("Student practice", () => {
     }
     await finish(page);
     await expect(
-      page.getByRole("heading", { name: "Your results." }),
+      page.getByRole("heading", { name: /sprint · / }),
     ).toBeVisible();
     await expect(page.getByText("Score", { exact: true })).toBeVisible();
-    await page.locator("summary").first().click();
     await expect(
       page.getByText(/^Your answer: A · Correct: [ABCD]$/).first(),
     ).toBeVisible();
@@ -81,7 +80,7 @@ test.describe("Student practice", () => {
       .locator(`a[href="/student/sprint/${finishedId}/results"]`)
       .click();
     await expect(
-      page.getByRole("heading", { name: "Your results." }),
+      page.getByRole("heading", { name: /sprint · / }),
     ).toBeVisible();
   });
 });
@@ -116,7 +115,6 @@ test.describe("AI backed written practice", () => {
       page.getByText("Submitted, marking in the background", { exact: true }),
     ).toBeVisible();
     await finish(page);
-    await page.locator("summary").first().click();
     await expect(page.getByText(/^Band:/)).toBeVisible({ timeout: 90000 });
     await expect(page.locator("mark").first()).toBeVisible();
     await expect(page.getByText("How to reach full marks")).toBeVisible();

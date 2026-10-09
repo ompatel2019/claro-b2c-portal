@@ -491,7 +491,7 @@ export function AnnotatedFeedback({
                 <Alert aria-hidden className="size-4" />
                 We couldn’t mark this one.
               </p>
-              <RetryAnswer id={row.attempt_id} />
+              <RetryAnswer ids={[row.attempt_id]} />
             </div>
           )}
           {state === "unreadable" && (

@@ -103,8 +103,7 @@ test.describe("annotated written feedback", () => {
     await page.setViewportSize({ width: 1700, height: 1000 });
     await signIn(page);
     await page.goto(results);
-    await page.locator("summary").first().click();
-    await expect(page.getByText("2 / 4")).toBeVisible();
+    await expect(page.getByText("2 / 4", { exact: true })).toBeVisible();
     await expect(
       page.getByText("Marked", { exact: true }).last(),
     ).toBeVisible();
@@ -117,7 +116,9 @@ test.describe("annotated written feedback", () => {
     await expect(fix).toHaveText("Inflation rose");
     await fix.click();
     await expect(page.locator('[data-card="0"]')).toBeFocused();
-    await expect(page.getByText("Overall")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Overall", exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByTitle("Hard to read. Not counted against you."),
     ).toHaveText("lagg[?]");
@@ -138,7 +139,6 @@ test.describe("annotated written feedback", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await signIn(page);
     await page.goto(results);
-    await page.locator("summary").first().click();
     await page.getByRole("button", { name: /^Strength 2/ }).click();
     await expect(
       page
@@ -154,7 +154,6 @@ test.describe("annotated written feedback", () => {
   }) => {
     await signIn(page);
     await page.goto(results);
-    await page.locator("summary").first().click();
     await page
       .getByRole("button", { name: "Report a problem with this question" })
       .click();
@@ -252,7 +251,6 @@ test.describe("annotated written feedback", () => {
   test("question this mark puts the answer under review", async ({ page }) => {
     await signIn(page);
     await page.goto(results);
-    await page.locator("summary").first().click();
     await page.getByRole("button", { name: "Question this mark" }).click();
     const dialog = page.getByRole("dialog");
     await expect(
