@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
@@ -18,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/page-header";
-export const metadata = { title: "Profile · Claro" };
 function ProfileSkeleton({ height = "h-48" }: { height?: string }) {
   return (
     <Card className="p-5" aria-busy="true">
@@ -145,6 +145,8 @@ async function History({
     />
   );
 }
+export const metadata = pageMetadata("Profile");
+
 export default async function Profile({
   searchParams,
 }: {

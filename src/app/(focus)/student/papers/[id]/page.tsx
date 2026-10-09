@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
@@ -10,6 +11,8 @@ import {
 import { SprintRunner } from "@/components/sprint-runner";
 import { PaperStart } from "@/components/paper-start";
 import { studentPaperFilter } from "@/lib/papers";
+export const metadata = pageMetadata("Paper session");
+
 export default async function PaperPage({
   params,
 }: {

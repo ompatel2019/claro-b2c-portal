@@ -56,6 +56,16 @@ it("shows the empty-install state", async () => {
   render(await dashboard());
   expect(screen.getByText("No students yet")).toBeInTheDocument();
 });
+it("opens the import review status from the attention list", async () => {
+  mocks.loadDashboard.mockResolvedValue({
+    ...data,
+    attention: { ...data.attention, importReview: 3 },
+  });
+  render(await dashboard());
+  expect(
+    screen.getByRole("link", { name: /drafts in import review/ }),
+  ).toHaveAttribute("href", "/admin/content/questions?status=review");
+});
 it("links failures to the failed queue and tests thresholds before rounding", async () => {
   mocks.loadDashboard.mockResolvedValue({
     ...data,

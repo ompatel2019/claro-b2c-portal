@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { Pen } from "@/components/icons";
@@ -10,6 +11,8 @@ import { type OwnQuestion } from "@/lib/single-check";
 import { PageHeader } from "@/components/page-header";
 import { MarkMyAnswer } from "@/components/mark-my-answer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const metadata = pageMetadata("Mark my answer");
 
 export default async function Page() {
   const db = await createClient();

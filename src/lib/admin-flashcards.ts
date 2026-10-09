@@ -21,16 +21,39 @@ export type FlashcardRow = {
   avg: number | null;
 };
 
-/** Privacy: only the count of student-owned cards leaves the server. */
+/** Whole-bank status counts; only the count of student-owned cards leaves the server. */
 export async function loadFlashcardCounts() {
   await requireAdmin();
-  const { count } = await admin()
-    .from("flashcards")
-    .select("id,profiles!owner_id!inner(role)", { count: "exact", head: true })
-    .not("owner_id", "is", null)
-    .eq("profiles.role", "student")
-    .throwOnError();
-  return { own: count ?? 0 };
+  const count = async (status?: string) => {
+    try {
+      const db = admin();
+      const query = status
+        ? db
+            .from("flashcards")
+            .select("id", { count: "exact", head: true })
+            .is("owner_id", null)
+            .eq("status", status)
+        : db
+            .from("flashcards")
+            .select("id,profiles!owner_id!inner(role)", {
+              count: "exact",
+              head: true,
+            })
+            .not("owner_id", "is", null)
+            .eq("profiles.role", "student");
+      const result = await query.throwOnError();
+      return result.count ?? null;
+    } catch {
+      return null;
+    }
+  };
+  const [own, live, draft, retired] = await Promise.all([
+    count(),
+    count("live"),
+    count("draft"),
+    count("retired"),
+  ]);
+  return { own, live, draft, retired };
 }
 
 /** The filtered, sorted page of shared cards with their review stats. */

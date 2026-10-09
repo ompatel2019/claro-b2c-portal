@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { loadMyCards } from "@/lib/my-card-data";
@@ -6,6 +7,8 @@ import type { Topic } from "@/lib/practice";
 import { MyCards } from "@/components/my-cards";
 import { FilterBar } from "@/components/filter-bar";
 import { StatCard } from "@/components/stat-card";
+export const metadata = pageMetadata("My flashcards");
+
 export default async function Page({
   searchParams,
 }: {

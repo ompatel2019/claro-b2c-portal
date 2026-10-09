@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import { sessionTitle, sessionHref } from "@/lib/session-summary";
 import { cache, Suspense } from "react";
 import Link from "next/link";
@@ -416,6 +417,8 @@ async function DueButton({ userId }: { userId: string }) {
     />
   ) : null;
 }
+
+export const metadata = pageMetadata("Home");
 
 export default async function Home() {
   const profile = await requireProfile();

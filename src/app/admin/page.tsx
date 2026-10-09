@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Alert, CheckCircle, History, Users } from "@/components/icons";
@@ -86,7 +87,7 @@ async function Dashboard() {
     [
       d.attention.importReview,
       "drafts in import review",
-      "/admin/content/questions?tab=import-review",
+      "/admin/content/questions?status=review",
     ],
     [
       d.spend.all >= d.spend.cap * 0.8 ? 1 : 0,
@@ -233,6 +234,8 @@ async function Dashboard() {
     </>
   );
 }
+
+export const metadata = pageMetadata("Dashboard");
 
 export default function AdminHome() {
   return (

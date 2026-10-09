@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { loadSprint } from "@/lib/practice-data";
@@ -40,6 +41,8 @@ const avg = (xs: (number | null)[]) => {
   const v = xs.filter((x): x is number => x != null);
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
 };
+
+export const metadata = pageMetadata("Sprint results");
 
 export default async function Results({
   params,

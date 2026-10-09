@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
@@ -13,6 +14,8 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { ActivityBrowser } from "@/components/activity-browser";
 import { buttonVariants } from "@/components/ui/button";
+export const metadata = pageMetadata("Activity");
+
 export default async function Activity({
   searchParams,
 }: {

@@ -1,9 +1,12 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadQuestion, loadTopics } from "@/lib/admin-questions";
 import { PageHeader } from "@/components/page-header";
 import { QuestionEditor } from "@/components/question-editor";
+
+export const metadata = pageMetadata("Question editor");
 
 /** §4.4 editor; /new creates a Claro-origin draft. */
 export default async function QuestionPage({

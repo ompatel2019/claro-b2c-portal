@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { Cards } from "@/components/icons";
 import { requireProfile } from "@/lib/auth";
@@ -12,6 +13,8 @@ import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { addDays } from "@/lib/activity";
 import { Card, CardContent } from "@/components/ui/card";
+
+export const metadata = pageMetadata("Flashcards");
 
 export default async function Flashcards({
   searchParams,

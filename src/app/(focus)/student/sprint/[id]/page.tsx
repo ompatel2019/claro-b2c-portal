@@ -1,8 +1,11 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import { redirect } from "next/navigation";
 import { loadSprint } from "@/lib/practice-data";
 import { modeLabel, topicNames, type Topic } from "@/lib/practice";
 import { createClient } from "@/utils/supabase/server";
 import { SprintRunner } from "@/components/sprint-runner";
+export const metadata = pageMetadata("Sprint session");
+
 export default async function Sprint({
   params,
 }: {

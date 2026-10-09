@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { continueTime } from "@/lib/home";
 import { Sprint } from "@/components/icons";
@@ -15,6 +16,8 @@ import { SprintSetup } from "@/components/sprint-setup";
 import { FinishSprint } from "@/components/finish-sprint";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+
+export const metadata = pageMetadata("Topic Sprint");
 
 export default async function SprintPage({
   searchParams,

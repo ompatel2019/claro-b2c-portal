@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { z } from "zod";
 import { buttonVariants } from "@/components/ui/button";
@@ -20,6 +21,8 @@ import { MarkingProgress } from "@/components/marking-progress";
 import { MarkMyAnswer } from "@/components/mark-my-answer";
 import { RichText } from "@/components/rich-text";
 import { Card } from "@/components/ui/card";
+
+export const metadata = pageMetadata("Answer results");
 
 /** Single-session report until §3.13 supplies the canonical report for every kind. */
 export default async function Page({

@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { loadFlashcards, pages } from "@/lib/flashcard-data";
 import {
@@ -23,6 +24,8 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+
+export const metadata = pageMetadata("Flashcard session");
 
 export default async function FlashcardSession({
   params,

@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { History, Close } from "@/components/icons";
@@ -200,6 +201,8 @@ async function Report({
     </>
   );
 }
+
+export const metadata = pageMetadata("Student details");
 
 export default async function StudentDetail({
   params,

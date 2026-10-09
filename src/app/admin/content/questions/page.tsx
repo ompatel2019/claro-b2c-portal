@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { QuestionFile, SearchOff } from "@/components/icons";
 import { requireAdmin } from "@/lib/auth";
@@ -25,6 +26,8 @@ import { QuestionsTable } from "@/components/questions-table";
 import { buttonVariants } from "@/components/ui/button";
 
 const BASE = "/admin/content/questions";
+
+export const metadata = pageMetadata("Questions");
 
 export default async function QuestionsPage({
   searchParams,

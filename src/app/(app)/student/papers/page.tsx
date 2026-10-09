@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { pages } from "@/lib/flashcard-data";
@@ -56,6 +57,8 @@ async function loadPapers(userId: string) {
   ]);
   return { papers, sits, now: Date.now() };
 }
+
+export const metadata = pageMetadata("Papers");
 
 export default async function Papers({
   searchParams,

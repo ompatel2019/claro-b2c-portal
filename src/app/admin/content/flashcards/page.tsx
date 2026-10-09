@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { singleParams } from "@/lib/admin";
@@ -13,6 +14,8 @@ import { PageHeader } from "@/components/page-header";
 import { buttonVariants } from "@/components/ui/button";
 
 const BASE = "/admin/content/flashcards";
+
+export const metadata = pageMetadata("Flashcards");
 
 export default async function FlashcardsPage({
   searchParams,
@@ -32,7 +35,11 @@ export default async function FlashcardsPage({
     <div className="space-y-4">
       <PageHeader
         title="Flashcards"
-        description={`Students have made ${counts.own.toLocaleString("en-AU")} ${counts.own === 1 ? "card" : "cards"} of their own.`}
+        description={
+          counts.own === null
+            ? "Student card count unavailable."
+            : `Students have made ${counts.own.toLocaleString("en-AU")} ${counts.own === 1 ? "card" : "cards"} of their own.`
+        }
         actions={
           <>
             <FlashcardImport topics={topics} />
@@ -47,16 +54,19 @@ export default async function FlashcardsPage({
           {
             value: "live",
             label: "Live",
+            count: counts.live,
             href: `${BASE}?status=live`,
           },
           {
             value: "draft",
             label: "Draft",
+            count: counts.draft,
             href: `${BASE}?status=draft`,
           },
           {
             value: "retired",
             label: "Retired",
+            count: counts.retired,
             href: `${BASE}?status=retired`,
           },
         ]}

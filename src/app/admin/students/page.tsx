@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { More, SearchOff, Users } from "@/components/icons";
 import { loadStudentRows } from "@/lib/admin-data";
@@ -15,6 +16,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+export const metadata = pageMetadata("Students");
 
 export default async function StudentsPage({
   searchParams,

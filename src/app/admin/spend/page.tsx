@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
@@ -12,6 +13,8 @@ import { parseRange } from "./data";
 import { RangeSelect } from "./range-select";
 import { ModelTable, TaskTable, StudentTable } from "./tables";
 import { usd, avgUsd } from "./helpers";
+
+export const metadata = pageMetadata("AI spend");
 
 export default async function SpendPage({
   searchParams,

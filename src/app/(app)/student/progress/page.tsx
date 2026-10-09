@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import { Suspense } from "react";
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
@@ -447,6 +448,8 @@ async function Mastery({ range, today }: Scope) {
     </Section>
   );
 }
+
+export const metadata = pageMetadata("Progress");
 
 export default async function Progress({
   searchParams,

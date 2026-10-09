@@ -1,3 +1,4 @@
+import { pageMetadata } from "@/lib/page-metadata";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
@@ -57,6 +58,8 @@ type Sit = {
   elapsed_s: number;
   summary: OverallSummary | null;
 };
+export const metadata = pageMetadata("Paper results");
+
 export default async function PaperResults({
   params,
   searchParams,
