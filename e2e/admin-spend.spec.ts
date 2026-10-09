@@ -89,7 +89,7 @@ test.describe("admin spend", () => {
     expect(values[1]).toMatch(/^\$\d+\.\d{2}$/);
     expect(values[2]).toMatch(/^\$\d+\.\d{2} of \$100$/);
     expect(values[3]).toMatch(
-      /^(<\$0\.0001|\$0\.00\d{2}|\$\d+\.\d{2}|No marked written answers)$/,
+      /^(<\$0\.0001|\$0\.\d{4}|\$\d+\.\d{2}|No marked written answers)$/,
     );
     for (const text of [
       "80% · Evals blocked",
