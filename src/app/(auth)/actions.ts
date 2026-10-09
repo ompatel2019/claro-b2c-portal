@@ -62,6 +62,8 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // Only this device: a global sign-out (the default) revokes every session of
+  // the account, signing the student out on their other devices mid-task.
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/sign-in");
 }

@@ -315,14 +315,14 @@ export function MyCards({
                   </TableCell>
                   <TableCell className="min-w-0 whitespace-normal sm:max-w-64 sm:min-w-40">
                     <button
-                      className="line-clamp-2 text-left font-medium break-words"
+                      className="line-clamp-2 w-full text-left font-medium wrap-anywhere"
                       onClick={() => setEditor(card)}
                     >
                       {card.front}
                     </button>
                   </TableCell>
                   <TableCell className="min-w-0 whitespace-normal sm:max-w-64 sm:min-w-40">
-                    <span className="line-clamp-2 break-words">
+                    <span className="line-clamp-2 wrap-anywhere">
                       {card.back}
                     </span>
                   </TableCell>

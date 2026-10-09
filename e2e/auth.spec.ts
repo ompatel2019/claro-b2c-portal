@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { signIn } from "./helpers";
 
 test("signed-out visitors are sent to sign in", async ({ page }) => {
   await page.goto("/");
@@ -35,5 +36,35 @@ test("student routes stay protected when signed out", async ({ page }) => {
   ]) {
     await page.goto(route);
     await expect(page).toHaveURL(/\/sign-in(\?|$)/);
+  }
+});
+
+test("signing out on one device keeps the student's other sessions", async ({
+  browser,
+}) => {
+  test.skip(
+    !process.env.STUDENT_EMAIL || !process.env.STUDENT_PASSWORD,
+    "Requires a real student account",
+  );
+  const other = await browser.newContext();
+  const here = await browser.newContext();
+  try {
+    const kept = await other.newPage();
+    await signIn(kept);
+    const page = await here.newPage();
+    await signIn(page);
+    await page.getByRole("button", { name: "Account menu" }).click();
+    await page.getByRole("menuitem", { name: "Sign out" }).click();
+    await expect(page).toHaveURL(/\/sign-in(\?|$)/);
+    // The other device still works, including client-side RPCs.
+    await kept.goto("/student/sprint");
+    await expect(kept).toHaveURL(/\/student\/sprint$/);
+    await expect(kept.getByText(/^\d+ questions match/)).toBeVisible();
+    await expect(
+      kept.getByText("Couldn't count matching questions."),
+    ).toHaveCount(0);
+  } finally {
+    await other.close();
+    await here.close();
   }
 });

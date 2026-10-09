@@ -79,7 +79,29 @@ test.describe("My cards", () => {
     await dialog.getByLabel("Back", { exact: true }).fill("Prices increase");
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await expect(front(page, "first")).toBeVisible();
-    // Check only this run's tagged card; unrelated cards and sessions stay untouched.
+    // Check only this run's tagged cards; unrelated cards and sessions stay untouched.
+    // A long card (unbroken word, long back) is the worst case for the narrow table.
+    const db = adminClient()!;
+    const { data: mine } = await db
+      .from("flashcards")
+      .select("owner_id,topic_id")
+      .eq("front", `${run} first`)
+      .single()
+      .throwOnError();
+    await db
+      .from("flashcards")
+      .insert({
+        ...mine,
+        origin: "student",
+        kind: "term",
+        front: `${run} long Supercalifragilisticexpialidociousmonetarypolicytransmission mechanism`,
+        back: "A long answer about how changes in the cash rate flow through lending rates, asset prices, the exchange rate and expectations to aggregate demand and, eventually, inflation. ".repeat(
+          3,
+        ),
+      })
+      .throwOnError();
+    await page.reload();
+    await expect(page.getByText(`${run} long`).first()).toBeVisible();
     const desktop = page.viewportSize()!;
     await page.setViewportSize({ width: 400, height: 800 });
     const table = page.getByRole("table", { name: "My cards", exact: true });
@@ -111,6 +133,16 @@ test.describe("My cards", () => {
       }),
     ).toBeVisible();
     await page.setViewportSize(desktop);
+    // The long card has done its job; the delete flow below counts two cards.
+    await db
+      .from("flashcards")
+      .delete()
+      .eq(
+        "front",
+        `${run} long Supercalifragilisticexpialidociousmonetarypolicytransmission mechanism`,
+      )
+      .throwOnError();
+    await page.reload();
     await front(page, "first").click();
     await expect(dialog.getByRole("combobox", { name: "Topic" })).toHaveText(
       "Inflation",
