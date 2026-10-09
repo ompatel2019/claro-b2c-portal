@@ -1,5 +1,72 @@
 import { addDays } from "./activity";
 import { csv } from "./admin";
+import { modeLabel, plural, topicNames, type Topic } from "./practice";
+
+/** A session row on the admin detail page (§3.12 columns, read-only). */
+export type SessionRow = {
+  id: string;
+  kind: string;
+  config: {
+    mode?: string;
+    topics?: string[];
+    subtopics?: string[];
+    card_ids?: string[];
+    question?: { stem?: string; marks?: number; criteria_text?: string };
+  };
+  started_at: string;
+  finished_at: string | null;
+  score: number | null;
+  max_score: number | null;
+  elapsed_s: number;
+  summary?: unknown;
+  attempts: {
+    status: string;
+    check_status: string;
+    answered?: boolean;
+    day?: string | null;
+  }[];
+};
+
+export function sessionKind(kind: string) {
+  return (
+    { sprint: "Sprint", paper: "Paper", flashcards: "Flashcards" }[kind] ??
+    "Mark my answer"
+  );
+}
+
+/** "Short answer sprint · Inflation", "Flashcards · Study", "Paper", "Mark my answer". */
+export function sessionTitle(s: SessionRow, topics: Topic[]) {
+  if (s.kind === "flashcards")
+    return `Flashcards · ${s.config.mode === "test" ? "Test" : "Study"}`;
+  if (s.kind !== "sprint") return sessionKind(s.kind);
+  const places = s.config.subtopics?.length
+    ? s.config.subtopics
+    : s.config.topics;
+  return `${modeLabel(s.config.mode)} sprint · ${topicNames(places, topics)}`;
+}
+
+export function sessionItems(s: SessionRow) {
+  return s.kind === "flashcards"
+    ? plural(s.config.card_ids?.length ?? 0, "card")
+    : plural(s.attempts.length, "question");
+}
+
+/** Status pill: in progress, marking (finished, marks pending), provisional, or finished. */
+export function sessionStatus(s: SessionRow) {
+  if (!s.finished_at) return "In progress" as const;
+  const live = s.attempts.filter((a) => a.status !== "skipped");
+  if (
+    live.some(
+      (a) =>
+        !["marked", "failed", "unreadable"].includes(a.status) ||
+        (a.status === "marked" && a.check_status === "pending"),
+    )
+  )
+    return "Marking" as const;
+  if (live.some((a) => a.check_status === "in_review"))
+    return "Provisional" as const;
+  return "Finished" as const;
+}
 
 /** One row of /admin/students (§4.2). */
 export type StudentRow = {
@@ -123,4 +190,79 @@ export function studentsCsv(rows: StudentRow[]) {
       r.blocked ? "yes" : "no",
     ]),
   ]);
+}
+
+/** Only application-local paths can become links from student-supplied feedback. */
+export function safeLocalPath(path: string | null) {
+  return path && /^\/(?!\/)/.test(path) && !/[\\\u0000-\u0020]/.test(path)
+    ? path
+    : null;
+}
+
+/** Reject impossible calendar dates before formatting or filtering them. */
+export function calendarDate(value: string | undefined) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value
+    ? value
+    : null;
+}
+
+/** URL filters for the read-only admin Sessions tab. */
+export function filterSessions(
+  rows: SessionRow[],
+  filters: {
+    kind?: string;
+    status?: string;
+    topic?: string;
+    date?: string;
+    from?: string;
+    to?: string;
+    range?: string;
+  },
+  dayOf: (iso: string) => string,
+  today?: string,
+) {
+  const from =
+    calendarDate(filters.from) ??
+    (today && ["7", "30", "90"].includes(filters.range ?? "")
+      ? addDays(today, 1 - Number(filters.range))
+      : null);
+  const to = calendarDate(filters.to);
+  return rows.filter(
+    (s) =>
+      (!from || dayOf(s.started_at) >= from) &&
+      (!to || dayOf(s.started_at) <= to) &&
+      (!filters.kind || s.kind === filters.kind) &&
+      (!filters.status || sessionStatus(s) === filters.status) &&
+      (!filters.topic ||
+        [...(s.config.topics ?? []), ...(s.config.subtopics ?? [])].includes(
+          filters.topic,
+        )) &&
+      (!filters.date ||
+        dayOf(s.started_at) === filters.date ||
+        (s.finished_at && dayOf(s.finished_at) === filters.date) ||
+        s.attempts.some((a) => a.day === filters.date)),
+  );
+}
+
+/** session_review has no question join for a student's pasted question. */
+export function ownQuestionReview(
+  row: import("./feedback").ReviewRow,
+  question: unknown,
+) {
+  if (row.question_id || !question || typeof question !== "object") return row;
+  const own = question as { stem?: unknown; marks?: unknown };
+  const marks = Number(own.marks ?? row.max_marks ?? 0);
+  return {
+    ...row,
+    type: "short" as const,
+    source: "Own question",
+    stem: typeof own.stem === "string" ? own.stem : "Own question",
+    marks: Number.isFinite(marks) ? marks : 0,
+    topic_id: null,
+    criteria: null,
+    sample_answer: null,
+  };
 }

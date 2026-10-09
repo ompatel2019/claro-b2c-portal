@@ -328,12 +328,14 @@ export function AnnotatedFeedback({
   row,
   photos = [],
   actions,
+  readOnly = false,
   edit,
   showReferences = true,
 }: {
   row: ReviewRow;
   photos?: string[];
   actions?: React.ReactNode;
+  readOnly?: boolean;
   edit?: FeedbackEdit;
   showReferences?: boolean;
 }) {
@@ -732,7 +734,7 @@ export function AnnotatedFeedback({
                 <Alert aria-hidden className="size-4" />
                 We couldn’t mark this one.
               </p>
-              <RetryAnswer ids={[row.attempt_id]} />
+              {!readOnly && <RetryAnswer ids={[row.attempt_id]} />}
             </div>
           )}
           {state === "unreadable" && (

@@ -25,14 +25,19 @@ export function ResultsAnswers({
   name,
   photos,
   mcGrid,
+  readOnly = false,
+  writtenAction,
 }: {
   rows: ReviewRow[];
   id: string;
   name: (id: string | null) => string;
   photos: Map<string | null, string | null>;
   mcGrid?: McGridRow[];
+  readOnly?: boolean;
+  writtenAction?: (row: ReviewRow) => React.ReactNode;
 }) {
   const report = (r: ReviewRow) =>
+    !readOnly &&
     r.question_id && (
       <ReportProblem
         questionId={r.question_id}
@@ -73,15 +78,20 @@ export function ResultsAnswers({
             </>
           ) : (
             <AnnotatedFeedback
+              readOnly={readOnly}
               row={r}
               photos={(r.image_paths ?? []).flatMap((p) => photos.get(p) ?? [])}
               actions={
-                <>
-                  {["marked", "reviewed"].includes(state) && (
-                    <QuestionMark attemptId={r.attempt_id} />
-                  )}
-                  {report(r)}
-                </>
+                writtenAction ? (
+                  writtenAction(r)
+                ) : (
+                  <>
+                    {!readOnly && ["marked", "reviewed"].includes(state) && (
+                      <QuestionMark attemptId={r.attempt_id} />
+                    )}
+                    {report(r)}
+                  </>
+                )
               }
             />
           )}

@@ -26,6 +26,10 @@ const pills = {
   "Not answered": [EyeOff, "bg-muted text-muted-foreground"],
   "In progress": [Dot, "border-ink text-ink"],
   Finished: [Check, "bg-muted text-muted-foreground"],
+  New: [Dot, "bg-muted text-muted-foreground"],
+  Triaged: [EyeOff, "bg-warning-soft text-warning"],
+  Resolved: [CheckCircle, "bg-success-soft text-success"],
+  Open: [Clock, "bg-warning-soft text-warning"],
 } satisfies Record<string, [Icon, string]>;
 export type Pill = keyof typeof pills;
 
@@ -69,3 +73,10 @@ export function statePill(
     )[state as string] ?? null
   );
 }
+
+export const STATUS_PILL = {
+  new: "New",
+  triaged: "Triaged",
+  resolved: "Resolved",
+  open: "Open",
+} as const;

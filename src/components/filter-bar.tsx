@@ -13,7 +13,13 @@ export type Filter =
       all: string;
     }
   | { name: string; label: string; checkbox: true }
-  | { name: string; label: string; placeholder: string; inputMode?: "numeric" };
+  | {
+      name: string;
+      label: string;
+      placeholder: string;
+      inputMode?: "numeric";
+      type?: "date";
+    };
 
 /** URL-synced filters: selects apply on change, text applies on Enter. */
 export function FilterBar({
@@ -78,6 +84,7 @@ export function FilterBar({
               className="w-48 max-w-full"
               name={f.name}
               inputMode={f.inputMode}
+              type={f.type}
               placeholder={f.placeholder}
               defaultValue={values[f.name] ?? ""}
             />

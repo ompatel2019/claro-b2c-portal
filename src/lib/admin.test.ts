@@ -18,7 +18,7 @@ describe("admin helpers", () => {
   });
 });
 
-import { csv, pageOf, singleParams, tableParams } from "./admin";
+import { csv, pageOf, pctOf, singleParams, tableParams } from "./admin";
 
 it("normalises repeated, invalid and oversized paging parameters", () => {
   const fallback = { id: "last", dir: "desc" as const };
@@ -51,4 +51,9 @@ it("escapes CSV quotes, line breaks and formulas without changing numeric values
   expect(csv([["a,b", 'a"b', "a\nb", null, 0, -2, " =1+1", "@SUM(A1)"]])).toBe(
     '"a,b","a""b","a\nb",,0,-2,\' =1+1,\'@SUM(A1)',
   );
+});
+
+it("formats a percentage without manufacturing one for missing marks", () => {
+  expect(pctOf(4, 6)).toBe(67);
+  expect(pctOf(0, 0)).toBeNull();
 });

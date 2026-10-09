@@ -11,6 +11,7 @@ vi.mock("next/navigation", () => ({
   usePathname: nav.path,
   useSearchParams: nav.search,
 }));
+import { StaticTable } from "./static-table";
 import { DataTable } from "./data-table";
 afterEach(() => {
   cleanup();
@@ -73,4 +74,29 @@ it("server sorting resets the page while preserving filters; pagination preserve
     screen.getByRole("checkbox", { name: "Select all rows on this page" }),
   );
   expect(screen.getByRole("status")).toHaveTextContent("2 selected");
+});
+
+it("StaticTable expands child rows with an accessible control", () => {
+  render(
+    <StaticTable
+      label="Topics"
+      columns={[{ id: "name", header: "Topic" }]}
+      rows={[
+        {
+          id: "a",
+          cells: { name: "Economy" },
+          children: [{ id: "a1", cells: { name: "Subtopic marks" } }],
+        },
+        { id: "b", cells: { name: "Markets" } },
+      ]}
+    />,
+  );
+  const expand = screen.getByRole("button", { name: "Economy subtopics" });
+  expect(expand).toHaveAttribute("aria-expanded", "false");
+  expect(screen.queryByText("Subtopic marks")).not.toBeInTheDocument();
+  fireEvent.click(expand);
+  expect(expand).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByText("Subtopic marks")).toBeVisible();
+  fireEvent.click(expand);
+  expect(screen.queryByText("Subtopic marks")).not.toBeInTheDocument();
 });

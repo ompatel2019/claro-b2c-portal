@@ -1,5 +1,18 @@
+import type { ReviewRow } from "./feedback";
 import { describe, expect, it } from "vitest";
-import { filterStudents, studentsCsv, type StudentRow } from "./students";
+import {
+  calendarDate,
+  filterSessions,
+  safeLocalPath,
+  ownQuestionReview,
+  filterStudents,
+  sessionItems,
+  sessionStatus,
+  sessionTitle,
+  studentsCsv,
+  type SessionRow,
+  type StudentRow,
+} from "./students";
 
 const base: StudentRow = {
   id: "a",
@@ -48,6 +61,57 @@ describe("students", () => {
     expect(ids({ disputes: "1" })).toEqual(["a", "c"]);
   });
 
+  it("titles, counts and classifies sessions like the student activity table", () => {
+    const topics = [
+      { id: "t3", parent_id: null, name: "Economic Issues", sort: 3 },
+      { id: "t3-inflation", parent_id: "t3", name: "Inflation", sort: 1 },
+    ];
+    const s: SessionRow = {
+      id: "s",
+      kind: "sprint",
+      config: { mode: "short", topics: ["t3"], subtopics: ["t3-inflation"] },
+      started_at: "2026-10-09T00:00:00Z",
+      finished_at: null,
+      score: null,
+      max_score: null,
+      elapsed_s: 0,
+      attempts: [
+        { status: "pending", check_status: "skipped" },
+        { status: "pending", check_status: "skipped" },
+      ],
+    };
+    expect(sessionTitle(s, topics)).toBe("Short answer sprint · Inflation");
+    expect(sessionItems(s)).toBe("2 questions");
+    expect(sessionStatus(s)).toBe("In progress");
+    const done = { ...s, finished_at: "2026-10-09T01:00:00Z" };
+    expect(sessionStatus(done)).toBe("Marking");
+    expect(
+      sessionStatus({
+        ...done,
+        attempts: [
+          { status: "marked", check_status: "agreed" },
+          { status: "skipped", check_status: "skipped" },
+        ],
+      }),
+    ).toBe("Finished");
+    expect(
+      sessionStatus({
+        ...done,
+        attempts: [{ status: "marked", check_status: "in_review" }],
+      }),
+    ).toBe("Provisional");
+    const cards: SessionRow = {
+      ...s,
+      kind: "flashcards",
+      config: { mode: "test", card_ids: ["a", "b", "c"] },
+    };
+    expect(sessionTitle(cards, topics)).toBe("Flashcards · Test");
+    expect(sessionItems(cards)).toBe("3 cards");
+    expect(sessionTitle({ ...s, kind: "single" }, topics)).toBe(
+      "Mark my answer",
+    );
+  });
+
   it("exports the visible columns as CSV", () => {
     const text = studentsCsv([base]);
     expect(text.split("\r\n")[0]).toMatch(/^Name,Email,Year/);
@@ -84,4 +148,75 @@ it("uses Sydney calendar boundaries and searches IDs and school", () => {
       "2026-10-09",
     ),
   ).toHaveLength(0);
+});
+
+it("keeps marked answers with pending checks in the Marking state", () => {
+  expect(
+    sessionStatus({
+      finished_at: "2026-10-09",
+      attempts: [{ status: "marked", check_status: "pending" }],
+    } as SessionRow),
+  ).toBe("Marking");
+});
+it("accepts real dates and rejects impossible dates", () => {
+  expect(calendarDate("2024-02-29")).toBe("2024-02-29");
+  for (const value of [
+    undefined,
+    "2026-02-29",
+    "2026-13-01",
+    "2026-10-32",
+    "tomorrow",
+  ])
+    expect(calendarDate(value)).toBeNull();
+});
+it("filters a marked day even when a session started and finished on another day", () => {
+  const row = {
+    id: "s",
+    kind: "sprint",
+    config: { subtopics: ["inflation"] },
+    started_at: "2026-10-07",
+    finished_at: "2026-10-08",
+    attempts: [{ status: "marked", check_status: "agreed", day: "2026-10-09" }],
+  } as SessionRow;
+  expect(
+    filterSessions(
+      [row],
+      {
+        date: "2026-10-09",
+        topic: "inflation",
+        status: "Finished",
+        kind: "sprint",
+      },
+      dayOf,
+    ),
+  ).toEqual([row]);
+  expect(filterSessions([row], { date: "2026-10-06" }, dayOf)).toEqual([]);
+  expect(filterSessions([row], { status: "Marking" }, dayOf)).toEqual([]);
+});
+it("allows local feedback context links and rejects script, external and disguised URLs", () => {
+  expect(safeLocalPath("/student/sprint?id=1")).toBe("/student/sprint?id=1");
+  for (const path of [
+    null,
+    "https://evil.example",
+    "javascript:alert(1)",
+    "//evil.example",
+    "/\\evil.example",
+    "/\nevil.example",
+  ])
+    expect(safeLocalPath(path)).toBeNull();
+});
+
+it("restores own-question context without inventing a marking band or replacing bank questions", () => {
+  const row = { question_id: null, max_marks: 6 } as ReviewRow;
+  expect(
+    ownQuestionReview(row, { stem: "Explain inflation", marks: 6 }),
+  ).toMatchObject({
+    type: "short",
+    source: "Own question",
+    stem: "Explain inflation",
+    marks: 6,
+    criteria: null,
+  });
+  const bank = { ...row, question_id: "q" };
+  expect(ownQuestionReview(bank, { stem: "Other" })).toBe(bank);
 });

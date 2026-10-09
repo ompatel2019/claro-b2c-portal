@@ -6,7 +6,36 @@ import { requireAdmin } from "@/lib/auth";
 import { sydneyDay } from "@/lib/admin";
 import { z } from "zod";
 import { pages } from "@/lib/flashcard-data";
-import type { StudentRow } from "@/lib/students";
+import { addDays, type ActivityDay } from "@/lib/activity";
+import type { ReviewRow } from "@/lib/feedback";
+import type { Topic } from "@/lib/practice";
+import {
+  ownQuestionReview,
+  type SessionRow,
+  type StudentRow,
+} from "@/lib/students";
+
+type StudentReviewRow = {
+  id: string;
+  reason: string;
+  status: string;
+  ai_mark: number | null;
+  final_mark: number | null;
+  created_at: string;
+  attempt: {
+    session_id: string;
+    question: { source: string; stem: string } | null;
+  } | null;
+};
+type FlashcardReportRow = {
+  id: string;
+  flashcard_id: string;
+  answer: string | null;
+  mark: number;
+  reason: string | null;
+  created_at: string;
+  card: { front: string; back: string } | null;
+};
 
 export const SPEND_CAP_USD = 100;
 
@@ -51,8 +80,31 @@ export async function loadStudentRows(): Promise<StudentRow[]> {
   }));
 }
 
-export async function loadStudent(id: string) {
+const detailSchema = z.object({
+  week: z.object({ thisWeek: z.number(), lastWeek: z.number() }),
+  averages: z.object({
+    avg30: z.number().nullable(),
+    prev30: z.number().nullable(),
+  }),
+  due: z.object({ today: z.number(), tomorrow: z.number() }),
+  streaks: z.object({ current_streak: z.number(), longest_streak: z.number() }),
+  lastActive: z.string().nullable(),
+  callsLastHour: z.number(),
+  spend30: z.number(),
+  usage: z.array(
+    z.object({
+      task: z.string(),
+      calls: z.number(),
+      tokens: z.number(),
+      usd: z.number(),
+    }),
+  ),
+});
+
+/** §4.3: profile, auth state, the Home KPIs, a year of activity and every tab's rows. */
+export async function loadStudentDetail(id: string) {
   await requireAdmin();
+  if (!z.uuid().safeParse(id).success) return null;
   const db = await createClient();
   const { data: profile } = await db
     .from("profiles")
@@ -61,19 +113,180 @@ export async function loadStudent(id: string) {
     .maybeSingle()
     .throwOnError();
   if (!profile || profile.role !== "student") return null;
-  const { data: user } = await admin().auth.admin.getUserById(id);
-  const { data: sessions } = await db
-    .from("sessions")
-    .select("id,kind,config,started_at,finished_at,score,max_score")
-    .eq("user_id", id)
-    .order("finished_at", { ascending: false, nullsFirst: false })
-    .order("started_at", { ascending: false })
-    .limit(30)
-    .throwOnError();
+  const now = new Date();
+  const today = sydneyDay(now);
+  const [
+    user,
+    days,
+    stats,
+    sessions,
+    attempts,
+    topics,
+    progress,
+    reviews,
+    feedback,
+  ] = await Promise.all([
+    admin().auth.admin.getUserById(id),
+    db
+      .rpc("activity_days", {
+        p_user: id,
+        p_from: addDays(today, -371),
+        p_to: today,
+      })
+      .throwOnError(),
+    db.rpc("admin_student_detail", { p_user: id }).throwOnError(),
+    pages<Omit<SessionRow, "attempts">>((from, to) =>
+      db
+        .from("sessions")
+        .select(
+          "id,kind,config,started_at,finished_at,score,max_score,elapsed_s,summary",
+        )
+        .eq("user_id", id)
+        .order("started_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
+    pages<{
+      session_id: string;
+      status: string;
+      check_status: string;
+      answered: boolean;
+      day: string | null;
+    }>((from, to) =>
+      db
+        .rpc("admin_student_attempts", { p_user: id })
+        .order("id")
+        .range(from, to),
+    ),
+    pages<Topic>((from, to) =>
+      db
+        .from("topics")
+        .select("id,parent_id,name,sort")
+        .order("sort")
+        .order("id")
+        .range(from, to),
+    ),
+    pages<{
+      topic_id: string;
+      parent_id: string | null;
+      earned: number;
+      possible: number;
+      answered: number;
+      last_answered: string | null;
+    }>((from, to) =>
+      db
+        .rpc("admin_student_topics", { p_user: id })
+        .order("topic_id")
+        .range(from, to),
+    ),
+    pages<StudentReviewRow>((from, to) =>
+      db
+        .from("mark_reviews")
+        .select(
+          "id,reason,status,ai_mark,final_mark,created_at,attempt:attempts(session_id,question:questions(source,stem))",
+        )
+        .eq("user_id", id)
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, to)
+        .overrideTypes<StudentReviewRow[], { merge: false }>(),
+    ),
+    pages<{
+      id: string;
+      kind: string;
+      message: string;
+      status: string;
+      created_at: string;
+    }>((from, to) =>
+      db
+        .from("feedback")
+        .select("id,kind,message,status,created_at")
+        .eq("user_id", id)
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
+  ]);
+  if (user.error) throw user.error;
+  const until = (user.data.user as { banned_until?: string | null } | null)
+    ?.banned_until;
+  const detail = detailSchema.parse(stats.data);
+  const bySession = new Map<string, typeof attempts>();
+  for (const a of attempts) {
+    const rows = bySession.get(a.session_id) ?? [];
+    rows.push(a);
+    bySession.set(a.session_id, rows);
+  }
   return {
     profile,
-    email: user.user?.email ?? "",
-    sessions: sessions ?? [],
+    email: user.data.user?.email ?? "",
+    blocked: !!until && Date.parse(until) > now.getTime(),
+    today,
+    ...detail,
+    activity: { days: days.data as ActivityDay[], ...detail.streaks },
+    sessions: sessions.map((s) => ({
+      ...s,
+      attempts: bySession.get(s.id) ?? [],
+    })),
+    topics,
+    progress,
+    reviews,
+    feedback,
+  };
+}
+
+/** The read-only report for one of the student's sessions (keys only after finish). */
+export async function loadSessionReport(sessionId: string, userId: string) {
+  await requireAdmin();
+  if (
+    !z.uuid().safeParse(sessionId).success ||
+    !z.uuid().safeParse(userId).success
+  )
+    return null;
+  const db = await createClient();
+  const { data: session } = await db
+    .from("sessions")
+    .select("id,kind,config,finished_at")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle()
+    .throwOnError();
+  if (!session) return null;
+  const cards =
+    session.kind === "flashcards"
+      ? await pages<FlashcardReportRow>((from, to) =>
+          db
+            .from("flashcard_reviews")
+            .select(
+              "id,flashcard_id,answer,mark,reason,created_at,card:flashcards(front,back)",
+            )
+            .eq("session_id", sessionId)
+            .eq("user_id", userId)
+            .order("created_at")
+            .order("id")
+            .range(from, to)
+            .overrideTypes<FlashcardReportRow[], { merge: false }>(),
+        )
+      : [];
+  const rows = session.finished_at
+    ? await pages<ReviewRow>((from, to) =>
+        db
+          .rpc("session_review", { p_session: sessionId })
+          .order("position")
+          .range(from, to),
+      )
+    : [];
+  const paths = rows.flatMap((r) => r.image_paths ?? []);
+  const signedResult = paths.length
+    ? await db.storage.from("answers").createSignedUrls(paths, 3600)
+    : null;
+  if (signedResult?.error) throw signedResult.error;
+  const signed = signedResult?.data;
+  return {
+    cards,
+    finished: !!session.finished_at,
+    rows: rows.map((row) => ownQuestionReview(row, session.config?.question)),
+    url: new Map(signed?.map((x) => [x.path, x.signedUrl])),
   };
 }
 
@@ -155,5 +368,32 @@ export async function loadSpend() {
     cap: SPEND_CAP_USD,
     byModel: [...byModel.entries()].sort((a, b) => b[1] - a[1]),
     byTask: [...byTask.entries()].sort((a, b) => b[1] - a[1]),
+  };
+}
+
+/** Verify the student association before signing any private screenshot URLs. */
+export async function loadStudentFeedback(id: string, userId: string) {
+  await requireAdmin();
+  if (!z.uuid().safeParse(id).success || !z.uuid().safeParse(userId).success)
+    return null;
+  const db = await createClient();
+  const { data } = await db
+    .from("feedback")
+    .select(
+      "id,user_id,message,status,admin_note,page_path,user_agent,question_id,session_id,screenshots",
+    )
+    .eq("id", id)
+    .eq("user_id", userId)
+    .maybeSingle()
+    .throwOnError();
+  if (!data) return null;
+  const signed = data.screenshots.length
+    ? await db.storage.from("reports").createSignedUrls(data.screenshots, 3600)
+    : null;
+  if (signed?.error) throw signed.error;
+  return {
+    row: data as import("@/components/feedback-detail").FeedbackDetailRow,
+    photos:
+      signed?.data?.flatMap((p) => (p.signedUrl ? [p.signedUrl] : [])) ?? [],
   };
 }

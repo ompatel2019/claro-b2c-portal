@@ -21,7 +21,8 @@ import {
   loadAdminBadges,
   loadDashboard,
   loadStudentRows,
-  loadStudent,
+  loadStudentDetail,
+  loadSessionReport,
   loadSpend,
 } from "./admin-data";
 
@@ -55,7 +56,8 @@ it.each([
   loadDashboard,
   loadAdminBadges,
   loadStudentRows,
-  () => loadStudent("id"),
+  () => loadStudentDetail("id"),
+  () => loadSessionReport("session", "user"),
   loadSpend,
 ])("authorises before reading admin data", async (load) => {
   mocks.requireAdmin.mockRejectedValue(new Error("redirect:/student"));

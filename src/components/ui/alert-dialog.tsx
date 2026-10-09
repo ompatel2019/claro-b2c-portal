@@ -1,5 +1,6 @@
 "use client";
 import { AlertDialog as Primitive } from "@base-ui/react/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 export const AlertDialog = Primitive.Root;
 export const AlertDialogTitle = Primitive.Title;
@@ -20,4 +21,14 @@ export function AlertDialogContent({
       />
     </Primitive.Portal>
   );
+}
+export function AlertDialogFooter({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return <div className={cn("flex justify-end gap-2", className)} {...props} />;
+}
+/** Closes the dialog as an outline button. */
+export function AlertDialogCancel(props: Primitive.Close.Props) {
+  return <Primitive.Close render={<Button variant="outline" />} {...props} />;
 }

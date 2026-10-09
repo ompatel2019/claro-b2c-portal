@@ -119,8 +119,8 @@ export async function finish(page: Page) {
   await expect(page).toHaveURL(/\/results$/, { timeout: 90000 });
 }
 
-/** Snapshot before any ratings; restore existing rows and delete only test-created rows. */
-export async function snapshotFlashcardProgress() {
+/** The E2E student's auth id (by STUDENT_EMAIL). */
+export async function studentId() {
   const db = adminClient()!;
   let userId = "";
   for (let page = 1; !userId; page++) {
@@ -136,7 +136,14 @@ export async function snapshotFlashcardProgress() {
       )?.id ?? "";
     if (data.users.length < 1000) break;
   }
-  if (!userId) throw new Error("Could not find the E2E student for cleanup.");
+  if (!userId) throw new Error("Could not find the E2E student.");
+  return userId;
+}
+
+/** Snapshot before any ratings; restore existing rows and delete only test-created rows. */
+export async function snapshotFlashcardProgress() {
+  const db = adminClient()!;
+  const userId = await studentId();
   const before: Record<string, unknown>[] = [];
   for (let from = 0; ; from += 500) {
     const { data, error } = await db

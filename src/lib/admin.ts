@@ -116,3 +116,7 @@ export function csv(rows: (string | number | null | undefined)[][]) {
     )
     .join("\r\n");
 }
+
+/** Rounded percentage; absent when there are no possible marks. */
+export const pctOf = (earned: number, possible: number) =>
+  possible > 0 ? Math.round((100 * earned) / possible) : null;

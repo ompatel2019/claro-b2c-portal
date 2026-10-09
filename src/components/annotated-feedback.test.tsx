@@ -281,3 +281,16 @@ it("shows the MC answer line with the explanation open when wrong", () => {
   rerender(<McReview row={{ ...mc, choice_index: null }} />);
   screen.getByText("Not answered · Correct: C");
 });
+
+it("admin read-only mode preserves failed answers without an AI retry control", () => {
+  render(
+    <AnnotatedFeedback
+      row={{ ...row, status: "failed", check_status: "skipped" }}
+      readOnly
+    />,
+  );
+  expect(screen.getByText("We couldn’t mark this one.")).toBeVisible();
+  expect(
+    screen.queryByRole("button", { name: /Retry/ }),
+  ).not.toBeInTheDocument();
+});
