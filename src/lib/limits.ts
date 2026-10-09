@@ -7,3 +7,5 @@ export const WRITTEN_WORD_WARNING = 2_500;
 export const ANSWER_PHOTO_BYTE_LIMIT = 10 * 1024 * 1024;
 export const SHORT_PHOTO_PAGE_LIMIT = 3;
 export const LONG_PHOTO_PAGE_LIMIT = 8;
+export const OPEN_DISPUTES_PER_ANSWER = 1;
+export const OPEN_DISPUTES_PER_STUDENT = 3;

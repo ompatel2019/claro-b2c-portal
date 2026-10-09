@@ -3,7 +3,25 @@ import { cache } from "react";
 import { admin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { requireAdmin } from "@/lib/auth";
-import { sydneyDay } from "@/lib/admin";
+import {
+  computeSpend,
+  rangeWindow,
+  type Range,
+  type Usage,
+  type SpendTotal,
+  type Student,
+  type MarkedAttempt,
+} from "@/app/admin/spend/data";
+import { BUDGET_USD, EVAL_BLOCK_USD } from "@/lib/ai/prices";
+import {
+  AI_RATE_LIMIT_PER_MINUTE,
+  AI_RATE_LIMIT_PER_HOUR,
+} from "@/lib/ai/rate-limit";
+import {
+  MARK_MY_ANSWER_DAILY_LIMIT,
+  OPEN_DISPUTES_PER_ANSWER,
+  OPEN_DISPUTES_PER_STUDENT,
+} from "@/lib/limits";
 import { z } from "zod";
 import { pages } from "@/lib/flashcard-data";
 import { addDays, type ActivityDay } from "@/lib/activity";
@@ -342,32 +360,66 @@ export async function loadAdminBadges() {
   };
 }
 
-export async function loadSpend() {
+export async function loadSpend(range: Range = "month", now = new Date()) {
   await requireAdmin();
   const db = await createClient();
-  const { data } = await db
-    .from("ai_usage")
-    .select("usd,model,task,created_at")
-    .throwOnError();
-  const rows = data ?? [];
-  const todayKey = sydneyDay(new Date());
-  let today = 0;
-  let all = 0;
-  const byModel = new Map<string, number>();
-  const byTask = new Map<string, number>();
-  for (const r of rows) {
-    const usd = Number(r.usd);
-    all += usd;
-    if (sydneyDay(r.created_at) === todayKey) today += usd;
-    byModel.set(r.model, (byModel.get(r.model) ?? 0) + usd);
-    byTask.set(r.task, (byTask.get(r.task) ?? 0) + usd);
-  }
+  const window = rangeWindow(range, now);
+  const recent = rangeWindow("30", now).since!;
+  const since =
+    window.since === null
+      ? null
+      : window.since < recent
+        ? window.since
+        : recent;
+  const [totals, usage, attempts, students] = await Promise.all([
+    pages<SpendTotal>((from, to) =>
+      db
+        .from("ai_usage")
+        .select("usd,created_at")
+        .lt("created_at", now.toISOString())
+        .order("id")
+        .range(from, to),
+    ),
+    pages<Usage>((from, to) => {
+      let query = db
+        .from("ai_usage")
+        .select(
+          "created_at,user_id,model,task,input_tokens,cached_tokens,output_tokens,usd",
+        )
+        .lt("created_at", now.toISOString());
+      if (since) query = query.gte("created_at", since);
+      return query.order("id").range(from, to);
+    }),
+    pages<MarkedAttempt>(async (from, to) => {
+      let query = db
+        .from("attempts")
+        .select("marked_at,question_id,question:questions(type)")
+        .eq("status", "marked")
+        .lt("marked_at", window.until);
+      if (window.since) query = query.gte("marked_at", window.since);
+      const { data, error } = await query.order("id").range(from, to);
+      return { data: data as unknown as MarkedAttempt[] | null, error };
+    }),
+    pages<Student>((from, to) =>
+      db
+        .from("profiles")
+        .select("id,full_name")
+        .eq("role", "student")
+        .order("id")
+        .range(from, to),
+    ),
+  ]);
   return {
-    today,
-    all,
+    ...computeSpend(totals, usage, attempts, students, range, now),
     cap: SPEND_CAP_USD,
-    byModel: [...byModel.entries()].sort((a, b) => b[1] - a[1]),
-    byTask: [...byTask.entries()].sort((a, b) => b[1] - a[1]),
+    markers: [EVAL_BLOCK_USD, BUDGET_USD, SPEND_CAP_USD],
+    limits: {
+      perMinute: AI_RATE_LIMIT_PER_MINUTE,
+      perHour: AI_RATE_LIMIT_PER_HOUR,
+      markMyAnswerPerDay: MARK_MY_ANSWER_DAILY_LIMIT,
+      openDisputesPerAnswer: OPEN_DISPUTES_PER_ANSWER,
+      openDisputesPerStudent: OPEN_DISPUTES_PER_STUDENT,
+    },
   };
 }
 

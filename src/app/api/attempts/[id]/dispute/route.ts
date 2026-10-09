@@ -1,10 +1,10 @@
+import { OPEN_DISPUTES_PER_STUDENT } from "@/lib/limits";
 import { z } from "zod";
 import { markingState } from "@/lib/feedback";
 import { admin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
-const OVER_LIMIT =
-  "You have 3 marks being checked. You can question another once one is done.";
+const OVER_LIMIT = `You have ${OPEN_DISPUTES_PER_STUDENT} marks being checked. You can question another once one is done.`;
 const body = z.object({ note: z.string().trim().min(10).max(1000) });
 
 /**
@@ -60,7 +60,7 @@ export async function POST(
     .eq("reason", "student_dispute")
     .eq("status", "open")
     .throwOnError();
-  if ((count ?? 0) >= 3)
+  if ((count ?? 0) >= OPEN_DISPUTES_PER_STUDENT)
     return Response.json({ error: OVER_LIMIT }, { status: 409 });
   const { error } = await db.from("mark_reviews").insert({
     attempt_id: id,

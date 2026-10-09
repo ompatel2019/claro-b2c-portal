@@ -29,7 +29,7 @@ export default async function SpendPage() {
       <section className="panel space-y-3">
         <h2>By model</h2>
         <ul className="space-y-2">
-          {spend.byModel.map(([model, usd]) => (
+          {spend.byModel.map(({ model, usd }) => (
             <li key={model} className="flex justify-between gap-4 text-sm">
               <span className="break-all">{model}</span>
               <span>${usd.toFixed(2)}</span>
@@ -40,12 +40,14 @@ export default async function SpendPage() {
       <section className="panel space-y-3">
         <h2>By feature</h2>
         <ul className="space-y-2">
-          {spend.byTask.map(([task, usd]) => (
-            <li key={task} className="flex justify-between gap-4 text-sm">
-              <span className="break-all">{task}</span>
-              <span>${usd.toFixed(2)}</span>
-            </li>
-          ))}
+          {spend.byTask
+            .flatMap((group) => group.tasks)
+            .map(({ task, usd }) => (
+              <li key={task} className="flex justify-between gap-4 text-sm">
+                <span className="break-all">{task}</span>
+                <span>${usd.toFixed(2)}</span>
+              </li>
+            ))}
         </ul>
       </section>
     </div>

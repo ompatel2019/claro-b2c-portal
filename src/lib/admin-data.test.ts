@@ -91,3 +91,141 @@ it("rejects malformed RPC data instead of rendering misleading values", async ()
   mocks.throwOnError.mockResolvedValue({ data: { ...empty, spend: null } });
   await expect(loadDashboard()).rejects.toThrow();
 });
+
+function spendClient(options: { fail?: string; count?: number } = {}) {
+  const queries: {
+    table: string;
+    query: Record<string, ReturnType<typeof vi.fn>>;
+  }[] = [];
+  const from = vi.fn((table: string) => {
+    const query: Record<string, ReturnType<typeof vi.fn>> = {};
+    for (const method of ["select", "lt", "gte", "eq", "order"])
+      query[method] = vi.fn(() => query);
+    query.range = vi.fn((start: number, end: number) => {
+      if (table === options.fail)
+        return Promise.resolve({
+          data: null,
+          error: new Error("Spend unavailable"),
+        });
+      const columns = query.select.mock.calls[0][0] as string;
+      const row =
+        table === "profiles"
+          ? { id: "fake-student-a", full_name: "Student A" }
+          : table === "attempts"
+            ? {
+                marked_at: "2026-10-09T02:30:00Z",
+                question_id: null,
+                question: null,
+              }
+            : columns === "usd,created_at"
+              ? { usd: "0.01", created_at: "2026-10-09T02:30:00Z" }
+              : {
+                  usd: "0.01",
+                  created_at: "2026-10-09T02:30:00Z",
+                  user_id: "fake-student-a",
+                  model: "Model A",
+                  task: "mark_written",
+                  input_tokens: 10,
+                  cached_tokens: 2,
+                  output_tokens: 5,
+                };
+      const count = table === "ai_usage" ? (options.count ?? 1) : 1;
+      return Promise.resolve({
+        data: Array.from(
+          { length: Math.max(0, Math.min(end + 1, count) - start) },
+          () => row,
+        ),
+        error: null,
+      });
+    });
+    queries.push({ table, query });
+    return query;
+  });
+  mocks.createClient.mockResolvedValue({ from });
+  return queries;
+}
+const spendNow = new Date("2026-10-09T03:00:00Z");
+it("pages usage past 1000 rows and returns shared caps and limits", async () => {
+  const queries = spendClient({ count: 1201 });
+  const result = await loadSpend("month", spendNow);
+  expect(result.all).toBeCloseTo(12.01);
+  expect(result.byModel[0]).toMatchObject({
+    calls: 1201,
+    input_tokens: 12010,
+    cached_tokens: 2402,
+    output_tokens: 6005,
+  });
+  expect(result.markedWritten).toBe(1);
+  expect(result.cap).toBe(100);
+  expect(result.markers).toEqual([80, 90, 100]);
+  expect(result.limits).toEqual({
+    perMinute: 20,
+    perHour: 200,
+    markMyAnswerPerDay: 20,
+    openDisputesPerAnswer: 1,
+    openDisputesPerStudent: 3,
+  });
+  const usage = queries.filter((q) => q.table === "ai_usage");
+  expect(usage).toHaveLength(6);
+  expect(usage.map(({ query }) => query.range.mock.calls[0])).toEqual([
+    [0, 499],
+    [0, 499],
+    [500, 999],
+    [500, 999],
+    [1000, 1499],
+    [1000, 1499],
+  ]);
+  for (const { query } of usage) {
+    expect(query.order).toHaveBeenCalledWith("id");
+    expect(query.lt).toHaveBeenCalledWith("created_at", spendNow.toISOString());
+    expect(query.select.mock.calls[0][0]).not.toContain("*");
+  }
+  const details = usage.filter(
+    ({ query }) => query.select.mock.calls[0][0] !== "usd,created_at",
+  );
+  for (const { query } of details)
+    expect(query.gte).toHaveBeenCalledWith(
+      "created_at",
+      "2026-09-09T14:00:00.000Z",
+    );
+  const profiles = queries.find((q) => q.table === "profiles")!.query;
+  expect(profiles.eq).toHaveBeenCalledWith("role", "student");
+  expect(profiles.select).toHaveBeenCalledWith("id,full_name");
+});
+it("filters custom attempt dates server-side while preserving fixed recent usage", async () => {
+  const queries = spendClient();
+  await loadSpend({ from: "2026-08-01", to: "2026-08-31" }, spendNow);
+  const attempts = queries.find((q) => q.table === "attempts")!.query;
+  expect(attempts.eq).toHaveBeenCalledWith("status", "marked");
+  expect(attempts.gte).toHaveBeenCalledWith(
+    "marked_at",
+    "2026-07-31T14:00:00.000Z",
+  );
+  expect(attempts.lt).toHaveBeenCalledWith(
+    "marked_at",
+    "2026-08-31T14:00:00.000Z",
+  );
+  const detail = queries.find(
+    (q) =>
+      q.table === "ai_usage" &&
+      q.query.select.mock.calls[0][0] !== "usd,created_at",
+  )!.query;
+  expect(detail.gte).toHaveBeenCalledWith(
+    "created_at",
+    "2026-07-31T14:00:00.000Z",
+  );
+});
+it("does not apply a lower bound for all-time reads", async () => {
+  const queries = spendClient();
+  await loadSpend("all", spendNow);
+  for (const { query } of queries) expect(query.gte).not.toHaveBeenCalled();
+});
+it.each(["ai_usage", "attempts", "profiles"])(
+  "propagates %s failures",
+  async (fail) => {
+    spendClient({ fail });
+    await expect(loadSpend("month", spendNow)).rejects.toThrow(
+      "Spend unavailable",
+    );
+  },
+);
