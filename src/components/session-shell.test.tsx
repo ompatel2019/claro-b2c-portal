@@ -151,3 +151,30 @@ it("warns papers at thirty minutes and keeps Finish visible", () => {
   expect(toast).toHaveBeenCalledWith("30 minutes left");
   expect(screen.getByRole("button", { name: "Finish" })).toBeVisible();
 });
+
+it("renders a read-only booklet without marking, saving or timer controls", () => {
+  const onExit = vi.fn();
+  render(
+    <SessionShell
+      readOnly
+      title="Paper preview"
+      onExit={onExit}
+      booklet={<p>Sections</p>}
+    >
+      <p>Question text</p>
+    </SessionShell>,
+  );
+  expect(screen.getByText("Question text")).toBeTruthy();
+  for (const name of [
+    "Finish",
+    "Save and exit",
+    "Calculator (C)",
+    "Send feedback",
+  ])
+    expect(screen.queryByRole("button", { name })).toBeNull();
+  expect(screen.queryByRole("progressbar")).toBeNull();
+  fireEvent.keyDown(window, { key: "c" });
+  expect(screen.queryByRole("dialog")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Close preview" }));
+  expect(onExit).toHaveBeenCalledOnce();
+});

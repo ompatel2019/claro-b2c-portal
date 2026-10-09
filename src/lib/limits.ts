@@ -18,3 +18,5 @@ export {
 
 export const CARD_FRONT_LIMIT = 200;
 export const CARD_BACK_LIMIT = 1_000;
+
+export const PAPER_READING_MIN = 5;
