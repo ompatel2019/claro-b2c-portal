@@ -14,6 +14,7 @@ test.describe("Admin students list", () => {
   test("filters, sorts, pages, selects and exports current filters", async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 2560, height: 1000 });
     await signInAdmin(page);
     await page.goto("/admin/students");
     await expect(
@@ -128,6 +129,63 @@ test.describe("Admin students list", () => {
     await expect(page).toHaveURL(/\/admin\/students\/[0-9a-f-]{36}$/);
   });
 
+  test("1280px fits the directory with the sidebar visible", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 850 });
+    await signInAdmin(page);
+    await page.goto("/admin/students");
+    await expect(
+      page.locator('[data-slot="sidebar"][data-state="expanded"]'),
+    ).toBeVisible();
+    const table = page.getByRole("table", { name: "Students" });
+    await expect(table).toBeVisible();
+    await expect(
+      table.getByRole("columnheader", { name: "Email", exact: true }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole("columnheader", {
+        name: "School",
+        exact: true,
+        includeHidden: true,
+      }),
+    ).toBeHidden();
+    await expect
+      .poll(() =>
+        table.evaluate((el) => {
+          const container = el.closest('[data-slot="table-container"]')!;
+          return container.scrollWidth <= container.clientWidth;
+        }),
+      )
+      .toBe(true);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.documentElement.scrollWidth <=
+            document.documentElement.clientWidth,
+        ),
+      )
+      .toBe(true);
+    const details = table.locator("details").first();
+    await details.locator("summary").click();
+    await expect(details.getByText("School", { exact: true })).toBeVisible();
+    await expect(
+      details.getByText("Sessions total", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      details.getByText("AI spend (all time)", { exact: true }),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        table.evaluate((el) => {
+          const container = el.closest('[data-slot="table-container"]')!;
+          return container.scrollWidth <= container.clientWidth;
+        }),
+      )
+      .toBe(true);
+  });
+
   test("fits mobile widths and keeps detail keyboard accessible", async ({
     page,
   }) => {
@@ -140,7 +198,7 @@ test.describe("Admin students list", () => {
       const table = page.getByRole("table", { name: "Students" });
       await expect(table).toBeVisible();
       await expect(
-        table.getByRole("columnheader", { name: "Email" }),
+        table.getByRole("columnheader", { name: "Email", includeHidden: true }),
       ).toBeHidden();
       await expect(async () => {
         expect(
@@ -149,6 +207,19 @@ test.describe("Admin students list", () => {
           ),
         ).toBe(true);
       }).toPass();
+      const details = table.locator("details").first();
+      await details.locator("summary").click();
+      await expect(
+        details.getByText(process.env.STUDENT_EMAIL!, { exact: true }),
+      ).toBeVisible();
+      await expect
+        .poll(() =>
+          table.evaluate((el) => {
+            const container = el.closest('[data-slot="table-container"]')!;
+            return container.scrollWidth <= container.clientWidth;
+          }),
+        )
+        .toBe(true);
     }
     await page
       .getByRole("table", { name: "Students" })

@@ -469,6 +469,8 @@ export default async function Progress({
     typeof p.type === "string" && ["mcq", "short", "extended"].includes(p.type)
       ? p.type
       : undefined;
+  // Keep the heatmap in the page tree, rather than a separate streamed payload.
+  const heatmap = await Heatmap({ userId: profile.id, today });
   return (
     <div
       className="min-w-0 space-y-4"
@@ -493,9 +495,7 @@ export default async function Progress({
       >
         <Stats {...scope} />
       </Suspense>
-      <Suspense fallback={<CardSkeleton />}>
-        <Heatmap userId={profile.id} today={today} />
-      </Suspense>
+      {heatmap}
       <Suspense
         key={`history-${range}-${kind}-${type}`}
         fallback={<CardSkeleton />}

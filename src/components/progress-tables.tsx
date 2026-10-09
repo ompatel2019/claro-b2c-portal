@@ -63,7 +63,7 @@ export function ProgressScore({
       </Badge>
       {bar && (
         <div
-          className="bg-muted h-1.5 w-16 overflow-hidden rounded-full"
+          className="bg-muted h-1.5 w-16 overflow-hidden rounded-full max-sm:w-10"
           aria-hidden
         >
           <div
@@ -91,36 +91,46 @@ export function TopicProgressTable({ rows }: { rows: TopicProgress[] }) {
       id: "name",
       header: "Topic",
       sort: (r) => r.name,
-      className: "w-full min-w-0 max-w-[10rem] whitespace-normal",
-      cell: (r) =>
-        r.parent_id ? (
-          <span className="block py-2 pl-2">{r.name}</span>
-        ) : (
-          <button
-            className="flex w-full items-center gap-2 py-2 text-left font-semibold"
-            aria-expanded={open.has(r.id)}
-            aria-controls={open.has(r.id) ? `topic-${r.id}` : undefined}
-            onClick={() =>
-              setOpen((s) => {
-                const next = new Set(s);
-                if (next.has(r.id)) next.delete(r.id);
-                else next.add(r.id);
-                return next;
-              })
-            }
-          >
-            {open.has(r.id) ? (
-              <ChevronUp className="size-4 shrink-0" />
-            ) : (
-              <ChevronDown className="size-4 shrink-0" />
-            )}
-            {r.name}
-          </button>
-        ),
+      className:
+        "w-full min-w-0 max-w-[10rem] wrap-anywhere whitespace-normal max-sm:px-2 max-sm:first:pl-2",
+      cell: (r) => (
+        <>
+          {r.parent_id ? (
+            <span className="block py-2 pl-2">{r.name}</span>
+          ) : (
+            <button
+              className="flex w-full items-center gap-2 py-2 text-left font-semibold"
+              aria-expanded={open.has(r.id)}
+              aria-controls={open.has(r.id) ? `topic-${r.id}` : undefined}
+              onClick={() =>
+                setOpen((s) => {
+                  const next = new Set(s);
+                  if (next.has(r.id)) next.delete(r.id);
+                  else next.add(r.id);
+                  return next;
+                })
+              }
+            >
+              {open.has(r.id) ? (
+                <ChevronUp className="size-4 shrink-0" />
+              ) : (
+                <ChevronDown className="size-4 shrink-0" />
+              )}
+              {r.name}
+            </button>
+          )}
+          <p className="text-muted-foreground text-xs sm:hidden">
+            {r.answered} answered · {r.earned} / {r.possible} marks · Last
+            practised{" "}
+            {r.last_answered ? dateLabel(r.last_answered, true) : "Not started"}
+          </p>
+        </>
+      ),
     },
     {
       id: "answered",
       header: "Answered",
+      className: "hidden sm:table-cell",
       sort: (r) => r.answered,
 
       cell: (r) => r.answered,
@@ -128,6 +138,7 @@ export function TopicProgressTable({ rows }: { rows: TopicProgress[] }) {
     {
       id: "marks",
       header: "Marks",
+      className: "hidden sm:table-cell",
       sort: (r) => r.earned,
 
       cell: (r) => `${r.earned} / ${r.possible}`,
@@ -135,6 +146,7 @@ export function TopicProgressTable({ rows }: { rows: TopicProgress[] }) {
     {
       id: "pct",
       header: "%",
+      className: "max-sm:px-2",
       sort: (r) => r.pct,
       cell: (r) =>
         r.possible ? (
@@ -148,6 +160,7 @@ export function TopicProgressTable({ rows }: { rows: TopicProgress[] }) {
     {
       id: "last",
       header: "Last practised",
+      className: "hidden sm:table-cell",
       sort: (r) => r.last_answered,
 
       cell: (r) =>
@@ -156,6 +169,7 @@ export function TopicProgressTable({ rows }: { rows: TopicProgress[] }) {
     {
       id: "action",
       header: "",
+      className: "max-sm:px-2 max-sm:last:pr-2",
       cell: (r) => (
         <Link
           aria-label={`${r.answered ? "Practise" : "Start"} ${r.name}`}
@@ -178,9 +192,13 @@ export function TopicProgressTable({ rows }: { rows: TopicProgress[] }) {
       label="Marks by topic"
       columns={columns}
       rows={parents}
+      // Nested table widths must not contribute to the parent's intrinsic width.
       renderDetail={(r) =>
         open.has(r.id) ? (
-          <div id={`topic-${r.id}`} className="bg-surface p-2">
+          <div
+            id={`topic-${r.id}`}
+            className="bg-surface p-2 [contain:inline-size] max-sm:px-1"
+          >
             <DataTable
               student
               {...sort}

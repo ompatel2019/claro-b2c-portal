@@ -64,6 +64,9 @@ const rows: TopicProgress[] = [
 it("expands a parent, shows untouched topics and sorts children locally", () => {
   const view = render(<TopicProgressTable rows={rows} />);
   expect(screen.queryByText("Inflation")).toBeNull();
+  expect(
+    screen.getByText(/3 answered · 4 \/ 10 marks · Last practised/),
+  ).toHaveTextContent("Fri 9 Oct");
   fireEvent.click(screen.getByRole("button", { name: "Economic Issues" }));
   expect(
     screen.getByRole("button", { name: "Economic Issues" }),
@@ -77,6 +80,12 @@ it("expands a parent, shows untouched topics and sorts children locally", () => 
   expect(
     within(table).getByRole("link", { name: "Practise Inflation" }),
   ).toHaveAttribute("href", "/student/sprint?topics=t3&sub=t3-inflation");
+  expect(
+    within(table).getByText(/3 answered · 4 \/ 10 marks · Last practised/),
+  ).toHaveTextContent("Fri 9 Oct");
+  expect(
+    within(table).getByText(/0 answered · 0 \/ 0 marks · Last practised/),
+  ).toHaveTextContent("Not started");
   fireEvent.click(within(table).getByRole("button", { name: "Topic" }));
   view.rerender(<TopicProgressTable rows={rows} />);
   fireEvent.click(within(table).getByRole("button", { name: "Topic" }));

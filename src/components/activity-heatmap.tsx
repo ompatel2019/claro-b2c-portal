@@ -35,21 +35,51 @@ export function ActivityHeatmap({
   error?: boolean;
   errorContent?: React.ReactNode;
 }) {
-  const weeks = heatmapWeeks(today);
+  const allWeeks = heatmapWeeks(today);
+  const [weekCount, setWeekCount] = useState(53);
+  const [offset, setOffset] = useState(0);
+  const end = Math.max(weekCount, allWeeks.length - offset);
+  const weeks = allWeeks.slice(Math.max(0, end - weekCount), end);
   const byDay = new Map(days.map((d) => [d.day, d]));
   const [focus, setFocus] = useState(today);
+  const lastDay = weeks.flat().findLast((day) => day !== null)!;
+  const focusDay = weeks.some((week) => week.includes(focus)) ? focus : lastDay;
   const [tip, setTip] = useState<string | null>(null);
-  const scroller = useRef<HTMLDivElement>(null);
+  const container = useRef<HTMLDivElement>(null);
   const grid = useRef<HTMLDivElement>(null);
-  const from = weeks[0][0]!;
+  const from = allWeeks[0][0]!;
   const active = days.filter(
     (d) => d.day >= from && d.questions + d.cards > 0,
   ).length;
 
   useEffect(() => {
-    // Small screens scroll horizontally; start at today.
-    scroller.current?.scrollTo({ left: scroller.current.scrollWidth });
-  }, []);
+    const node = container.current;
+    if (!node) return;
+    const observer = new ResizeObserver(([entry]) => {
+      // Keep whole weeks visible, leaving room for weekday labels.
+      const count = Math.max(
+        1,
+        Math.min(53, Math.floor((entry.contentRect.width - 32) / CELL)),
+      );
+      const resizedWeeks = heatmapWeeks(today);
+      const nextEnd = Math.max(count, resizedWeeks.length - offset);
+      const nextWeeks = resizedWeeks.slice(
+        Math.max(0, nextEnd - count),
+        nextEnd,
+      );
+      const focused = document.activeElement as HTMLElement | null;
+      if (
+        grid.current?.contains(focused) &&
+        !nextWeeks.flat().includes(focused?.dataset.day ?? "")
+      ) {
+        const day = nextWeeks.flat().findLast((day) => day !== null)!;
+        grid.current.querySelector<HTMLElement>(`[data-day="${day}"]`)?.focus();
+      }
+      setWeekCount(count);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [error, today, offset]);
 
   function move(e: React.KeyboardEvent, day: string) {
     const step = {
@@ -67,6 +97,10 @@ export function ActivityHeatmap({
     grid.current?.querySelector<HTMLElement>(`[data-day="${next}"]`)?.focus();
   }
 
+  const labels = monthLabels(weeks).filter((m, i, labels) => {
+    const end = labels[i + 1]?.col ?? weeks.length;
+    return (end - m.col) * CELL >= 28;
+  });
   const tipDay = tip ? byDay.get(tip) : undefined;
   const [col, row] = tip
     ? [
@@ -96,11 +130,16 @@ export function ActivityHeatmap({
             </p>
           ))
         ) : (
-          <div ref={scroller} className="overflow-x-auto pb-1">
+          <div
+            ref={container}
+            data-testid="activity-heatmap"
+            className="min-w-0 pb-1"
+          >
             <div className="relative w-max pt-5 pl-8 text-[11px]">
-              {monthLabels(weeks).map((m) => (
+              {labels.map((m) => (
                 <span
                   key={m.col}
+                  data-month-label
                   aria-hidden
                   className="text-muted-foreground absolute top-0"
                   style={{ left: 32 + m.col * CELL }}
@@ -121,7 +160,7 @@ export function ActivityHeatmap({
               <div
                 ref={grid}
                 role="group"
-                aria-label="Activity over the last year"
+                aria-label={`Activity from ${weeks[0][0]} to ${lastDay}`}
                 className="grid auto-cols-[11px] grid-flow-col grid-rows-[repeat(7,11px)] gap-[3px]"
                 onMouseLeave={() => setTip(null)}
               >
@@ -137,7 +176,7 @@ export function ActivityHeatmap({
                       prefetch={false}
                       data-day={day}
                       aria-label={`${label} (${SHADE_LABELS[shade(count)]})`}
-                      tabIndex={day === focus ? 0 : -1}
+                      tabIndex={day === focusDay ? 0 : -1}
                       onKeyDown={(e) => move(e, day)}
                       onFocus={() => {
                         setFocus(day);
@@ -151,12 +190,11 @@ export function ActivityHeatmap({
                   );
                 })}
               </div>
-              {tip && (
+              {tip && col >= 0 && (
                 <div
                   role="tooltip"
-                  className="bg-ink pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full rounded-md px-2 py-1 text-xs whitespace-nowrap text-white"
+                  className="bg-ink pointer-events-none absolute left-0 z-10 w-max max-w-full -translate-y-full rounded-md px-2 py-1 text-xs whitespace-normal text-white"
                   style={{
-                    left: 32 + col * CELL + 5,
                     top: 20 + row * CELL - 4,
                   }}
                 >
@@ -164,6 +202,28 @@ export function ActivityHeatmap({
                 </div>
               )}
             </div>
+          </div>
+        )}
+        {!error && weekCount < allWeeks.length && (
+          <div className="flex justify-between gap-2 text-xs">
+            <button
+              type="button"
+              className="underline disabled:opacity-50"
+              disabled={end === weekCount}
+              onClick={() =>
+                setOffset(Math.min(53 - weekCount, offset + weekCount))
+              }
+            >
+              Earlier weeks
+            </button>
+            <button
+              type="button"
+              className="underline disabled:opacity-50"
+              disabled={end === allWeeks.length}
+              onClick={() => setOffset(Math.max(0, offset - weekCount))}
+            >
+              Later weeks
+            </button>
           </div>
         )}
         <div className="text-muted-foreground flex flex-col-reverse items-start gap-2 text-xs sm:flex-row sm:items-center sm:justify-between">

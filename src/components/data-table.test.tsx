@@ -13,6 +13,7 @@ vi.mock("next/navigation", () => ({
 }));
 import { StaticTable } from "./static-table";
 import { DataTable } from "./data-table";
+import { StudentsTable } from "./students-table";
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -238,4 +239,53 @@ it.each([
       .getByRole("navigation", { name: "Feedback pagination" })
       .querySelector('[aria-live="polite"]'),
   ).toHaveTextContent(new RegExp(`^Page 1 of 1 · ${total} ${noun}$`));
+});
+
+it("student details preserve hidden metrics without triggering row navigation", () => {
+  nav.router.mockReturnValue({ push: nav.push });
+  nav.path.mockReturnValue("/admin/students");
+  nav.search.mockReturnValue(new URLSearchParams());
+  const { container } = render(
+    <StudentsTable
+      students={[
+        {
+          id: "ada",
+          full_name: "Ada",
+          email: "ada@example.com",
+          year_level: 11,
+          school: "School",
+          joined: "2026-10-09",
+          last_active: null,
+          sessions_7d: 0,
+          sessions_total: 0,
+          answered: 0,
+          avg_30: null,
+          streak: 0,
+          open_disputes: 0,
+          ai_spend: 1.23,
+          blocked: false,
+        },
+      ]}
+      pager={{ page: 1, pages: 1, total: 1, sort: { id: "last", dir: "desc" } }}
+    />,
+  );
+  fireEvent.click(screen.getByText("More details"));
+  expect(nav.push).not.toHaveBeenCalled();
+  const details = container.querySelector("details")!;
+  const fields = Object.fromEntries(
+    Array.from(details.querySelectorAll("dl > div"), (field) => [
+      field.querySelector("dt")!.textContent,
+      field.querySelector("dd")!.textContent,
+    ]),
+  );
+  expect(fields).toMatchObject({
+    Email: "ada@example.com",
+    School: "School",
+    "Sessions total": "0",
+    "Questions answered": "0",
+    "AI spend (all time)": "$1.23",
+    Blocked: "No",
+  });
+  fireEvent.click(screen.getAllByRole("row")[1].querySelectorAll("td")[6]);
+  expect(nav.push).toHaveBeenCalledWith("/admin/students/ada");
 });

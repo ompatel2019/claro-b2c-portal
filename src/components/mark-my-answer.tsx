@@ -549,7 +549,7 @@ export function MarkMyAnswer({
                 </div>
                 {!questionLocked && (
                   <div
-                    className="max-h-64 overflow-y-auto rounded-xl border"
+                    className="max-h-[min(16rem,40svh)] overflow-y-auto rounded-xl border"
                     hidden={!bankOpen}
                   >
                     <p
@@ -769,7 +769,7 @@ export function MarkMyAnswer({
             />
           </CardContent>
         </Card>
-        <Card className="sticky bottom-3 z-10 flex flex-row flex-wrap items-center justify-between gap-3 p-4">
+        <Card className="z-10 flex flex-row flex-wrap items-center justify-between gap-3 p-4 sm:sticky sm:bottom-3">
           <p className="text-sm tabular-nums" role="status">
             {remaining} of {MARK_MY_ANSWER_DAILY_LIMIT} checks left today
           </p>

@@ -31,12 +31,38 @@ test.describe("Activity heatmap", () => {
         /^Current streak \d+ days? · Longest \d+ days? · \d+ active days? in the last year$/,
       ),
     ).toBeVisible();
-    const grid = page.getByRole("group", {
-      name: "Activity over the last year",
+    const heatmap = page.getByTestId("activity-heatmap");
+    const grid = heatmap.getByRole("group", {
+      name: /^Activity from \d{4}-\d{2}-\d{2} to \d{4}-\d{2}-\d{2}$/,
     });
     const today = grid.locator("a[tabindex='0']");
     await expect(today).toHaveCount(1);
-    expect(await grid.locator("a").count()).toBeGreaterThan(364);
+    const seen = new Set<string>();
+    const earlier = page.getByRole("button", { name: "Earlier weeks" });
+    do {
+      await expect(today).toHaveCount(1);
+      for (const day of await grid
+        .locator("a")
+        .evaluateAll((links) =>
+          links.map((link) => link.getAttribute("data-day")!),
+        ))
+        seen.add(day);
+      if (!(await earlier.count()) || (await earlier.isDisabled())) break;
+      const range = await grid.getAttribute("aria-label");
+      await expect(async () => {
+        if ((await grid.getAttribute("aria-label")) === range)
+          await earlier.click();
+        await expect(grid).not.toHaveAttribute("aria-label", range!, {
+          timeout: 1000,
+        });
+      }).toPass();
+    } while (true);
+    expect(seen.size).toBeGreaterThan(364);
+    const later = page.getByRole("button", { name: "Later weeks" });
+    while ((await later.count()) && (await later.isEnabled())) {
+      await later.click();
+      await expect(today).toHaveCount(1);
+    }
     await expect(async () => {
       await today.focus();
       await expect(page.getByRole("tooltip")).toBeVisible({ timeout: 1000 });
@@ -88,11 +114,16 @@ test.describe("Activity browser", () => {
     await expect(async () => {
       await page.getByRole("button", { name: /^Sprints ·/ }).click();
       await expect(page).toHaveURL(/kind=sprint/, { timeout: 1000 });
+      // Wait for the form's hidden context to commit before submitting Status.
+      await expect(
+        page.locator('input[type="hidden"][name="kind"]'),
+      ).toHaveValue("sprint", { timeout: 1000 });
     }).toPass();
     await expect(async () => {
       await page.getByLabel("Status", { exact: true }).selectOption("progress");
       await expect(page).toHaveURL(/status=progress/, { timeout: 1000 });
     }).toPass();
+    expect(new URL(page.url()).searchParams.get("kind")).toBe("sprint");
     await expect(
       page
         .getByRole("table", { name: "Your activity" })
@@ -101,10 +132,14 @@ test.describe("Activity browser", () => {
     ).toBeVisible();
     const rows = page.locator("table tbody tr");
     expect(await rows.count()).toBeLessThanOrEqual(20);
-    const titles = await rows
-      .locator("td:nth-child(2) a:first-child")
-      .allTextContents();
-    expect(titles.every((t) => t.toLowerCase().includes("sprint"))).toBe(true);
+    await expect
+      .poll(async () => {
+        const titles = await rows
+          .locator("td:nth-child(2) a:first-child")
+          .allTextContents();
+        return titles.every((t) => t.toLowerCase().includes("sprint"));
+      })
+      .toBe(true);
     await expect(async () => {
       await page
         .getByLabel("Search", { exact: true })

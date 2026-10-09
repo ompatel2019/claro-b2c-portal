@@ -55,10 +55,13 @@ test.describe("Sprint results", () => {
     await expect(practise.last()).toBeVisible();
     for (const width of [360, 400, 640, 768]) {
       await page.setViewportSize({ width, height: 800 });
-      await page.evaluate(() =>
-        window.scrollTo(0, document.documentElement.scrollHeight),
-      );
-      await clearsFeedback(practise.last());
+      // Streaming and the responsive heatmap can change height after scrolling.
+      await expect(async () => {
+        await practise
+          .last()
+          .evaluate((el) => el.scrollIntoView({ block: "center" }));
+        await clearsFeedback(practise.last());
+      }).toPass({ timeout: 20000 });
     }
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto(resultsUrl);

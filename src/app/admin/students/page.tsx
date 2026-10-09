@@ -77,7 +77,7 @@ export default async function StudentsPage({
               {
                 name: "q",
                 label: "Search",
-                placeholder: "Name, email, school or ID",
+                placeholder: "Search students",
               },
               {
                 name: "year",

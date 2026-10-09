@@ -114,12 +114,59 @@ export function StudentsTable({
   const router = useRouter();
   const responsive = columns.map((c) => ({
     ...c,
+    cell:
+      c.id === "name"
+        ? (s: StudentRow) => (
+            <>
+              {c.cell(s)}
+              <details
+                className="mt-1 text-xs 2xl:hidden"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <summary className="cursor-pointer">More details</summary>
+                <dl className="space-y-1 py-2">
+                  {columns
+                    .filter((column) => !["name", "last"].includes(column.id))
+                    .map((column) => (
+                      <div
+                        key={column.id}
+                        className={
+                          [
+                            "email",
+                            "year",
+                            "sessions7",
+                            "avg",
+                            "blocked",
+                          ].includes(column.id)
+                            ? "sm:hidden"
+                            : undefined
+                        }
+                      >
+                        <dt className="text-muted-foreground">
+                          {column.header}
+                        </dt>
+                        <dd className="wrap-anywhere">
+                          {column.id === "blocked" && !s.blocked
+                            ? "No"
+                            : column.cell(s)}
+                        </dd>
+                      </div>
+                    ))}
+                </dl>
+              </details>
+            </>
+          )
+        : c.cell,
     className:
       c.id === "name"
-        ? "max-sm:max-w-32 max-sm:whitespace-normal max-sm:break-words"
+        ? "max-w-48 whitespace-normal wrap-anywhere max-sm:max-w-32"
         : c.id === "last"
           ? "max-sm:px-2"
-          : "hidden sm:table-cell",
+          : c.id === "email"
+            ? "hidden max-w-56 whitespace-normal break-all sm:table-cell"
+            : ["year", "sessions7", "avg", "blocked"].includes(c.id)
+              ? "hidden whitespace-normal sm:table-cell"
+              : "hidden whitespace-normal 2xl:table-cell",
   }));
   return (
     <DataTable
