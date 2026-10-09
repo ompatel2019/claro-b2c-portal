@@ -295,8 +295,17 @@ it("rewrites the returned review on disagreement and advances using that mark", 
   await waitFor(() =>
     expect(screen.getByRole("button", { name: "Next card" })).toBeEnabled(),
   );
-  fireEvent.keyDown(window, { key: "ArrowRight" });
-  await screen.findByRole("heading", { name: "Deflation" });
+  // The shortcut is ignored while the save transition is still settling, so press it until the
+  // next card shows (a press on a card without a verdict does nothing) instead of racing a delay.
+  await waitFor(
+    () => {
+      fireEvent.keyDown(window, { key: "ArrowRight" });
+      expect(
+        screen.getByRole("heading", { name: "Deflation" }),
+      ).toBeInTheDocument();
+    },
+    { timeout: 5000 },
+  );
   expect(screen.getByText("1 card coming back")).toBeVisible();
   expect(rateFlashcard).not.toHaveBeenCalled();
 });
