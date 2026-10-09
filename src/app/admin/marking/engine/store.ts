@@ -81,13 +81,38 @@ export const leaseActive = (lease: Lease | null) =>
 /** Immutable successor paths let atomic create arbitrate expired-lease takeover. */
 async function leaseHead(
   base: string,
-  path = base,
 ): Promise<{ path: string; lease: Lease | null }> {
-  const lease = await readJson<Lease>(path);
-  if (!lease) return { path, lease };
-  const nextPath = `${base}.${lease.owner}`;
-  const next = await readJson<Lease>(nextPath);
-  return next ? leaseHead(base, nextPath) : { path, lease };
+  const slash = base.lastIndexOf("/");
+  const dir = base.slice(0, slash);
+  const baseName = base.slice(slash + 1);
+  const paths: string[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await bounded(
+      bucket().list(dir, { limit: 1000, offset, search: baseName }),
+    );
+    if (error) throw new Error(error.message);
+    for (const file of data ?? []) {
+      if (file.name === baseName || file.name.startsWith(`${baseName}.`))
+        paths.push(`${dir}/${file.name}`);
+    }
+    if (!data || data.length < 1000) break;
+  }
+  const leases = new Map(
+    await Promise.all(
+      paths.map(async (path) => [path, await readJson<Lease>(path)] as const),
+    ),
+  );
+  let path = base;
+  let lease = leases.get(path) ?? null;
+  while (lease) {
+    const nextPath = `${base}.${lease.owner}`;
+    const next = leases.get(nextPath);
+    if (!next) break;
+    path = nextPath;
+    lease = next;
+  }
+  // A successor created after listing makes the caller's atomic create fail.
+  return { path, lease };
 }
 export async function readLease(path: string) {
   return (await leaseHead(path)).lease;
@@ -131,10 +156,14 @@ export async function loadBucketRuns() {
       bucket().list("runs", { limit: 100, offset }),
     );
     if (error) throw new Error(error.message);
-    for (const file of data ?? []) {
-      if (!file.name.endsWith(".json")) continue;
-      const run = await readJson<WebRun>(`runs/${file.name}`);
-      if (run) {
+    const page = await Promise.all(
+      (data ?? [])
+        .filter((file) => file.name.endsWith(".json"))
+        .map((file) => readJson<WebRun>(`runs/${file.name}`)),
+    );
+    await Promise.all(
+      page.map(async (run) => {
+        if (!run) return;
         if (run.meta.status === "running") {
           const cancelled = await readJson<{ at: string }>(
             `cancel/${run.meta.id}.json`,
@@ -144,9 +173,9 @@ export async function loadBucketRuns() {
             run.meta.finishedAt = cancelled.at;
           }
         }
-        runs.push(run);
-      }
-    }
+      }),
+    );
+    for (const run of page) if (run) runs.push(run);
     if (!data || data.length < 100) return runs;
   }
 }

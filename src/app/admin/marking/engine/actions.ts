@@ -51,7 +51,9 @@ const active = (r: WebRun) =>
 async function hasRunningRun(runs: WebRun[]) {
   if (runs.some(active)) return true;
   const locks = await Promise.all(
-    runs.map((r) => readLease(`locks/${r.meta.id}.json`)),
+    runs
+      .filter((r) => !["completed", "failed"].includes(r.meta.status))
+      .map((r) => readLease(`locks/${r.meta.id}.json`)),
   );
   return locks.some(leaseActive);
 }

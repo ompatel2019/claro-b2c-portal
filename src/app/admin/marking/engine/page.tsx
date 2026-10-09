@@ -42,7 +42,7 @@ export default async function EnginePage({
   const params = await searchParams;
   const comparing =
     params.tab === "runs" && (params.a !== undefined || params.b !== undefined);
-  const dialogData = comparing ? null : await evalRunDialogData();
+  let dialogData: Awaited<ReturnType<typeof evalRunDialogData>> | null = null;
   const tab = params.tab === "runs" ? "runs" : "docs";
   let content;
   if (comparing) {
@@ -58,7 +58,12 @@ export default async function EnginePage({
       </div>
     );
   } else if (tab === "runs") {
-    const [runs, web] = await Promise.all([loadEvalRuns(), loadBucketRuns()]);
+    const [dialog, runs, web] = await Promise.all([
+      evalRunDialogData(),
+      loadEvalRuns(),
+      loadBucketRuns(),
+    ]);
+    dialogData = dialog;
     const rows = mergeRuns(runs, web);
     content = rows.length ? (
       <RunsTable rows={rows} />
@@ -70,7 +75,8 @@ export default async function EnginePage({
       />
     );
   } else {
-    const docs = await loadDocs();
+    const [dialog, docs] = await Promise.all([evalRunDialogData(), loadDocs()]);
+    dialogData = dialog;
     const selected = docs.find((doc) => doc.id === params.doc) ?? docs[0];
     content = !selected ? (
       <EmptyState

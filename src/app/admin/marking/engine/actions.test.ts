@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   files: new Map<string, string>(),
   cached: new Map<string, string>(),
   download: vi.fn(),
+  list: vi.fn(),
   spend: vi.fn(),
   auth: vi.fn(),
   mark: vi.fn(),
@@ -38,16 +39,7 @@ vi.mock("@/utils/supabase/admin", () => ({
           paths.forEach((path) => mocks.files.delete(path));
           return { error: null };
         },
-        list: async (
-          prefix: string,
-          options: { offset: number; limit: number },
-        ) => ({
-          error: null,
-          data: [...mocks.files.keys()]
-            .filter((path) => path.startsWith(prefix + "/"))
-            .slice(options.offset, options.offset + options.limit)
-            .map((path) => ({ name: path.slice(prefix.length + 1) })),
-        }),
+        list: mocks.list,
       }),
     },
   }),
@@ -65,6 +57,7 @@ import {
   loadBucketRuns,
   saveRun,
   readJson,
+  writeJson,
   type WebRun,
 } from "./store";
 import { mergeRuns } from "./summary";
@@ -102,6 +95,22 @@ beforeEach(() => {
       return { data: new Blob([body]), error: null };
     },
   );
+  mocks.list.mockReset();
+  mocks.list.mockImplementation(
+    async (
+      prefix: string,
+      options: { offset: number; limit: number; search?: string },
+    ) => ({
+      error: null,
+      data: [...mocks.files.keys()]
+        .filter((path) => path.startsWith(prefix + "/"))
+        .map((path) => ({ name: path.slice(prefix.length + 1) }))
+        .filter(
+          (file) => !options.search || file.name.startsWith(options.search),
+        )
+        .slice(options.offset, options.offset + options.limit),
+    }),
+  );
   mocks.beforeUpload.mockReset();
   mocks.auth.mockResolvedValue({
     id: "admin",
@@ -124,6 +133,102 @@ beforeEach(() => {
     return result;
   });
 });
+it("loads each page's runs, then running cancel markers, in parallel and listing order", async () => {
+  const started = await startEvalRun(options);
+  const run = JSON.parse(mocks.files.get(`runs/${started.id}.json`)!);
+  mocks.list.mockResolvedValue({
+    data: [
+      "first.json",
+      "ignored.txt",
+      "missing.json",
+      "second.json",
+      "done.json",
+    ].map((name) => ({ name })),
+    error: null,
+  });
+  const pending = new Map<string, (value: unknown) => void>();
+  mocks.download.mockReset();
+  mocks.download.mockImplementation(
+    (path: string) => new Promise((resolve) => pending.set(path, resolve)),
+  );
+  const resolve = (path: string, value: unknown) =>
+    pending.get(path)!({
+      data: value === null ? null : new Blob([JSON.stringify(value)]),
+      error:
+        value === null
+          ? { message: "Object not found", statusCode: 404 }
+          : null,
+    });
+  const loading = loadBucketRuns();
+  await vi.waitFor(() => expect(pending.size).toBe(4));
+  expect([...pending.keys()]).toEqual([
+    "runs/first.json",
+    "runs/missing.json",
+    "runs/second.json",
+    "runs/done.json",
+  ]);
+  resolve("runs/second.json", { ...run, meta: { ...run.meta, id: "second" } });
+  resolve("runs/done.json", {
+    ...run,
+    meta: { ...run.meta, id: "done", status: "completed" },
+  });
+  resolve("runs/missing.json", null);
+  // No cancellation checks until all run files have downloaded.
+  await new Promise((resolve) => setImmediate(resolve));
+  expect(pending.size).toBe(4);
+  resolve("runs/first.json", { ...run, meta: { ...run.meta, id: "first" } });
+  await vi.waitFor(() => expect(pending.size).toBe(6));
+  expect([...pending.keys()].slice(4)).toEqual([
+    "cancel/first.json",
+    "cancel/second.json",
+  ]);
+  resolve("cancel/second.json", { at: "2026-10-10T00:00:00Z" });
+  resolve("cancel/first.json", null);
+  const runs = await loading;
+  expect(runs.map((r) => [r.meta.id, r.meta.status])).toEqual([
+    ["first", "running"],
+    ["second", "cancelled"],
+    ["done", "completed"],
+  ]);
+  expect(runs[1].meta.finishedAt).toBe("2026-10-10T00:00:00Z");
+  const before = JSON.stringify(runs);
+  mergeRuns([], runs);
+  expect(JSON.stringify(runs)).toBe(before);
+});
+it("paginates using the listing size even when all files are filtered out", async () => {
+  mocks.list
+    .mockResolvedValueOnce({
+      data: Array.from({ length: 100 }, (_, i) => ({ name: `${i}.txt` })),
+      error: null,
+    })
+    .mockResolvedValueOnce({ data: [{ name: "missing.json" }], error: null });
+  expect(await loadBucketRuns()).toEqual([]);
+  expect(mocks.list.mock.calls).toEqual([
+    ["runs", { limit: 100, offset: 0 }],
+    ["runs", { limit: 100, offset: 100 }],
+  ]);
+  expect(mocks.download).toHaveBeenCalledTimes(1);
+});
+it.each(["listing", "run", "cancel"])(
+  "propagates %s storage errors",
+  async (phase) => {
+    const run = await startEvalRun(options);
+    const error = { message: "Storage unavailable", statusCode: 500 };
+    if (phase === "listing")
+      mocks.list.mockResolvedValue({ data: null, error });
+    else {
+      const download = mocks.download.getMockImplementation()!;
+      const failing =
+        phase === "run" ? `runs/${run.id}.json` : `cancel/${run.id}.json`;
+      mocks.download.mockImplementation((path, options) =>
+        path === failing
+          ? Promise.resolve({ data: null, error })
+          : download(path, options),
+      );
+    }
+    await expect(loadBucketRuns()).rejects.toThrow("Storage unavailable");
+  },
+);
 it("starts the fixed 18-item run and stores admin attribution and selected config", async () => {
   const run = await startEvalRun(options);
   expect(run).toMatchObject({ status: "running", total: 18, done: 0 });
@@ -422,6 +527,189 @@ it("takes over an abandoned expired lease and never releases the successor", asy
   await successor;
   now.mockRestore();
 });
+function legacyChain(base: string, count = 20) {
+  let path = base;
+  for (let i = 0; i < count; i++) {
+    mocks.files.set(
+      path,
+      JSON.stringify({
+        owner: `legacy-${i}`,
+        expiresAt: new Date(0).toISOString(),
+      }),
+    );
+    path = `${base}.legacy-${i}`;
+  }
+  return path;
+}
+it("reads a 20-file legacy chain with one listing and parallel downloads", async () => {
+  const base = "locks/legacy.json";
+  legacyChain(base);
+  const download = mocks.download.getMockImplementation()!;
+  let finish!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  mocks.download.mockImplementation(async (...args) => {
+    await pending;
+    return download(...args);
+  });
+  const head = readLease(base);
+  await vi.waitFor(() => expect(mocks.download).toHaveBeenCalledTimes(20));
+  expect(mocks.list).toHaveBeenCalledExactlyOnceWith("locks", {
+    limit: 1000,
+    offset: 0,
+    search: "legacy.json",
+  });
+  finish();
+  expect(await head).toMatchObject({ owner: "legacy-19" });
+  expect(mocks.download).toHaveBeenCalledTimes(20);
+});
+it("acquires the successor after a long legacy chain", async () => {
+  const base = "locks/legacy.json";
+  const successor = legacyChain(base);
+  await locked(base, async () => {
+    expect(mocks.files.has(successor)).toBe(true);
+    expect(Date.parse((await readLease(base))!.expiresAt)).toBeGreaterThan(
+      Date.now(),
+    );
+  });
+  expect(mocks.files.size).toBe(21);
+  expect(JSON.parse(mocks.files.get(successor)!)).toMatchObject({
+    expiresAt: new Date(0).toISOString(),
+  });
+});
+it("ignores unrelated locks with similar prefixes", async () => {
+  const base = "locks/id.json";
+  legacyChain(base, 1);
+  for (const path of ["locks/id.jsonx", "locks/id-other.json"]) {
+    mocks.files.set(
+      path,
+      JSON.stringify({
+        owner: "unrelated",
+        expiresAt: new Date(Date.now() + LEASE_MS).toISOString(),
+      }),
+    );
+  }
+  // Search only narrows results; exact filtering must work even for broad results.
+  const list = mocks.list.getMockImplementation()!;
+  mocks.list.mockImplementation((prefix, options) =>
+    list(prefix, { ...options, search: undefined }),
+  );
+  expect(await readLease(base)).toMatchObject({ owner: "legacy-0" });
+  expect(mocks.download.mock.calls.map(([path]) => path)).toEqual([base]);
+});
+it.each([false, true])(
+  "treats a listed-but-deleted file as absent (base: %s)",
+  async (deleteBase) => {
+    const base = "locks/deleted.json";
+    legacyChain(base, 2);
+    const list = mocks.list.getMockImplementation()!;
+    mocks.list.mockImplementation(async (...args) => {
+      const result = await list(...args);
+      mocks.files.delete(deleteBase ? base : `${base}.legacy-0`);
+      return result;
+    });
+    expect(await readLease(base)).toEqual(
+      deleteBase
+        ? null
+        : {
+            owner: "legacy-0",
+            expiresAt: new Date(0).toISOString(),
+          },
+    );
+  },
+);
+it("paginates lock listings before reading the chain", async () => {
+  const base = "locks/paginated.json";
+  legacyChain(base, 1001);
+  expect(await readLease(base)).toMatchObject({ owner: "legacy-1000" });
+  expect(mocks.list.mock.calls).toEqual([
+    ["locks", { limit: 1000, offset: 0, search: "paginated.json" }],
+    ["locks", { limit: 1000, offset: 1000, search: "paginated.json" }],
+  ]);
+  expect(mocks.download).toHaveBeenCalledTimes(1001);
+});
+it("arbitrates concurrent acquirers with atomic create", async () => {
+  const path = "locks/concurrent.json";
+  const successor = legacyChain(path);
+  let releaseUploads!: () => void;
+  const uploads = new Promise<void>((resolve) => {
+    releaseUploads = resolve;
+  });
+  mocks.beforeUpload.mockImplementation(() => uploads);
+  const callback = vi.fn(async () => {});
+  const results = Promise.allSettled([
+    locked(path, callback),
+    locked(path, callback),
+  ]);
+  await vi.waitFor(() => expect(mocks.beforeUpload).toHaveBeenCalledTimes(2));
+  releaseUploads();
+  const settled = await results;
+  expect(settled.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  expect(settled.filter((r) => r.status === "rejected")).toEqual([
+    expect.objectContaining({
+      reason: expect.objectContaining({ message: "Already exists" }),
+    }),
+  ]);
+  expect(callback).toHaveBeenCalledTimes(1);
+  expect(
+    mocks.beforeUpload.mock.calls.slice(0, 2).map(([path]) => path),
+  ).toEqual([successor, successor]);
+});
+it("retains an uncertain lease even when the callback catches the timeout", async () => {
+  const path = "locks/uncertain.json";
+  mocks.beforeUpload.mockImplementation((uploadPath) => {
+    if (uploadPath === "runs/stalled.json") return new Promise(() => {});
+  });
+  vi.useFakeTimers();
+  try {
+    const operation = locked(path, async () => {
+      await expect(writeJson("runs/stalled.json", {})).rejects.toThrow(
+        "Eval I/O deadline exceeded",
+      );
+    });
+    await vi.advanceTimersByTimeAsync(20_000);
+    await operation;
+    expect(mocks.files.has(path)).toBe(true);
+    expect(Date.parse((await readLease(path))!.expiresAt)).toBeGreaterThan(
+      Date.now(),
+    );
+  } finally {
+    vi.useRealTimers();
+  }
+});
+it.each(["completed", "failed", "running", "cancelled"] as const)(
+  "dialog only checks potentially in-progress run locks: %s",
+  async (status) => {
+    const run = await startEvalRun(options);
+    const path = `runs/${run.id}.json`;
+    const stored = JSON.parse(mocks.files.get(path)!);
+    stored.meta.status = status;
+    // Stale running metadata must still check for an in-flight worker.
+    stored.meta.updatedAt = new Date(Date.now() - 16 * 60_000).toISOString();
+    mocks.files.set(path, JSON.stringify(stored));
+    const lockPath = `locks/${run.id}.json`;
+    mocks.files.set(
+      lockPath,
+      JSON.stringify({
+        owner: "worker",
+        expiresAt: new Date(Date.now() + LEASE_MS).toISOString(),
+      }),
+    );
+    mocks.download.mockClear();
+    const inProgress = status === "running" || status === "cancelled";
+    expect(await evalRunDialogData()).toMatchObject({ running: inProgress });
+    expect(
+      mocks.download.mock.calls.some(([path]) => path.startsWith("locks/")),
+    ).toBe(inProgress);
+    if (inProgress)
+      await expect(startEvalRun(options)).rejects.toThrow("already running");
+    else
+      await expect(startEvalRun(options)).resolves.toMatchObject({
+        status: "running",
+      });
+  },
+);
 it.each([false, true])(
   "saves a deadline error and continues even when the provider resolves after abort (late success: %s)",
   async (lateSuccess) => {
