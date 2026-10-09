@@ -8,8 +8,15 @@ const H = 160;
 const PAD = 8;
 const LEFT = 88;
 const BOTTOM = H - 24;
+const colours = [
+  "var(--chart-2)",
+  "var(--chart-1)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--success)",
+];
 
-/** K10 ChartCard for a fixed 30-day window: title, hero number, an area or bars per Sydney day. */
+/** K10 ChartCard: title, hero number, an area or stacked bars per Sydney day. */
 export function DailyChart({
   title,
   hero,
@@ -18,23 +25,29 @@ export function DailyChart({
 }: {
   title: string;
   hero: string;
-  points: { day: string; value: number }[];
+  points: { day: string; value: number; models?: Record<string, number> }[];
   kind: "area" | "bars";
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const format = (v: number) =>
     kind === "bars" ? `$${v.toFixed(2)}` : String(v);
   const current = points.find((p) => p.day === selected) ?? points.at(-1);
-  const max = Math.max(1, ...points.map((p) => p.value));
+  const models = [
+    ...new Set(points.flatMap((p) => Object.keys(p.models ?? {}))),
+  ].sort();
+  const max = Math.max(
+    kind === "bars" ? 0.01 : 1,
+    ...points.map((p) => p.value),
+  );
   const step = (W - LEFT - PAD) / Math.max(1, points.length);
   const x = (i: number) => LEFT + (i + 0.5) * step;
   const y = (v: number) => PAD + (1 - v / max) * (BOTTOM - PAD);
   const line = points
     .map((p, i) => `${i ? "L" : "M"}${x(i)},${y(p.value)}`)
     .join("");
-  const bar = Math.max(2, step * 0.6);
+  const bar = step * 0.6;
   return (
-    <Card>
+    <Card className="min-w-0">
       <CardHeader>
         <CardTitle role="heading" aria-level={2}>
           {title}
@@ -44,9 +57,13 @@ export function DailyChart({
       <CardContent>
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          className="h-40 w-full overflow-visible"
+          className="h-auto w-full"
           role="img"
-          aria-label={`${title}, last 30 days`}
+          aria-label={
+            models.length
+              ? `${title}, Sydney dates, stacked by model`
+              : `${title}, last 30 days`
+          }
         >
           {[0, max].map((g) => (
             <g key={g}>
@@ -110,16 +127,37 @@ export function DailyChart({
               onMouseEnter={() => setSelected(p.day)}
               onClick={() => setSelected(p.day)}
             >
-              <title>{`${dateLabel(p.day, true)} · ${format(p.value)}`}</title>
+              <title>{`${dateLabel(p.day)} (Sydney) · ${format(p.value)}`}</title>
               {kind === "bars" ? (
-                <rect
-                  x={x(i) - bar / 2}
-                  y={y(p.value)}
-                  width={bar}
-                  height={BOTTOM - y(p.value)}
-                  rx={1.5}
-                  className="fill-primary"
-                />
+                models.length ? (
+                  models.map((model, index) => {
+                    const value = p.models?.[model] ?? 0;
+                    const base = models
+                      .slice(0, index)
+                      .reduce((sum, name) => sum + (p.models?.[name] ?? 0), 0);
+                    return (
+                      <rect
+                        key={model}
+                        x={x(i) - bar / 2}
+                        y={y(base + value)}
+                        width={bar}
+                        height={y(base) - y(base + value)}
+                        fill={colours[index % colours.length]}
+                      >
+                        <title>{`${dateLabel(p.day)} (Sydney) · ${model}: ${format(value)}`}</title>
+                      </rect>
+                    );
+                  })
+                ) : (
+                  <rect
+                    x={x(i) - bar / 2}
+                    y={y(p.value)}
+                    width={bar}
+                    height={BOTTOM - y(p.value)}
+                    rx={1.5}
+                    className="fill-primary"
+                  />
+                )
               ) : (
                 <circle
                   cx={x(i)}
@@ -131,6 +169,23 @@ export function DailyChart({
             </g>
           ))}
         </svg>
+        {models.length > 0 && (
+          <ul
+            aria-label="Models"
+            className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm"
+          >
+            {models.map((model, index) => (
+              <li key={model} className="flex min-w-0 items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="size-3 shrink-0 rounded-sm"
+                  style={{ backgroundColor: colours[index % colours.length] }}
+                />
+                <span className="wrap-anywhere">{model}</span>
+              </li>
+            ))}
+          </ul>
+        )}
         {current && (
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
             <label className="text-muted-foreground flex items-center gap-2">
@@ -143,13 +198,18 @@ export function DailyChart({
               >
                 {points.map((p) => (
                   <option key={p.day} value={p.day}>
-                    {dateLabel(p.day, true)}
+                    {dateLabel(p.day)}
                   </option>
                 ))}
               </select>
             </label>
             <output className="font-medium tabular-nums" aria-live="polite">
               {format(current.value)}
+              {models.map((model) => (
+                <span key={model} className="ml-2 inline-block wrap-anywhere">
+                  {model}: {format(current.models?.[model] ?? 0)}
+                </span>
+              ))}
             </output>
           </div>
         )}
