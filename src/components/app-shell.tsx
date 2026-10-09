@@ -50,7 +50,7 @@ export const nav: Record<
       label: "Practise",
       items: [
         { label: "Home", href: "/", icon: LayoutDashboard },
-        { label: "Topic Sprint", href: "/practice", icon: Zap },
+        { label: "Topic Sprint", href: "/student/sprint", icon: Zap },
         { label: "Flashcards", href: "/flashcards", icon: Layers },
       ],
     },
@@ -94,7 +94,10 @@ export function activeItem(kind: keyof typeof nav, path: string) {
   return items.find((i) =>
     i.href === root
       ? path === root
-      : path === i.href || path.startsWith(`${i.href}/`),
+      : path === i.href ||
+        path.startsWith(`${i.href}/`) ||
+        // Sprint sessions still live under /practice until §3.3 moves them.
+        (i.href === "/student/sprint" && path.startsWith("/practice/")),
   );
 }
 

@@ -5,7 +5,7 @@ import { addDays, type ActivityDay } from "@/lib/activity";
 import { ActivityHeatmap } from "@/components/activity-heatmap";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
-import { QuickStarts } from "@/components/practice-setup";
+import { QuickStarts } from "@/components/sprint-setup";
 import { SessionList } from "@/components/session-list";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
@@ -142,7 +142,7 @@ export default async function Dashboard() {
                 <li key={t.id}>
                   <Link
                     className="hover:border-brand flex h-full flex-col gap-1 rounded-xl border p-4 transition-colors"
-                    href={`/practice?topics=${t.id}`}
+                    href={`/student/sprint?topics=${t.id}`}
                   >
                     <span className="font-semibold">{t.name}</span>
                     <span className="text-muted-foreground text-[13px]">
@@ -188,7 +188,7 @@ export default async function Dashboard() {
                   <li key={t.id}>
                     <Link
                       className="flex items-center justify-between gap-3 py-3"
-                      href={`/practice?topics=${encodeURIComponent(t.id)}`}
+                      href={`/student/sprint?sub=${encodeURIComponent(t.id)}&history=prefer_new`}
                     >
                       <span>{t.name}</span>
                       <Badge variant={scoreTone(t.pct)}>

@@ -23,23 +23,37 @@ export async function cleanupSessions(ids: string[]) {
     if (error) throw new Error("Could not clean up E2E sessions.");
   }
 }
+const TYPES: Record<string, string> = {
+  "Multiple choice": "mcq",
+  "Short answer": "short",
+  "Extended response": "extended",
+  Mixed: "mixed",
+};
+/** Starts a sprint of one type on Inflation through the §3.2 setup page. */
 export async function start(page: Page, mode: string, ids: string[]) {
-  await page.goto("/practice");
-  await page.getByLabel(mode, { exact: false }).first().check();
-  await page.locator('input[name="topics"][value="t3-inflation"]').check();
-  await page.getByRole("button", { name: "Start sprint", exact: true }).click();
+  await page.goto(`/student/sprint?type=${TYPES[mode]}&sub=t3-inflation`);
+  await expect(page.getByText(/^\d+ questions match/)).toBeVisible();
+  await page.getByRole("button", { name: /^Start (sprint|with)/ }).click();
   await expect(page).toHaveURL(/\/practice\/[^/]+$/);
   const id = page.url().split("/").at(-1)!;
   ids.push(id);
   return id;
 }
+/** MC inputs are visually hidden inside radio cards, so wait, then force. */
+export async function pick(page: Page, letter: string) {
+  const radio = page.getByRole("radio", {
+    name: new RegExp(`^Option ${letter}:`),
+  });
+  await expect(radio).toBeEnabled();
+  await radio.check({ force: true });
+}
 export async function finish(page: Page) {
   await page
-    .getByRole("button", { name: "Submit sprint", exact: true })
+    .getByRole("button", { name: "Finish", exact: true })
     .last()
     .click();
   await page
-    .getByRole("button", { name: "Confirm submit", exact: true })
+    .getByRole("button", { name: "Finish and mark", exact: true })
     .click();
   await expect(page).toHaveURL(/\/results$/, { timeout: 90000 });
 }

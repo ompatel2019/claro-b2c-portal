@@ -661,7 +661,7 @@ export function AnnotatedFeedback({
         {row.topic_id && (
           <Link
             className={buttonVariants({ variant: "outline", size: "sm" })}
-            href={`/practice?topics=${encodeURIComponent(row.topic_id)}`}
+            href={`/student/sprint?type=${row.type}&sub=${encodeURIComponent(row.topic_id)}`}
           >
             Practise similar
           </Link>
