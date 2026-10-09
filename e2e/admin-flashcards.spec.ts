@@ -56,9 +56,8 @@ test.describe("Admin flashcards", () => {
     await openDialog(page, "Add card", "Add card");
     const dialog = page.getByRole("dialog");
     await expect(async () => {
-      await dialog
-        .getByLabel("Topic", { exact: true })
-        .selectOption("t3-inflation");
+      await dialog.getByLabel("Topic", { exact: true }).click();
+      await page.getByRole("option", { name: /Inflation/ }).click();
       await dialog
         .getByLabel("Front", { exact: true })
         .fill(`${tag} Inflation`);
@@ -68,8 +67,8 @@ test.describe("Admin flashcards", () => {
       await expect(dialog.getByLabel("Front", { exact: true })).toHaveValue(
         `${tag} Inflation`,
       );
-      await expect(dialog.getByLabel("Topic", { exact: true })).toHaveValue(
-        "t3-inflation",
+      await expect(dialog.getByLabel("Topic", { exact: true })).toContainText(
+        "Inflation",
       );
     }).toPass();
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
@@ -111,9 +110,8 @@ test.describe("Admin flashcards", () => {
       ).toBeVisible();
     }).toPass();
     await openDialog(page, "Move to topic", "Move to topic");
-    await dialog
-      .getByLabel("Subtopic", { exact: true })
-      .selectOption("t3-unemployment");
+    await dialog.getByLabel("Subtopic", { exact: true }).click();
+    await page.getByRole("option", { name: /Unemployment/ }).click();
     await dialog.getByRole("button", { name: "Move", exact: true }).click();
     await expect(dialog).toBeHidden();
     await expect(table).toContainText("Unemployment");
@@ -243,9 +241,8 @@ test.describe("Admin flashcards", () => {
     await openDialog(page, "Add card", "Add card");
     const dialog = page.getByRole("dialog");
     const front = `${tag} ${"W".repeat(160)}`;
-    await dialog
-      .getByLabel("Topic", { exact: true })
-      .selectOption("t3-inflation");
+    await dialog.getByRole("combobox", { name: "Topic", exact: true }).click();
+    await page.getByRole("option", { name: /Inflation/ }).click();
     await dialog.getByLabel("Front", { exact: true }).fill(front);
     await dialog
       .getByLabel("Back", { exact: true })
@@ -285,8 +282,8 @@ test.describe("Admin flashcards", () => {
       await expect
         .poll(() => dialog.evaluate((d) => d.scrollWidth <= d.clientWidth + 1))
         .toBe(true);
-      await expect(dialog.getByLabel("Topic", { exact: true })).toHaveValue(
-        "t3-inflation",
+      await expect(dialog.getByLabel("Topic", { exact: true })).toContainText(
+        "Inflation",
       );
       await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
       await expect(dialog).toBeHidden();

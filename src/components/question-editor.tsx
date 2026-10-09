@@ -39,6 +39,7 @@ import { QuestionKey, QuestionView } from "./question-view";
 import { Button, buttonVariants } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
+import { FormSelect } from "./ui/form-select";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Textarea } from "./ui/textarea";
@@ -101,6 +102,8 @@ export function QuestionEditor({
       : EMPTY,
   );
   const [savedAt, setSavedAt] = useState(loaded?.question.updated_at ?? null);
+  const [saveAttempted, setSaveAttempted] = useState(false);
+  const [criteriaTouched, setCriteriaTouched] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [idTouched, setIdTouched] = useState(!isNew);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -143,7 +146,11 @@ export function QuestionEditor({
     }));
     setDirty(true);
   };
-  const setCriteria = (criteria: Criterion[]) => set("criteria", criteria);
+  const setCriteria = (criteria: Criterion[]) => {
+    setCriteriaTouched(true);
+    set("criteria", criteria);
+  };
+  const showBands = saveAttempted || criteriaTouched;
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
@@ -230,6 +237,7 @@ export function QuestionEditor({
 
   function save() {
     if (pending || uploading) return;
+    setSaveAttempted(true);
     if (!navigator.onLine) {
       saveQueued.current = true;
       setSummary(["You're offline. We'll save when you're back."]);
@@ -384,34 +392,33 @@ export function QuestionEditor({
               />
             </Field>
             <Field label="Type" error={errors.type}>
-              <select
-                className="field h-9 bg-white py-0"
+              <FormSelect
                 value={form.type}
-                disabled={locked}
-                onChange={(e) =>
-                  setType(e.target.value as QuestionInput["type"])
+                disabled={locked || pending || uploading}
+                onValueChange={(value) =>
+                  setType(value as QuestionInput["type"])
                 }
-              >
-                {Object.entries(TYPE_LABELS).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  ...Object.entries(TYPE_LABELS).map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
+                ]}
+              />
             </Field>
             <Field label="Topic" error={errors.topic_id}>
-              <select
-                className="field h-9 bg-white py-0"
+              <FormSelect
                 value={form.topic_id}
-                onChange={(e) => set("topic_id", e.target.value)}
-              >
-                <option value="">Choose a subtopic</option>
-                {subtopics.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {name(t.parent_id)} · {t.name}
-                  </option>
-                ))}
-              </select>
+                disabled={pending || uploading}
+                onValueChange={(value) => set("topic_id", value)}
+                options={[
+                  { value: "", label: "Choose a subtopic" },
+                  ...subtopics.map((t) => ({
+                    value: t.id,
+                    label: `${name(t.parent_id)} · ${t.name}`,
+                  })),
+                ]}
+              />
             </Field>
             <Field
               label="Marks"
@@ -428,20 +435,17 @@ export function QuestionEditor({
               />
             </Field>
             <Field label="Directive verb" error={errors.verb}>
-              <select
-                className="field h-9 bg-white py-0"
+              <FormSelect
                 value={form.verb ?? ""}
-                onChange={(e) =>
-                  set("verb", (e.target.value || null) as QuestionInput["verb"])
+                disabled={pending || uploading}
+                onValueChange={(value) =>
+                  set("verb", (value || null) as QuestionInput["verb"])
                 }
-              >
-                <option value="">None</option>
-                {VERBS.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: "", label: "None" },
+                  ...VERBS.map((value) => ({ value, label: value })),
+                ]}
+              />
             </Field>
             <Field
               label="Source label"
@@ -600,9 +604,11 @@ export function QuestionEditor({
                       <Input
                         type="number"
                         aria-label={`Band ${i + 1} min`}
-                        aria-invalid={!!bands.rows[i]}
+                        aria-invalid={!!(showBands && bands.rows[i])}
                         aria-describedby={
-                          bands.rows[i] ? `band-${i}-error` : undefined
+                          showBands && bands.rows[i]
+                            ? `band-${i}-error`
+                            : undefined
                         }
                         className="w-20"
                         value={c.min}
@@ -620,9 +626,11 @@ export function QuestionEditor({
                       <Input
                         type="number"
                         aria-label={`Band ${i + 1} max`}
-                        aria-invalid={!!bands.rows[i]}
+                        aria-invalid={!!(showBands && bands.rows[i])}
                         aria-describedby={
-                          bands.rows[i] ? `band-${i}-error` : undefined
+                          showBands && bands.rows[i]
+                            ? `band-${i}-error`
+                            : undefined
                         }
                         className="w-20"
                         value={c.max}
@@ -638,9 +646,11 @@ export function QuestionEditor({
                       />
                       <Input
                         aria-label={`Band ${i + 1} descriptor`}
-                        aria-invalid={!!bands.rows[i]}
+                        aria-invalid={!!(showBands && bands.rows[i])}
                         aria-describedby={
-                          bands.rows[i] ? `band-${i}-error` : undefined
+                          showBands && bands.rows[i]
+                            ? `band-${i}-error`
+                            : undefined
                         }
                         className="w-full min-w-0 sm:w-auto sm:min-w-40 sm:flex-1"
                         value={c.descriptor}
@@ -694,7 +704,7 @@ export function QuestionEditor({
                         <Close />
                       </Button>
                     </div>
-                    {bands.rows[i] && (
+                    {showBands && bands.rows[i] && (
                       <p
                         id={`band-${i}-error`}
                         role="alert"
@@ -705,7 +715,7 @@ export function QuestionEditor({
                     )}
                   </div>
                 ))}
-                {bands.summary && (
+                {showBands && bands.summary && (
                   <p role="alert" className="text-destructive text-xs">
                     {bands.summary}
                   </p>
@@ -761,17 +771,18 @@ export function QuestionEditor({
               hint="Draft → Live → Retired. Publishing validates every rule."
               error={errors.status}
             >
-              <select
-                className="field h-9 bg-white py-0"
+              <FormSelect
                 value={form.status}
-                onChange={(e) =>
-                  set("status", e.target.value as QuestionInput["status"])
+                disabled={pending || uploading}
+                onValueChange={(value) =>
+                  set("status", value as QuestionInput["status"])
                 }
-              >
-                <option value="draft">Draft</option>
-                <option value="live">Live</option>
-                <option value="retired">Retired</option>
-              </select>
+                options={[
+                  { value: "draft", label: "Draft" },
+                  { value: "live", label: "Live" },
+                  { value: "retired", label: "Retired" },
+                ]}
+              />
             </Field>
             <Button type="submit" disabled={pending || uploading}>
               {pending ? "Saving…" : "Save"}
@@ -783,7 +794,8 @@ export function QuestionEditor({
               Back to questions
             </Link>
             <span className="text-muted-foreground text-xs">
-              {dirty ? "Unsaved changes" : "Saved"} · ⌘S
+              {dirty ? "Unsaved changes" : savedAt ? "Saved" : "Not saved yet"}{" "}
+              · ⌘S
             </span>
           </CardContent>
         </Card>
@@ -998,23 +1010,21 @@ function TestMark({ form, recent }: { form: QuestionInput; recent: string[] }) {
       {recent.length > 0 && (
         <label className="grid gap-1 text-sm">
           <span className="font-medium">Recent real answers (anonymised)</span>
-          <select
-            className="field h-9 bg-white py-0"
+          <FormSelect
             aria-label="Recent real answers (anonymised)"
             value=""
-            onChange={(e) =>
-              e.target.value &&
-              ((ownAnswer.current = false),
-              setAnswer(recent[Number(e.target.value)]))
+            onValueChange={(value) =>
+              value &&
+              ((ownAnswer.current = false), setAnswer(recent[Number(value)]))
             }
-          >
-            <option value="">Pick one…</option>
-            {recent.map((a, i) => (
-              <option key={i} value={i}>
-                {a.slice(0, 80)}…
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: "", label: "Pick one…" },
+              ...recent.map((answer, i) => ({
+                value: String(i),
+                label: `${answer.slice(0, 80)}…`,
+              })),
+            ]}
+          />
         </label>
       )}
       <Textarea

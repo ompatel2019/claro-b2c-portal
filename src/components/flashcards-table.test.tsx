@@ -108,18 +108,22 @@ it("provides an edit button and stable names for selects and counted fields", as
   expect(edit).toHaveFocus();
   fireEvent.click(edit);
   const dialog = await screen.findByRole("dialog");
-  expect(within(dialog).getByRole("combobox", { name: "Kind" })).toHaveValue(
-    "term",
-  );
-  expect(within(dialog).getByRole("combobox", { name: "Topic" })).toHaveValue(
-    "child",
-  );
+  expect(
+    within(dialog).getByRole("combobox", { name: "Kind" }),
+  ).toHaveTextContent("Term");
+  expect(
+    within(dialog).getByRole("combobox", { name: "Topic" }),
+  ).toHaveTextContent("Economics · Inflation");
   expect(within(dialog).getByRole("textbox", { name: "Front" })).toHaveValue(
     "GDP",
   );
-  fireEvent.change(within(dialog).getByRole("combobox", { name: "Status" }), {
-    target: { value: "retired" },
-  });
+  fireEvent.click(within(dialog).getByRole("combobox", { name: "Status" }));
+  {
+    const option = await screen.findByRole("option", { name: "Retired" });
+    fireEvent.mouseMove(option);
+    fireEvent.mouseUp(option);
+    fireEvent.click(option);
+  }
   fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
   await screen.findByRole("alertdialog");
   expect(mocks.save).not.toHaveBeenCalled();

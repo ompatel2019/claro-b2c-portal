@@ -72,6 +72,7 @@ export default async function FlashcardsPage({
         ]}
       />
       <FilterBar
+        customSelect
         values={f}
         hidden={{ status: list.status }}
         filters={[

@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "./ui/alert-dialog";
 import { Button } from "./ui/button";
+import { FormSelect } from "./ui/form-select";
 import {
   Dialog,
   DialogContent,
@@ -260,27 +261,24 @@ export function QuestionsTable({
               </DialogDescription>
               <label className="grid gap-1 text-sm font-medium">
                 {dialog.kind === "topic" ? "Subtopic" : "Verb"}
-                <select
+                <FormSelect
                   aria-label={dialog.kind === "topic" ? "Subtopic" : "Verb"}
-                  className="field h-9 bg-white py-0"
                   value={choice}
-                  onChange={(e) => setChoice(e.target.value)}
-                >
-                  <option value="">
-                    {dialog.kind === "topic" ? "Choose a subtopic" : "None"}
-                  </option>
-                  {dialog.kind === "topic"
-                    ? subtopics.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {name(t.parent_id!)} · {t.name}
-                        </option>
-                      ))
-                    : VERBS.map((v) => (
-                        <option key={v} value={v}>
-                          {v}
-                        </option>
-                      ))}
-                </select>
+                  onValueChange={(value) => setChoice(value)}
+                  options={[
+                    {
+                      value: "",
+                      label:
+                        dialog.kind === "topic" ? "Choose a subtopic" : "None",
+                    },
+                    ...(dialog.kind === "topic"
+                      ? subtopics.map((t) => ({
+                          value: t.id,
+                          label: `${name(t.parent_id!)} · ${t.name}`,
+                        }))
+                      : VERBS.map((value) => ({ value, label: value }))),
+                  ]}
+                />
               </label>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setDialog(null)}>

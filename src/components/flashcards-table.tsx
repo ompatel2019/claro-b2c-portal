@@ -34,6 +34,7 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Input } from "./ui/input";
+import { FormSelect } from "./ui/form-select";
 import { Textarea } from "./ui/textarea";
 
 const KIND = { term: "Term", stat: "Stat" } as const;
@@ -166,52 +167,51 @@ function CardDialog({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1 text-sm font-medium">
               Kind
-              <select
+              <FormSelect
                 aria-label="Kind"
-                className="field h-9 min-w-0 bg-white py-0"
                 value={form.kind}
-                onChange={(e) =>
-                  set("kind", e.target.value as CardInput["kind"])
+                onValueChange={(value) =>
+                  set("kind", value as CardInput["kind"])
                 }
-              >
-                <option value="term">Term</option>
-                <option value="stat">Stat</option>
-              </select>
+                options={[
+                  { value: "term", label: "Term" },
+                  { value: "stat", label: "Stat" },
+                ]}
+              />
             </label>
             <label className="grid gap-1 text-sm font-medium">
               Status
-              <select
+              <FormSelect
                 aria-label="Status"
-                className="field h-9 min-w-0 bg-white py-0"
                 value={form.status}
-                onChange={(e) =>
-                  set("status", e.target.value as CardInput["status"])
+                onValueChange={(value) =>
+                  set("status", value as CardInput["status"])
                 }
-              >
-                <option value="draft">Draft</option>
-                <option value="live">Live</option>
-                <option value="retired">Retired</option>
-              </select>
+                options={[
+                  { value: "draft", label: "Draft" },
+                  { value: "live", label: "Live" },
+                  { value: "retired", label: "Retired" },
+                ]}
+              />
             </label>
           </div>
           <label className="grid gap-1 text-sm font-medium">
             Topic
-            <select
+            <FormSelect
               aria-label="Topic"
               required
-              className="field h-9 min-w-0 truncate bg-white py-0 pr-8"
               value={form.topic_id}
-              onChange={(e) => set("topic_id", e.target.value)}
-            >
-              <option value="">Choose a subtopic</option>
-              {topics
-                .filter((t) => t.parent_id)
-                .map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {name(t.parent_id)} · {t.name}
-                  </option>
-                ))}
-            </select>
+              onValueChange={(value) => set("topic_id", value)}
+              options={[
+                { value: "", label: "Choose a subtopic" },
+                ...topics
+                  .filter((t) => t.parent_id)
+                  .map((t) => ({
+                    value: t.id,
+                    label: `${name(t.parent_id)} · ${t.name}`,
+                  })),
+              ]}
+            />
           </label>
           <label className="grid gap-1 text-sm font-medium">
             Front
@@ -500,21 +500,20 @@ export function FlashcardsTable({
           </DialogDescription>
           <label className="grid gap-1 text-sm font-medium">
             Subtopic
-            <select
+            <FormSelect
               aria-label="Subtopic"
-              className="field h-9 min-w-0 bg-white py-0"
               value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-            >
-              <option value="">Choose a subtopic</option>
-              {topics
-                .filter((t) => t.parent_id)
-                .map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {name(t.parent_id)} · {t.name}
-                  </option>
-                ))}
-            </select>
+              onValueChange={(value) => setTopic(value)}
+              options={[
+                { value: "", label: "Choose a subtopic" },
+                ...topics
+                  .filter((t) => t.parent_id)
+                  .map((t) => ({
+                    value: t.id,
+                    label: `${name(t.parent_id)} · ${t.name}`,
+                  })),
+              ]}
+            />
           </label>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setMove(null)}>

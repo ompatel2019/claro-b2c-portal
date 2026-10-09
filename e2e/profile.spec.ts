@@ -131,7 +131,7 @@ test.describe("Student profile (read only)", () => {
       ]) {
         const table = page.getByRole("table", { name: label, exact: true });
         await expect(
-          table.or(page.getByText(empty, { exact: true })),
+          table.or(page.getByText(empty, { exact: true })).first(),
         ).toBeVisible();
         if (!(await table.count())) continue;
         const card = table.locator('xpath=ancestor::*[@data-slot="card"]');

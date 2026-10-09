@@ -58,6 +58,7 @@ export default async function QuestionsPage({
   const parents = topics.filter((t) => !t.parent_id);
   const filterBar = (
     <FilterBar
+      customSelect
       values={f}
       hidden={{
         status,

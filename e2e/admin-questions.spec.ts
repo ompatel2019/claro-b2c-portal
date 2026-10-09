@@ -76,6 +76,8 @@ test.describe("Admin questions", () => {
     ).toBeVisible({
       timeout: 60000,
     });
+    await expect(page.getByText("Not saved yet · ⌘S")).toBeVisible();
+    await expect(page.getByText("Add at least one band.")).toHaveCount(0);
     // Saving an empty form lists what is missing; nothing is written.
     await expect(async () => {
       await page.getByRole("button", { name: "Save", exact: true }).click();
@@ -93,12 +95,11 @@ test.describe("Admin questions", () => {
     }).toPass();
     await page.getByLabel("ID", { exact: true }).fill(id);
     await expect(async () => {
-      await page
-        .getByRole("combobox", { name: "Topic", exact: true })
-        .selectOption("t3-inflation");
+      await page.getByRole("combobox", { name: "Topic", exact: true }).click();
+      await page.getByRole("option", { name: /Inflation/ }).click();
       await expect(
         page.getByRole("combobox", { name: "Topic", exact: true }),
-      ).toHaveValue("t3-inflation");
+      ).toContainText("Inflation");
     }).toPass();
     await page
       .getByLabel("Stem")
@@ -121,10 +122,15 @@ test.describe("Admin questions", () => {
     );
     const { data } = await adminClient()!
       .from("questions")
-      .select("status,origin,criteria,marks")
+      .select("status,origin,criteria,marks,topic_id")
       .eq("id", id)
       .single();
-    expect(data).toMatchObject({ status: "draft", origin: "claro", marks: 2 });
+    expect(data).toMatchObject({
+      status: "draft",
+      origin: "claro",
+      marks: 2,
+      topic_id: "t3-inflation",
+    });
     // The preview shows the stem and the criteria table.
     await expect(
       page.getByText(`${tag} Explain one cause of inflation.`).first(),
@@ -177,12 +183,13 @@ test.describe("Admin questions", () => {
       await page
         .getByRole("dialog")
         .getByRole("combobox", { name: "Verb", exact: true })
-        .selectOption("Explain");
+        .click();
+      await page.getByRole("option", { name: "Explain", exact: true }).click();
       await expect(
         page
           .getByRole("dialog")
           .getByRole("combobox", { name: "Verb", exact: true }),
-      ).toHaveValue("Explain");
+      ).toContainText("Explain");
     }).toPass();
     await page
       .getByRole("dialog")
@@ -236,6 +243,26 @@ test("question pages fit narrow screens and Test mark stays read-only", async ({
         () => document.documentElement.scrollWidth <= window.innerWidth,
       ),
     ).toBe(true);
+    const topic = page.getByRole("combobox", { name: "Topic", exact: true });
+    await topic.click();
+    const longOption = page.getByRole("option", {
+      name: /Case study: globalisation/,
+    });
+    await expect(longOption).toBeVisible();
+    expect(
+      await longOption.evaluate(
+        (option) => option.scrollWidth <= option.clientWidth,
+      ),
+    ).toBe(true);
+    const popup = page.getByRole("listbox");
+    expect(
+      await popup.evaluate((list) => {
+        const bounds = list.getBoundingClientRect();
+        return bounds.left >= 0 && bounds.right <= window.innerWidth;
+      }),
+    ).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(topic).toBeFocused();
   }
   await expect(async () => {
     await page

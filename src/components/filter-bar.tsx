@@ -1,5 +1,7 @@
 "use client";
 import Form from "next/form";
+import { useEffect, useRef, useState } from "react";
+import { FormSelect } from "./ui/form-select";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -29,7 +31,9 @@ export function FilterBar({
   hidden,
   activeCount,
   clearHref,
+  customSelect = false,
 }: {
+  customSelect?: boolean;
   hidden?: Record<string, string | undefined>;
   /** Count external chips as well as the controls in this form. */
   activeCount?: number;
@@ -71,28 +75,33 @@ export function FilterBar({
               {f.label}
             </span>
           ) : "options" in f ? (
-            <select
-              // The wrapping label's name would also include the selected option.
-              aria-label={f.label}
-              className="field h-9 w-full max-w-64 bg-white py-0"
-              name={f.name}
-              defaultValue={values[f.name] ?? ""}
-              onChange={(e) => {
-                const form = e.currentTarget.form;
-                for (const name of f.clearOnChange ?? []) {
-                  const input = form?.elements.namedItem(name);
-                  if (input instanceof HTMLInputElement) input.disabled = true;
-                }
-                form?.requestSubmit();
-              }}
-            >
-              <option value="">{f.all}</option>
-              {f.options.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            customSelect ? (
+              <SelectFilter filter={f} initialValue={values[f.name] ?? ""} />
+            ) : (
+              <select
+                // The wrapping label's name would also include the selected option.
+                aria-label={f.label}
+                className="field h-9 w-full max-w-64 bg-white py-0"
+                name={f.name}
+                defaultValue={values[f.name] ?? ""}
+                onChange={(e) => {
+                  const form = e.currentTarget.form;
+                  for (const name of f.clearOnChange ?? []) {
+                    const input = form?.elements.namedItem(name);
+                    if (input instanceof HTMLInputElement)
+                      input.disabled = true;
+                  }
+                  form?.requestSubmit();
+                }}
+              >
+                <option value="">{f.all}</option>
+                {f.options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            )
           ) : (
             <Input
               className="w-48 max-w-full"
@@ -120,5 +129,38 @@ export function FilterBar({
         </Link>
       )}
     </Form>
+  );
+}
+
+function SelectFilter({
+  filter,
+  initialValue,
+}: {
+  filter: Extract<Filter, { options: unknown }>;
+  initialValue: string;
+}) {
+  const [value, setValue] = useState(initialValue);
+  const previous = useRef(initialValue);
+  const container = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (previous.current === value) return;
+    previous.current = value;
+    const form = container.current?.closest("form");
+    for (const name of filter.clearOnChange ?? []) {
+      const input = form?.elements.namedItem(name);
+      if (input instanceof HTMLInputElement) input.disabled = true;
+    }
+    form?.requestSubmit();
+  }, [value, filter.clearOnChange]);
+  return (
+    <div ref={container} className="w-full max-w-64">
+      <FormSelect
+        aria-label={filter.label}
+        name={filter.name}
+        value={value}
+        onValueChange={setValue}
+        options={[{ value: "", label: filter.all }, ...filter.options]}
+      />
+    </div>
   );
 }
