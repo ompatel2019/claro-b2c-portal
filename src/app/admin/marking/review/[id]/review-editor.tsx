@@ -221,7 +221,7 @@ export function ReviewEditor({
     <form
       ref={form}
       action={action}
-      className="space-y-4"
+      className={`space-y-4 ${readonly ? "" : "pb-[calc(12rem+env(safe-area-inset-bottom))] lg:pb-0"}`}
       onBlurCapture={() => {
         changeField.current = null;
       }}
@@ -256,6 +256,7 @@ export function ReviewEditor({
           <AnnotatedFeedback
             row={editedRow}
             photos={photos}
+            showReferences={false}
             edit={
               readonly
                 ? undefined
@@ -283,144 +284,186 @@ export function ReviewEditor({
             </Button>
           )}
         </div>
-        <div className="panel min-w-0 space-y-4">
-          <fieldset disabled={readonly || pending} className="space-y-3">
-            <legend className="mb-2 font-semibold">Mark</legend>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                aria-label="Decrease mark (↓)"
-                disabled={mark <= 0}
-                onClick={() => adjust(mark - 1)}
-              >
-                − (↓)
-              </Button>
-              <Input
-                aria-label="Final mark"
-                name="mark"
-                type="number"
-                min={0}
-                max={max}
-                step={1}
-                required
-                value={mark}
-                className="w-20 text-center"
-                onChange={(e) => adjust(Number(e.target.value))}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                aria-label="Increase mark (↑)"
-                disabled={mark >= max}
-                onClick={() => adjust(mark + 1)}
-              >
-                + (↑)
-              </Button>
-              <span>/ {max}</span>
-            </div>
-            <p className="text-sm" title={criterion?.descriptor}>
-              {band?.label ?? "No band satisfied"}
-              {criterion && (
-                <span className="sr-only">: {criterion.descriptor}</span>
-              )}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {review.ai_mark != null && (
+        <div className="panel min-w-0 lg:sticky lg:top-16 lg:flex lg:max-h-[calc(100dvh-5rem)] lg:flex-col lg:gap-4">
+          <div className="space-y-4 lg:min-h-0 lg:overflow-y-auto">
+            <fieldset disabled={readonly || pending} className="space-y-3">
+              <legend className="mb-2 font-semibold">Mark</legend>
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
-                  onClick={() => adjust(Number(review.ai_mark))}
+                  aria-label="Decrease mark (↓)"
+                  disabled={mark <= 0}
+                  onClick={() => adjust(mark - 1)}
                 >
-                  Use AI mark ({review.ai_mark}) · A
+                  − (↓)
                 </Button>
-              )}
-              {review.check_mark != null && (
+                <Input
+                  aria-label="Final mark"
+                  name="mark"
+                  type="number"
+                  min={0}
+                  max={max}
+                  step={1}
+                  required
+                  value={mark}
+                  className="w-20 text-center"
+                  onChange={(e) => adjust(Number(e.target.value))}
+                />
                 <Button
                   type="button"
                   variant="outline"
-                  size="sm"
-                  onClick={() => adjust(Number(review.check_mark))}
+                  aria-label="Increase mark (↑)"
+                  disabled={mark >= max}
+                  onClick={() => adjust(mark + 1)}
                 >
-                  Use check mark ({review.check_mark}) · C
+                  + (↑)
                 </Button>
-              )}
-            </div>
-          </fieldset>
-          <section className="space-y-2">
-            <h2 className="text-base font-semibold">Why the models differ</h2>
-            <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              <div>
-                <h3 className="font-medium">AI</h3>
-                <p className="whitespace-pre-wrap">
-                  {typeof row.feedback?.justification === "string"
-                    ? row.feedback.justification
-                    : "No justification recorded."}
-                </p>
-                {typeof row.feedback?.why_not_higher === "string" && (
-                  <p className="mt-2 whitespace-pre-wrap">
-                    {row.feedback.why_not_higher}
-                  </p>
+                <span>/ {max}</span>
+              </div>
+              <p className="text-sm" title={criterion?.descriptor}>
+                {band?.label ?? "No band satisfied"}
+                {criterion && (
+                  <span className="sr-only">: {criterion.descriptor}</span>
+                )}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {review.ai_mark != null && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => adjust(Number(review.ai_mark))}
+                  >
+                    Use AI mark ({review.ai_mark}) · A
+                  </Button>
+                )}
+                {review.check_mark != null && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => adjust(Number(review.check_mark))}
+                  >
+                    Use check mark ({review.check_mark}) · C
+                  </Button>
                 )}
               </div>
-              <div>
-                <h3 className="font-medium">Checker</h3>
-                <p className="whitespace-pre-wrap">
-                  {review.check_notes || "No checker notes recorded."}
+            </fieldset>
+            <section className="space-y-2">
+              <h2 className="text-base font-semibold">Why the models differ</h2>
+              <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                <div>
+                  <h3 className="font-medium">AI</h3>
+                  <p className="whitespace-pre-wrap">
+                    {typeof row.feedback?.justification === "string"
+                      ? row.feedback.justification
+                      : "No justification recorded."}
+                  </p>
+                  {typeof row.feedback?.why_not_higher === "string" && (
+                    <p className="mt-2 whitespace-pre-wrap">
+                      {row.feedback.why_not_higher}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-medium">Checker</h3>
+                  <p className="whitespace-pre-wrap">
+                    {review.check_notes || "No checker notes recorded."}
+                  </p>
+                </div>
+              </div>
+            </section>
+            {review.student_note && (
+              <section className="text-sm">
+                <h2 className="text-base font-semibold">Student note</h2>
+                <p className="whitespace-pre-wrap">{review.student_note}</p>
+              </section>
+            )}
+            <details className="text-sm">
+              <summary className="cursor-pointer font-semibold">
+                Marking guidelines
+              </summary>
+              {row.criteria?.map((c) => (
+                <p
+                  key={c.descriptor}
+                  className={`mt-2 ${c === criterion ? "bg-accent rounded p-2" : ""}`}
+                >
+                  <strong>
+                    {c.min}–{c.max}:
+                  </strong>{" "}
+                  {c.descriptor}
                 </p>
+              ))}
+              {guidelineNotes && (
+                <p className="mt-2 whitespace-pre-wrap">{guidelineNotes}</p>
+              )}
+              {!row.criteria?.length && !guidelineNotes && (
+                <p>No guidelines recorded.</p>
+              )}
+            </details>
+            <details className="text-sm">
+              <summary className="cursor-pointer font-semibold">
+                Sample answer
+              </summary>
+              <p className="mt-2 whitespace-pre-wrap">
+                {row.sample_answer || "No sample answer recorded."}
+              </p>
+            </details>
+            <label className="grid gap-2 text-sm font-medium">
+              Admin note
+              <Textarea
+                name="admin_note"
+                maxLength={1000}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                disabled={readonly || pending}
+              />
+              <span className="text-muted-foreground text-xs">
+                {note.length}/1000 · Internal only
+              </span>
+            </label>
+          </div>
+          {!readonly && (
+            <div className="fixed inset-x-0 bottom-0 z-20 space-y-2 border-t bg-white px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:static lg:shrink-0 lg:px-0 lg:pt-4 lg:pb-0">
+              <input
+                type="hidden"
+                name="comments"
+                value={JSON.stringify(comments)}
+              />
+              <input type="hidden" name="next_mark_line" value={nextMark} />
+              <p className="text-sm">
+                {[
+                  `Mark ${initial} → ${mark}`,
+                  ...(edited
+                    ? [
+                        `${edited} ${edited === 1 ? "comment" : "comments"} edited`,
+                      ]
+                    : []),
+                  ...(deleted ? [`${deleted} deleted`] : []),
+                  ...(added ? [`${added} added`] : []),
+                ].join(" · ")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  ref={resolve}
+                  type="submit"
+                  disabled={pending || guidelinesUnavailable}
+                >
+                  {pending ? "Resolving…" : "Resolve (⌘/Ctrl+Enter)"}
+                </Button>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  name="unchanged"
+                  value="yes"
+                  disabled={pending || guidelinesUnavailable}
+                >
+                  Resolve unchanged
+                </Button>
               </div>
             </div>
-          </section>
-          {review.student_note && (
-            <section className="text-sm">
-              <h2 className="text-base font-semibold">Student note</h2>
-              <p className="whitespace-pre-wrap">{review.student_note}</p>
-            </section>
           )}
-          <details className="text-sm">
-            <summary className="cursor-pointer font-semibold">
-              Marking guidelines
-            </summary>
-            {row.criteria?.map((c) => (
-              <p
-                key={c.descriptor}
-                className={`mt-2 ${c === criterion ? "bg-accent rounded p-2" : ""}`}
-              >
-                <strong>
-                  {c.min}–{c.max}:
-                </strong>{" "}
-                {c.descriptor}
-              </p>
-            ))}
-            {guidelineNotes && (
-              <p className="mt-2 whitespace-pre-wrap">{guidelineNotes}</p>
-            )}
-            {!row.criteria?.length && !guidelineNotes && (
-              <p>No guidelines recorded.</p>
-            )}
-          </details>
-          <details className="text-sm">
-            <summary className="cursor-pointer font-semibold">
-              Sample answer
-            </summary>
-            <p className="mt-2 whitespace-pre-wrap">
-              {row.sample_answer || "No sample answer recorded."}
-            </p>
-          </details>
-          <label className="grid gap-2 text-sm font-medium">
-            Admin note
-            <Textarea
-              name="admin_note"
-              maxLength={1000}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              disabled={readonly || pending}
-            />
-            <span className="text-muted-foreground text-xs">
-              {note.length}/1000 · Internal only
-            </span>
-          </label>
         </div>
       </div>
       {message && (
@@ -437,47 +480,11 @@ export function ReviewEditor({
         </p>
       )}
       {!readonly && (
-        <div className="space-y-2 border-t pt-4">
-          <input
-            type="hidden"
-            name="comments"
-            value={JSON.stringify(comments)}
-          />
-          <input type="hidden" name="next_mark_line" value={nextMark} />
-          <p className="text-sm">
-            {[
-              `Mark ${initial} → ${mark}`,
-              ...(edited
-                ? [`${edited} ${edited === 1 ? "comment" : "comments"} edited`]
-                : []),
-              ...(deleted ? [`${deleted} deleted`] : []),
-              ...(added ? [`${added} added`] : []),
-            ].join(" · ")}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              ref={resolve}
-              type="submit"
-              disabled={pending || guidelinesUnavailable}
-            >
-              {pending ? "Resolving…" : "Resolve (⌘/Ctrl+Enter)"}
-            </Button>
-            <Button
-              type="submit"
-              variant="outline"
-              name="unchanged"
-              value="yes"
-              disabled={pending || guidelinesUnavailable}
-            >
-              Resolve unchanged
-            </Button>
-          </div>
-          <p className="text-muted-foreground text-xs">
-            A / C use model marks · ↑ / ↓ adjust mark · P / N navigate ·
-            ⌘/Ctrl+Enter resolve · ⌘/Ctrl+Z undo comment change · Esc clears
-            selection
-          </p>
-        </div>
+        <p className="text-muted-foreground text-xs">
+          A / C use model marks · ↑ / ↓ adjust mark · P / N navigate ·
+          ⌘/Ctrl+Enter resolve · ⌘/Ctrl+Z undo comment change · Esc clears
+          selection
+        </p>
       )}
     </form>
   );

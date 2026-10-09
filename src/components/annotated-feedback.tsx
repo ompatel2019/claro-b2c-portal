@@ -329,11 +329,13 @@ export function AnnotatedFeedback({
   photos = [],
   actions,
   edit,
+  showReferences = true,
 }: {
   row: ReviewRow;
   photos?: string[];
   actions?: React.ReactNode;
   edit?: FeedbackEdit;
+  showReferences?: boolean;
 }) {
   const nextCommentId = useRef(
     Math.min(0, ...(edit?.comments.map((c) => c.id) ?? [])) - 1,
@@ -902,7 +904,7 @@ export function AnnotatedFeedback({
 
       {showMark && (
         <div className="space-y-2">
-          {!!row.criteria?.length && (
+          {showReferences && !!row.criteria?.length && (
             <Remembered name="guidelines" title="Marking guidelines">
               <table className="w-full text-left">
                 <thead className="text-muted-foreground text-xs uppercase">
@@ -937,7 +939,7 @@ export function AnnotatedFeedback({
               </table>
             </Remembered>
           )}
-          {row.sample_answer && (
+          {showReferences && row.sample_answer && (
             <Remembered name="model" title="Model answer">
               <p className="whitespace-pre-wrap">{row.sample_answer}</p>
               <p className="text-muted-foreground mt-2 text-[13px]">
