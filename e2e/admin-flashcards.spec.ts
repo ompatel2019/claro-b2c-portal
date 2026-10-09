@@ -44,6 +44,7 @@ test.describe("Admin flashcards", () => {
   test("adds, edits, sorts, moves, retires, undoes and fits mobile widths", async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1536, height: 800 });
     await signInAdmin(page);
     await page.goto("/admin/content/flashcards?status=draft");
     await expect(
@@ -228,6 +229,68 @@ test.describe("Admin flashcards", () => {
         return count;
       })
       .toBe(1);
+  });
+
+  test("the flashcards list and editor fit mobile and sidebar widths with long text", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await signInAdmin(page);
+    await page
+      .context()
+      .addCookies([{ name: "sidebar_state", value: "true", url: page.url() }]);
+    await page.goto("/admin/content/flashcards?status=draft");
+    await openDialog(page, "Add card", "Add card");
+    const dialog = page.getByRole("dialog");
+    const front = `${tag} ${"W".repeat(160)}`;
+    await dialog
+      .getByLabel("Topic", { exact: true })
+      .selectOption("t3-inflation");
+    await dialog.getByLabel("Front", { exact: true }).fill(front);
+    await dialog
+      .getByLabel("Back", { exact: true })
+      .fill(`A sustained rise in prices. ${"W".repeat(300)}`);
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await page.goto(
+      `/admin/content/flashcards?status=draft&q=${encodeURIComponent(front)}`,
+    );
+    const table = page.getByRole("table", { name: "Flashcards", exact: true });
+    await expect(table.getByRole("row")).toHaveCount(2, { timeout: 60000 });
+    for (const width of [1280, 360, 400]) {
+      await page.setViewportSize({ width, height: 800 });
+      await expect
+        .poll(() =>
+          table.evaluate(
+            (t) =>
+              t.parentElement!.scrollWidth <= t.parentElement!.clientWidth + 1,
+          ),
+        )
+        .toBe(true);
+      if (width === 1280) {
+        for (const name of ["Front", "Back"]) {
+          await expect
+            .poll(() =>
+              table
+                .getByRole("columnheader", { name, exact: true })
+                .evaluate((cell) => cell.getBoundingClientRect().width),
+            )
+            .toBeGreaterThanOrEqual(160);
+        }
+      }
+      await table
+        .getByRole("button", { name: `Edit ${front}`, exact: true })
+        .click();
+      await expect(dialog).toBeVisible();
+      await expect
+        .poll(() => dialog.evaluate((d) => d.scrollWidth <= d.clientWidth + 1))
+        .toBe(true);
+      await expect(dialog.getByLabel("Topic", { exact: true })).toHaveValue(
+        "t3-inflation",
+      );
+      await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+      await expect(dialog).toBeHidden();
+    }
   });
 });
 

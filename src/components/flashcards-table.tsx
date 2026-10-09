@@ -199,7 +199,7 @@ function CardDialog({
             <select
               aria-label="Topic"
               required
-              className="field h-9 min-w-0 bg-white py-0"
+              className="field h-9 min-w-0 truncate bg-white py-0 pr-8"
               value={form.topic_id}
               onChange={(e) => set("topic_id", e.target.value)}
             >
@@ -339,12 +339,13 @@ export function FlashcardsTable({
   const columns: Column<FlashcardRow>[] = [
     {
       id: "front",
+      className: "whitespace-normal sm:min-w-40",
       header: "Front",
       sort: true,
       cell: (c) => (
         <button
           type="button"
-          className="line-clamp-2 max-w-32 text-left [overflow-wrap:anywhere] whitespace-normal sm:max-w-xs"
+          className="line-clamp-2 max-w-32 text-left break-normal [overflow-wrap:anywhere] whitespace-normal sm:max-w-xs"
           onClick={() => edit(c)}
           aria-label={`Edit ${c.front}`}
         >
@@ -354,25 +355,25 @@ export function FlashcardsTable({
     },
     {
       id: "back",
-      className: "hidden sm:table-cell",
+      className: "hidden min-w-40 whitespace-normal sm:table-cell",
       header: "Back",
       sort: true,
       cell: (c) => (
-        <span className="line-clamp-2 max-w-sm break-words whitespace-normal">
+        <span className="line-clamp-2 max-w-sm break-normal [overflow-wrap:anywhere] whitespace-normal">
           {c.back}
         </span>
       ),
     },
     {
       id: "kind",
-      className: "hidden sm:table-cell",
+      className: "hidden xl:table-cell",
       header: "Kind",
       sort: true,
       cell: (c) => KIND[c.kind],
     },
     {
       id: "topic",
-      className: "hidden sm:table-cell",
+      className: "hidden max-w-48 whitespace-normal sm:table-cell",
       header: "Topic",
       sort: true,
       cell: (c) => name(c.topic_id),
@@ -385,35 +386,35 @@ export function FlashcardsTable({
     },
     {
       id: "origin",
-      className: "hidden sm:table-cell",
+      className: "hidden xl:table-cell",
       header: "Origin",
       sort: true,
       cell: (c) => ORIGIN[c.origin as keyof typeof ORIGIN] ?? c.origin,
     },
     {
       id: "reviews",
-      className: "hidden sm:table-cell",
+      className: "hidden 2xl:table-cell",
       header: "Reviews",
       sort: true,
       cell: (c) => c.reviews,
     },
     {
       id: "knew",
-      className: "hidden sm:table-cell",
+      className: "hidden 2xl:table-cell",
       header: "% knew first try",
       sort: true,
       cell: (c) => (c.knew_first == null ? "No reviews" : `${c.knew_first}%`),
     },
     {
       id: "avg",
-      className: "hidden sm:table-cell",
+      className: "hidden 2xl:table-cell",
       header: "Avg rating",
       sort: true,
       cell: (c) => (c.avg == null ? "No reviews" : `${c.avg}%`),
     },
     {
       id: "updated",
-      className: "hidden sm:table-cell",
+      className: "hidden 2xl:table-cell",
       header: "Updated",
       sort: true,
       cell: (c) => dateLabel(c.updated_at, true),
