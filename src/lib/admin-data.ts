@@ -3,6 +3,7 @@ import { cache } from "react";
 import { admin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { sydneyDay } from "@/lib/admin";
 import {
   computeSpend,
   rangeWindow,
