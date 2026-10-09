@@ -55,6 +55,17 @@ test.describe("Mock papers", () => {
             (element) => getComputedStyle(element).overflowX,
           ),
         ).toBe("auto");
+        // Below sm the details sit under the title, so nothing scrolls sideways
+        // and the Start/Continue button stays on screen.
+        expect(
+          await container.evaluate((el) => el.scrollWidth <= el.clientWidth),
+        ).toBe(true);
+        const action = table
+          .getByRole("link", {
+            name: /^(Start|Continue|View results|Sit again)/,
+          })
+          .first();
+        await expect(action).toBeInViewport({ ratio: 1 });
       }
     }
     await page.getByRole("combobox", { name: /^Source/ }).selectOption("hsc");

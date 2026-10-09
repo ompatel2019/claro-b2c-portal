@@ -119,28 +119,63 @@ export default async function Papers({
             <TableHeader>
               <TableRow>
                 <TableHead scope="col">Paper</TableHead>
-                <TableHead scope="col">Year</TableHead>
-                <TableHead scope="col">Time</TableHead>
-                <TableHead scope="col">Marks</TableHead>
-                <TableHead scope="col">Status</TableHead>
-                <TableHead scope="col">Action</TableHead>
+                <TableHead scope="col" className="max-sm:hidden">
+                  Year
+                </TableHead>
+                <TableHead scope="col" className="max-sm:hidden">
+                  Time
+                </TableHead>
+                <TableHead scope="col" className="max-sm:hidden">
+                  Marks
+                </TableHead>
+                <TableHead scope="col" className="max-sm:hidden">
+                  Status
+                </TableHead>
+                <TableHead scope="col" className="max-sm:px-2">
+                  Action
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((paper) => (
                 <TableRow key={paper.id} className="h-14">
-                  <TableCell>
+                  <TableCell className="max-sm:px-3 max-sm:whitespace-normal">
                     <Link
                       href={paper.actions[0].href}
-                      className="font-semibold hover:underline"
+                      className="font-semibold [overflow-wrap:anywhere] hover:underline"
                     >
                       {paper.title}
                     </Link>
+                    {/* Below sm the hidden columns reappear as a details line. */}
+                    <div className="text-muted-foreground mt-1 space-y-1 text-xs sm:hidden">
+                      <p>
+                        {paper.year ?? "Year not listed"} ·{" "}
+                        {paper.time_limit_min} min · {paper.total_marks} marks
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {paper.status === "in-progress" && (
+                          <StatusPill pill="In progress" />
+                        )}
+                        <span>{paper.statusLabel}</span>
+                        {paper.scorePercentage !== null && (
+                          <Badge variant={scoreTone(paper.scorePercentage)}>
+                            {Math.round(paper.scorePercentage)}%
+                          </Badge>
+                        )}
+                      </div>
+                      {paper.best && <p>{paper.best}</p>}
+                    </div>
                   </TableCell>
-                  <TableCell>{paper.year ?? "Year not listed"}</TableCell>
-                  <TableCell>{paper.time_limit_min} min</TableCell>
-                  <TableCell>{paper.total_marks}</TableCell>
-                  <TableCell className="tabular-nums">
+                  <TableCell className="max-sm:hidden">
+                    {paper.year ?? "Year not listed"}
+                  </TableCell>
+                  <TableCell className="max-sm:hidden">
+                    {paper.time_limit_min} min
+                  </TableCell>
+                  <TableCell className="max-sm:hidden">
+                    {paper.total_marks}
+                  </TableCell>
+                  <TableCell className="tabular-nums max-sm:hidden">
                     <div className="flex items-center gap-2">
                       {paper.status === "in-progress" && (
                         <StatusPill pill="In progress" />
@@ -158,8 +193,8 @@ export default async function Papers({
                       </p>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
+                  <TableCell className="max-sm:px-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       {paper.actions.map((action, index) => (
                         <Link
                           key={action.label}
