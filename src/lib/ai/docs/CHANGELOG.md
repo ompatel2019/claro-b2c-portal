@@ -1,5 +1,7 @@
 # Engine changelog
 
+10 Oct 2026: Eval storage JSON reads use a fresh cache nonce to bypass stale CDN copies of runs, leases and cancel markers; the run version guard is unchanged.
+
 Eval = A1 set, 18 headline items (fm-1 and ei-4 excluded). Signed error: + = lenient. Marker anthropic/claude-sonnet-5.5 (OpenRouter); earlier runs used gpt-6.1-sol (Fast). Judge gpt-6-astra/low. Result files are in `src/lib/ai/eval/results/`. Runs marked dirty were made on an uncommitted change (the eval varied one setting), and the setting is recorded in the file.
 
 ## 9 Oct 2026: Sonnet 5.5 via OpenRouter + field-naming format retry

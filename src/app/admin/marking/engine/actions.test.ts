@@ -3,6 +3,8 @@ import { beforeEach, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 const mocks = vi.hoisted(() => ({
   files: new Map<string, string>(),
+  cached: new Map<string, string>(),
+  download: vi.fn(),
   spend: vi.fn(),
   auth: vi.fn(),
   mark: vi.fn(),
@@ -31,13 +33,7 @@ vi.mock("@/utils/supabase/admin", () => ({
           mocks.files.set(path, body);
           return { error: null };
         },
-        download: async (path: string) =>
-          mocks.files.has(path)
-            ? { data: new Blob([mocks.files.get(path)!]), error: null }
-            : {
-                data: null,
-                error: { message: "Object not found", statusCode: 404 },
-              },
+        download: mocks.download,
         remove: async (paths: string[]) => {
           paths.forEach((path) => mocks.files.delete(path));
           return { error: null };
@@ -90,6 +86,22 @@ const result = {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.files.clear();
+  mocks.cached.clear();
+  mocks.download.mockReset();
+  mocks.download.mockImplementation(
+    async (path: string, options?: { cacheNonce?: string }) => {
+      // CDN entries survive upserts; only a new nonce reads the current body.
+      const key = JSON.stringify([path, options?.cacheNonce]);
+      const body = mocks.cached.get(key) ?? mocks.files.get(path);
+      if (body === undefined)
+        return {
+          data: null,
+          error: { message: "Object not found", statusCode: 404 },
+        };
+      mocks.cached.set(key, body);
+      return { data: new Blob([body]), error: null };
+    },
+  );
   mocks.beforeUpload.mockReset();
   mocks.auth.mockResolvedValue({
     id: "admin",
@@ -185,6 +197,37 @@ it("marks exactly one item with task eval, then stores score, check, time and ac
     check: result.check,
     seconds: expect.any(Number),
   });
+});
+it("saves two sequential steps through a stale CDN with fresh nonces", async () => {
+  const run = await startEvalRun(options);
+  const path = `runs/${run.id}.json`;
+  expect(JSON.parse(mocks.files.get(path)!)).toMatchObject({ version: 1 });
+  // Prime the unbusted URL with the same v1 that the first step reads.
+  await mocks.download(path);
+  expect(await stepEvalRun(run.id)).toMatchObject({ done: 1 });
+  expect(JSON.parse(mocks.files.get(path)!)).toMatchObject({ version: 2 });
+  const stale = await mocks.download(path);
+  const staleRun = JSON.parse(await stale.data.text()) as WebRun;
+  expect(staleRun).toMatchObject({ version: 1, items: [] });
+  // The stale second-step read would attempt v2 and hit the unchanged guard.
+  await expect(saveRun(staleRun)).rejects.toThrow("newer run version");
+  expect(await stepEvalRun(run.id)).toMatchObject({ done: 2 });
+  const stored = JSON.parse(mocks.files.get(path)!);
+  expect(stored.version).toBe(3);
+  expect(stored.items).toHaveLength(2);
+  expect(mocks.mark).toHaveBeenCalledTimes(2);
+  // Only the two deliberate CDN probes above may omit a nonce.
+  expect(
+    mocks.download.mock.calls.filter((call) => call.length === 1),
+  ).toHaveLength(2);
+  const nonces = mocks.download.mock.calls
+    .filter((call) => call.length > 1)
+    .map(([, options]) => options?.cacheNonce);
+  expect(nonces.length).toBeGreaterThan(0);
+  expect(
+    nonces.every((nonce) => typeof nonce === "string" && nonce.length > 0),
+  ).toBe(true);
+  expect(new Set(nonces).size).toBe(nonces.length);
 });
 it("never marks either excluded fixture and completes after 18 client steps", async () => {
   const run = await startEvalRun(options);

@@ -25,7 +25,9 @@ export type WebRun = OfflineEvalRun & {
 };
 const bucket = () => admin().storage.from("evals");
 export async function readJson<T>(path: string): Promise<T | null> {
-  const { data, error } = await bounded(bucket().download(path));
+  const { data, error } = await bounded(
+    bucket().download(path, { cacheNonce: randomUUID() }),
+  );
   if (error) {
     if (
       String(error.statusCode) === "404" ||
