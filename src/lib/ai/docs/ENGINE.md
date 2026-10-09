@@ -2,6 +2,8 @@
 
 How a written answer is marked. Code: `src/lib/marking/` (engine, examples, grade, prompts, schemas) and `src/lib/ai/` (OpenAI call, prices). Eval: `src/lib/ai/eval/`.
 
+See also: [MARKING-PRINCIPLES](/admin/marking/engine?tab=docs&doc=MARKING-PRINCIPLES), [VERB-GUIDE](/admin/marking/engine?tab=docs&doc=VERB-GUIDE), [COMMENT-RULES](/admin/marking/engine?tab=docs&doc=COMMENT-RULES), [CHECK-AND-AGREEMENT](/admin/marking/engine?tab=docs&doc=CHECK-AND-AGREEMENT), [TRANSCRIPTION](/admin/marking/engine?tab=docs&doc=TRANSCRIPTION).
+
 ## Model
 
 All three marker passes use **anthropic/claude-sonnet-5.5** through OpenRouter (`MARKER.model = MODELS.marker` in `src/lib/marking/engine.ts`): grader low, blind check low, reconcile medium. In `src/lib/ai/openai.ts`, `anthropic/` model ids use the OpenRouter baseURL (`https://openrouter.ai/api/v1`), `OPENROUTER_API_KEY` and `provider.require_parameters`, with no priority tier. `prices.ts` records $2 input / $0.10 cached input / $10 output per 1M tokens.

@@ -5,6 +5,16 @@ vi.mock("node:fs/promises", () => ({ readdir: vi.fn(), readFile: vi.fn() }));
 import { readdir, readFile } from "node:fs/promises";
 import { loadDocs } from "./docs";
 
+async function loadDiskDocs() {
+  const fs =
+    await vi.importActual<typeof import("node:fs/promises")>(
+      "node:fs/promises",
+    );
+  vi.mocked(readdir).mockImplementation(fs.readdir);
+  vi.mocked(readFile).mockImplementation(fs.readFile);
+  return { fs, docs: await loadDocs() };
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
   vi.unstubAllEnvs();
@@ -60,4 +70,49 @@ it("surfaces real filesystem failures to the error boundary", async () => {
     Object.assign(new Error("denied"), { code: "EACCES" }),
   );
   await expect(loadDocs()).rejects.toThrow("denied");
+});
+
+it("loads every real markdown file, ENGINE first then alphabetical", async () => {
+  const { fs, docs } = await loadDiskDocs();
+  const files = (await fs.readdir("src/lib/ai/docs"))
+    .filter((file) => file.endsWith(".md"))
+    .sort((a, b) =>
+      a === "ENGINE.md" ? -1 : b === "ENGINE.md" ? 1 : a.localeCompare(b),
+    );
+  expect(docs.map((doc) => `${doc.id}.md`)).toEqual(files);
+  expect(docs.map((doc) => doc.id)).toEqual(
+    expect.arrayContaining([
+      "MARKING-PRINCIPLES",
+      "VERB-GUIDE",
+      "COMMENT-RULES",
+      "CHECK-AND-AGREEMENT",
+      "TRANSCRIPTION",
+    ]),
+  );
+  for (const doc of docs) expect(doc.text.trim(), doc.id).not.toBe("");
+});
+
+it("keeps every local engine document link resolvable", async () => {
+  const { docs } = await loadDiskDocs();
+  const ids = new Set(docs.map((doc) => doc.id));
+  for (const doc of docs) {
+    for (const link of doc.text.matchAll(
+      /\]\((\/admin\/marking\/engine\?tab=docs&doc=[^\s)]+)\)/g,
+    )) {
+      const id = new URL(link[1], "http://localhost").searchParams.get("doc");
+      expect(ids.has(id!), `${doc.id}: ${link[1]}`).toBe(true);
+    }
+  }
+});
+
+it("cites existing source paths in every document", async () => {
+  const { fs, docs } = await loadDiskDocs();
+  const paths = new Set<string>();
+  for (const doc of docs) {
+    for (const citation of doc.text.matchAll(/`(src\/[^`\s]+)`/g))
+      paths.add(citation[1]);
+  }
+  expect(paths.size).toBeGreaterThan(0);
+  for (const path of paths)
+    await expect(fs.access(path), path).resolves.toBeUndefined();
 });

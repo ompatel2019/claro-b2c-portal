@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 async function signInAdmin(page: Page) {
@@ -171,49 +173,54 @@ test.describe("admin marking engine", () => {
     expect(await noOverflow(page)).toBe(true);
   });
   test("docs and runs fit a 400px phone", async ({ page }) => {
+    test.slow();
     await page.setViewportSize({ width: 400, height: 844 });
     await signInAdmin(page);
-    for (const query of [
-      "tab=docs&doc=ENGINE",
-      "tab=docs&doc=CHANGELOG",
-      "tab=runs",
-    ]) {
-      await page.goto(`/admin/marking/engine?${query}`);
+    await page.goto("/admin/marking/engine?tab=docs");
+    const navigation = page.getByRole("navigation", {
+      name: "Engine documents",
+    });
+    await expect(navigation).toBeVisible({ timeout: 30000 });
+    const hrefs = await navigation
+      .getByRole("link")
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href")!));
+    expect(hrefs.length).toBeGreaterThan(0);
+    for (const href of hrefs) {
+      await page.goto(href);
+      const id = new URL(href, page.url()).searchParams.get("doc")!;
+      const title = page
+        .locator('[data-slot="card-title"]')
+        .filter({ hasText: id });
+      await expect(title).toHaveText(id);
       await expect(
-        page.getByRole("heading", {
-          level: 1,
-          name: "Marking engine",
-          exact: true,
-        }),
-      ).toBeVisible({ timeout: 30000 });
-      if (query === "tab=runs")
-        await expect(
-          page.getByRole("list", { name: "Eval runs" }),
-        ).toBeVisible();
-      else
-        await expect(
-          page.getByRole("navigation", { name: "Engine documents" }),
-        ).toBeVisible();
+        title.locator("../..").getByRole("heading", { level: 2 }).first(),
+      ).toBeVisible();
       expect(await noOverflow(page)).toBe(true);
-      if (query === "tab=docs&doc=ENGINE") {
-        const tables = page.getByRole("table");
-        expect(await tables.count()).toBeGreaterThan(0);
-        expect(
-          await tables.evaluateAll((tables) =>
+      const source = await readFile(
+        join(process.cwd(), "src/lib/ai/docs", `${id}.md`),
+        "utf8",
+      );
+      if (id === "ENGINE" || /^\|(?:\s*:?-+:?\s*\|)+\s*$/m.test(source))
+        await expect(page.getByRole("table").first()).toBeVisible();
+      expect(
+        await page
+          .getByRole("table")
+          .evaluateAll((tables) =>
             tables.every(
               (table) =>
                 table.getBoundingClientRect().right <= window.innerWidth &&
                 table.scrollWidth <= table.parentElement!.clientWidth,
             ),
           ),
-        ).toBe(true);
-      }
-      if (query === "tab=runs") {
-        const wrapper = page.getByTestId("runs-region");
-        expect(
-          await wrapper.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
-        ).toBe(true);
-      }
+      ).toBe(true);
     }
+    await page.goto("/admin/marking/engine?tab=runs");
+    await expect(page.getByRole("list", { name: "Eval runs" })).toBeVisible();
+    expect(await noOverflow(page)).toBe(true);
+    expect(
+      await page
+        .getByTestId("runs-region")
+        .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    ).toBe(true);
   });
 });
