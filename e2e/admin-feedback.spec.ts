@@ -216,6 +216,10 @@ test.describe("Admin feedback inbox", () => {
       await expect(
         table.getByRole("columnheader", { name: "Page", exact: true }),
       ).toBeHidden();
+      // Kind, Student and Linked item move into a details line under the message.
+      await expect(
+        table.getByText(/^(Bug|Feature) · \S/).first(),
+      ).toBeVisible();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth,

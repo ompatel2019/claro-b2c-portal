@@ -53,16 +53,24 @@ const columns = (
     className: "max-sm:w-full max-sm:max-w-40 max-sm:px-2",
     header: "Message",
     cell: (r) => (
-      <Link
-        className="line-clamp-2 max-w-md break-words whitespace-normal underline-offset-4 hover:underline"
-        href={href(r.id)}
-        onClick={(e) => {
-          e.preventDefault();
-          open(r.id);
-        }}
-      >
-        {r.message}
-      </Link>
+      <>
+        <Link
+          className="line-clamp-2 max-w-md break-words whitespace-normal underline-offset-4 hover:underline"
+          href={href(r.id)}
+          onClick={(e) => {
+            e.preventDefault();
+            open(r.id);
+          }}
+        >
+          {r.message}
+        </Link>
+        {/* Below sm the hidden Kind, Student and Linked item columns reappear here. */}
+        <p className="text-muted-foreground mt-1 text-xs break-words whitespace-normal sm:hidden">
+          {[kind(r.kind), r.name, r.linked, ago(r.created_at, now)]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+      </>
     ),
   },
   {
