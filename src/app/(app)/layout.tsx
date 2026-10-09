@@ -27,7 +27,7 @@ export default async function Layout({
     <AppShell
       kind="student"
       name={profile.full_name}
-      badges={{ "/flashcards": count ?? 0 }}
+      badges={{ "/student/flashcards": count ?? 0 }}
       defaultOpen={jar.get("sidebar_state")?.value !== "false"}
     >
       <FlashcardPersistDrain />

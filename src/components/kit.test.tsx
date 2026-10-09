@@ -35,6 +35,13 @@ it("marks the section root only on an exact match", () => {
     "Topic Sprint",
   );
   expect(activeItem("student", "/student/sprint")?.label).toBe("Topic Sprint");
+  expect(activeItem("student", "/student/flashcards")?.label).toBe(
+    "Flashcards",
+  );
+  expect(
+    nav.student.flatMap((g) => g.items).find((i) => i.label === "Flashcards")
+      ?.href,
+  ).toBe("/student/flashcards");
   expect(activeItem("student", "/profile")).toBeUndefined();
   expect(activeItem("admin", "/admin")?.label).toBe("Dashboard");
   expect(activeItem("admin", "/admin/students/x")?.label).toBe("All students");

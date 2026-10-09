@@ -16,9 +16,14 @@ export default async function FlashcardSession({
       cards={cards}
       reviews={reviews}
       deckName={
-        session.config.due
+        session.config.which === "due" || session.config.due
           ? "Due for review"
-          : topicNames(session.config.topics, topics)
+          : topicNames(
+              session.config.subtopics?.length
+                ? session.config.subtopics
+                : session.config.topics,
+              topics,
+            )
       }
     />
   );

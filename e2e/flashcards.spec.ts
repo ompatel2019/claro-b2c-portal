@@ -39,15 +39,34 @@ test.describe("Student flashcards", () => {
     if (error) throw new Error("Could not clean up E2E flashcard progress.");
   });
   async function startDeck(page: Page, mode: "study" | "test") {
-    await page.goto("/flashcards?topic=t3-inflation&filter=t3");
+    await page.goto("/student/flashcards?topic=t3-inflation");
     await expect(
-      page.getByRole("heading", { name: "Inflation", exact: true }),
+      page.getByRole("heading", { name: "Flashcards", exact: true }),
     ).toBeVisible({ timeout: 60000 });
-    const type = page.locator("#flashcard-type");
-    await expect(type).toBeVisible({ timeout: 30000 });
-    await type.selectOption("term");
-    await page.locator("#flashcard-mode").selectOption(mode);
-    await page.getByRole("button", { name: "Start deck", exact: true }).click();
+    await expect(
+      page
+        .locator("form")
+        .filter({
+          has: page.getByRole("button", { name: "Start", exact: true }),
+        }),
+    ).toContainText("Inflation ·");
+    await page.getByRole("button", { name: /^Terms \(\d+\)$/ }).click();
+    await page
+      .getByRole("button", {
+        name: mode === "study" ? "Study" : "Test",
+        exact: true,
+      })
+      .click();
+    await expect(
+      page.getByRole("button", { name: /^Terms \(\d+\)$/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      page.getByRole("button", {
+        name: mode === "study" ? "Study" : "Test",
+        exact: true,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Start", exact: true }).click();
     await expect(page).toHaveURL(/\/flashcards\/[^/]+$/, { timeout: 60000 });
     sessionIds.push(page.url().split("/").at(-1)!);
   }
@@ -59,23 +78,15 @@ test.describe("Student flashcards", () => {
     reviewedCards.add(id!);
     return id!;
   }
-  test("deck chips use topic names and counts are pluralised", async ({
-    page,
-  }) => {
-    await page.goto("/flashcards");
-    const chips = page.getByRole("navigation", {
-      name: "Filter flashcard topics",
-    });
+  test("deck chips use topic names and live counts", async ({ page }) => {
+    await page.goto("/student/flashcards");
     await expect(
-      chips.getByRole("link", { name: "The Global Economy", exact: true }),
+      page.getByRole("heading", { name: /^The Global Economy · \d+$/ }),
     ).toBeVisible();
-    await expect(chips.getByRole("link", { name: /^Topic \d$/ })).toHaveCount(
+    await expect(page.getByRole("button", { name: /^Topic \d$/ })).toHaveCount(
       0,
     );
-    const counts = page.getByText(/^\d+ terms? · \d+ statistics cards?$/);
-    expect(await counts.count()).toBeGreaterThan(0);
-    for (const text of await counts.allTextContents())
-      expect(text).not.toMatch(/(^|· )1 (terms|statistics cards)/);
+    await expect(page.getByText(/^\d+ of \d+ cards?$/)).toBeVisible();
   });
   test("dashboard shows cards due today", async ({ page }) => {
     await expect(
@@ -223,7 +234,7 @@ test.describe("Flashcard persist queue", () => {
       if (res.status() >= 500) serverErrors.push(res.url());
     });
     await signIn(page);
-    await page.goto("/flashcards", { waitUntil: "domcontentloaded" });
+    await page.goto("/student/flashcards", { waitUntil: "domcontentloaded" });
     await page.evaluate(
       ({ key, sessionId }) => {
         localStorage.setItem(

@@ -16,10 +16,12 @@ function query(data: unknown, error: unknown = null) {
     select: vi.fn(),
     eq: vi.fn(),
     like: vi.fn(),
+    or: vi.fn(),
     in: vi.fn(),
     lte: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
+    range: vi.fn(),
     maybeSingle: vi.fn(),
     single: vi.fn(),
     insert: vi.fn(),
@@ -32,10 +34,12 @@ function query(data: unknown, error: unknown = null) {
     "select",
     "eq",
     "like",
+    "or",
     "in",
     "lte",
     "order",
     "limit",
+    "range",
     "maybeSingle",
     "single",
     "insert",
@@ -58,71 +62,177 @@ beforeEach(() => {
     role: "student",
   } as never);
 });
-it.each(["t3", "t3-inflation"])(
-  "starts a shuffled deck with one card query filtered by %s",
-  async (topic) => {
-    const cards = query(
-      Array.from({ length: 24 }, (_, i) => ({
-        id: `c${i}`,
-        topic_id: "t3-inflation",
-        kind: "term",
-      })),
-    );
-    const session = query({ id: sessionId });
-    const db = client(cards, session);
-    const form = new FormData();
-    form.set("topic", topic);
-    form.set("type", "term");
-    await expect(startFlashcards({}, form)).rejects.toThrow(
-      `redirect:/flashcards/${sessionId}`,
-    );
-    expect(db.from.mock.calls).toEqual([["flashcards"], ["sessions"]]);
-    expect(cards.in).toHaveBeenCalledWith("kind", ["term"]);
-    if (topic === "t3")
-      expect(cards.like).toHaveBeenCalledWith("topic_id", "t3-%");
-    else expect(cards.eq).toHaveBeenCalledWith("topic_id", topic);
-    const config = session.insert.mock.calls[0][0].config;
-    expect(config.card_ids).toHaveLength(20);
-    expect(new Set(config.card_ids).size).toBe(20);
-  },
-);
-it("loads due cards through progress joined to flashcards", async () => {
-  const due = query([
-    { card: { id: "c", topic_id: "t3-inflation", kind: "stat" } },
+function liveCards(n = 24) {
+  return Array.from({ length: n }, (_, i) => ({
+    id: `c${i}`,
+    topic_id: "t3-inflation",
+    kind: "term",
+    owner_id: null,
+    status: "live",
+  }));
+}
+it("starts a default study deck without legacy mode, type or topic fields", async () => {
+  const cards = query(liveCards());
+  const session = query({ id: sessionId });
+  const db = client(cards, query([]), session);
+  await expect(startFlashcards({}, new FormData())).rejects.toThrow(
+    `redirect:/flashcards/${sessionId}`,
+  );
+  expect(db.from.mock.calls).toEqual([
+    ["flashcards"],
+    ["flashcard_progress"],
+    ["sessions"],
   ]);
-  client(due, query({ id: sessionId }));
+  expect(cards.eq).toHaveBeenCalledWith("status", "live");
+  expect(cards.or).toHaveBeenCalledWith("owner_id.is.null,owner_id.eq.user");
+  expect(session.insert.mock.calls[0][0].config).toMatchObject({
+    mode: "study",
+    kinds: ["term", "stat"],
+  });
+  expect(session.insert.mock.calls[0][0].config.card_ids).toHaveLength(20);
+});
+it("keeps the home due path and filters out future progress", async () => {
+  const session = query({ id: sessionId });
+  const progress = query([
+    { flashcard_id: "c0", due_on: "2000-01-01", reviews: 1 },
+    { flashcard_id: "c1", due_on: "2999-01-01", reviews: 1 },
+  ]);
+  client(query(liveCards(2)), progress, session);
   const form = new FormData();
   form.set("due", "1");
   await expect(startFlashcards({}, form)).rejects.toThrow("redirect:");
-  expect(due.select).toHaveBeenCalledWith(
-    expect.stringContaining("flashcards!inner"),
-  );
-  expect(due.eq).toHaveBeenCalledWith("user_id", "user");
-  expect(due.lte).toHaveBeenCalledWith(
-    "due_on",
-    expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
-  );
+  expect(progress.eq).toHaveBeenCalledWith("user_id", "user");
+  expect(session.insert.mock.calls[0][0].config.card_ids).toEqual(["c0"]);
 });
-it("returns a friendly empty-deck error without creating a session", async () => {
-  const db = client(query([]));
+it("returns an empty-deck error without inserting", async () => {
+  const db = client(query([]), query([]), query([]));
   expect(await startFlashcards({}, new FormData())).toEqual({
     error: expect.stringContaining("No cards match"),
   });
-  expect(db.from).toHaveBeenCalledTimes(1);
+  expect(db.from).not.toHaveBeenCalledWith("sessions");
 });
-it("can restart just the selected missed cards in study mode", async () => {
-  const cards = query([{ id: "c", topic_id: "t3-inflation", kind: "term" }]);
+it("can restart authorised selected missed cards in study mode", async () => {
   const session = query({ id: sessionId });
-  client(cards, session);
+  client(query(liveCards(2)), query([]), session);
   const form = new FormData();
-  form.append("card_ids", "c");
+  form.append("card_ids", "c0");
   await expect(startFlashcards({}, form)).rejects.toThrow("redirect:");
-  expect(cards.in).toHaveBeenCalledWith("id", ["c"]);
-  expect(session.insert).toHaveBeenCalledWith(
-    expect.objectContaining({
-      config: expect.objectContaining({ mode: "study", card_ids: ["c"] }),
+  expect(session.insert.mock.calls[0][0].config.card_ids).toEqual(["c0"]);
+});
+it("rederives JSON deck ids and stores all controls, excluding foreign and retired cards", async () => {
+  const session = query({ id: sessionId });
+  client(
+    query([
+      ...liveCards(4),
+      { ...liveCards(1)[0], id: "foreign", owner_id: "other" },
+    ]),
+    query([]),
+    session,
+  );
+  const config = {
+    mode: "test",
+    kinds: ["term"],
+    source: "both",
+    topics: ["t3"],
+    subtopics: ["t3-inflation"],
+    which: "all",
+    size: 2,
+    order: "topic",
+    repeat_missed: false,
+    answer_by: "typing",
+  };
+  const form = new FormData();
+  form.set(
+    "config",
+    JSON.stringify({ ...config, card_ids: ["foreign", "retired"] }),
+  );
+  form.append("card_ids", "foreign");
+  await expect(startFlashcards({}, form)).rejects.toThrow("redirect:");
+  expect(session.insert.mock.calls[0][0].config).toEqual({
+    ...config,
+    card_ids: ["c0", "c1"],
+  });
+});
+it.each(["{", "null", JSON.stringify({ mode: "study", size: 201 })])(
+  "rejects malformed JSON config %s before reading the bank",
+  async (config) => {
+    const db = client();
+    const form = new FormData();
+    form.set("config", config);
+    expect(await startFlashcards({}, form)).toEqual({
+      error: expect.stringContaining("valid deck"),
+    });
+    expect(db.from).not.toHaveBeenCalled();
+  },
+);
+it("returns a friendly query failure and creates no session", async () => {
+  const db = client(query([], { message: "failure" }), query([]), query([]));
+  expect(await startFlashcards({}, new FormData())).toEqual({
+    error: expect.stringContaining("Could not load"),
+  });
+  expect(db.from).not.toHaveBeenCalledWith("sessions");
+});
+it("loads cards beyond the first API page before deriving the deck", async () => {
+  const first = query(liveCards(500));
+  const second = query([{ ...liveCards(1)[0], id: "last-page-card" }]);
+  const session = query({ id: sessionId });
+  client(first, query([]), second, session);
+  const form = new FormData();
+  form.set(
+    "config",
+    JSON.stringify({
+      mode: "study",
+      kinds: ["term", "stat"],
+      source: "both",
+      topics: [],
+      subtopics: [],
+      which: "all",
+      size: "all",
+      order: "topic",
+      repeat_missed: true,
+      answer_by: "either",
     }),
   );
+  await expect(startFlashcards({}, form)).rejects.toThrow("redirect:");
+  expect(first.range).toHaveBeenCalledWith(0, 499);
+  expect(second.range).toHaveBeenCalledWith(500, 999);
+  expect(session.insert.mock.calls[0][0].config.card_ids).toHaveLength(501);
+  expect(session.insert.mock.calls[0][0].config.card_ids).toContain(
+    "last-page-card",
+  );
+});
+it("uses progress for missed cards without loading review history", async () => {
+  const progress = query([
+    {
+      flashcard_id: "c0",
+      last_mark: 0,
+      reviews: 1,
+      updated_at: "2026-10-09",
+      due_on: "2999-01-01",
+    },
+  ]);
+  const session = query({ id: sessionId });
+  const db = client(query(liveCards(2)), progress, session);
+  const form = new FormData();
+  form.set(
+    "config",
+    JSON.stringify({
+      mode: "study",
+      kinds: ["term", "stat"],
+      source: "both",
+      topics: [],
+      subtopics: [],
+      which: "missed",
+      size: 20,
+      order: "topic",
+      repeat_missed: true,
+      answer_by: "either",
+    }),
+  );
+  await expect(startFlashcards({}, form)).rejects.toThrow("redirect:");
+  expect(progress.eq).toHaveBeenCalledWith("user_id", "user");
+  expect(db.from).not.toHaveBeenCalledWith("flashcard_reviews");
+  expect(session.insert.mock.calls[0][0].config.card_ids).toEqual(["c0"]);
 });
 it.each([
   null,
@@ -199,4 +309,14 @@ it("does not advance the schedule on a recycled self rating", async () => {
   );
   await rateFlashcard(sessionId, "c", 1);
   expect(db.from).not.toHaveBeenCalledWith("flashcard_progress");
+});
+
+it("retries all 200 posted legacy cards", async () => {
+  const session = query({ id: sessionId });
+  client(query(liveCards(200)), query([]), session);
+  const form = new FormData();
+  for (const card of liveCards(200)) form.append("card_ids", card.id);
+  await expect(startFlashcards({}, form)).rejects.toThrow("redirect:");
+  expect(session.insert.mock.calls[0][0].config.card_ids).toHaveLength(200);
+  expect(session.insert.mock.calls[0][0].config.size).toBe("all");
 });

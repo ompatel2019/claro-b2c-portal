@@ -3,12 +3,14 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
+import { sydneyToday, type FlashcardConfig } from "@/lib/flashcards";
 import {
-  shuffle,
-  sydneyToday,
-  type Flashcard,
-  type FlashcardConfig,
-} from "@/lib/flashcards";
+  deckSchema,
+  DECK_DEFAULTS,
+  selectDeck,
+  type DeckConfig,
+} from "@/lib/deck";
+import { loadDeckBank } from "@/lib/flashcard-data";
 import { updateFlashcardProgress } from "@/lib/flashcard-progress";
 import type { FormState } from "../actions";
 
@@ -18,64 +20,60 @@ export async function startFlashcards(
 ): Promise<FormState> {
   const profile = await requireProfile();
   if (profile.role !== "student") redirect("/admin");
-  const parsed = z
-    .object({
-      mode: z.enum(["study", "test"]),
-      topic: z.string().regex(/^(t[1-4](-[a-z0-9-]+)?)?$/, "Choose a topic."),
-      type: z.enum(["term", "stat", "both"]),
-      due: z.boolean(),
-      cardIds: z.array(z.string().min(1).max(200)).max(20),
-    })
-    .safeParse({
-      mode: form.get("mode") ?? "study",
-      topic: form.get("topic") ?? "",
-      type: form.get("type") ?? "both",
-      due: form.get("due") === "1",
-      cardIds: form.getAll("card_ids"),
-    });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const { mode, topic, type, due, cardIds } = parsed.data;
-  const kinds: FlashcardConfig["kinds"] =
-    type === "both" ? ["term", "stat"] : [type];
-  const db = await createClient();
-  let cards: Flashcard[];
-  if (due) {
-    const result = await db
-      .from("flashcard_progress")
-      .select("card:flashcards!inner(id,topic_id,kind,front,back)")
-      .eq("user_id", profile.id)
-      .lte("due_on", sydneyToday());
-    if (result.error)
-      return { error: "Could not load your due cards. Please try again." };
-    cards = (result.data ?? []).map((row) => row.card as unknown as Flashcard);
+  let configInput: unknown;
+  const raw = form.get("config");
+  const legacyIds = raw === null ? form.getAll("card_ids") : [];
+  if (raw !== null) {
+    try {
+      configInput = JSON.parse(String(raw));
+    } catch {
+      return { error: "Choose a valid deck setup." };
+    }
   } else {
-    let query = db
-      .from("flashcards")
-      .select("id,topic_id,kind,front,back")
-      .in("kind", kinds);
-    if (cardIds.length) query = query.in("id", cardIds);
-    else if (topic)
-      query = topic.includes("-")
-        ? query.eq("topic_id", topic)
-        : query.like("topic_id", `${topic}-%`);
-    const result = await query;
-    if (result.error)
-      return { error: "Could not load this deck. Please try again." };
-    cards = (result.data ?? []) as Flashcard[];
+    const legacy = z
+      .object({
+        ids: z.array(z.string().min(1).max(200)).max(200),
+      })
+      .safeParse({
+        ids: legacyIds,
+      });
+    if (!legacy.success) return { error: "Choose a valid deck setup." };
+    configInput = {
+      ...DECK_DEFAULTS,
+      size: legacyIds.length ? "all" : DECK_DEFAULTS.size,
+      which: form.get("due") === "1" ? "due" : "all",
+    };
   }
-  cards = shuffle(cards).slice(0, 20);
-  if (!cards.length)
+  const parsed = deckSchema.safeParse(configInput);
+  if (!parsed.success) return { error: "Choose a valid deck setup." };
+  const setup: DeckConfig = parsed.data;
+  const db = await createClient();
+  let loaded: Awaited<ReturnType<typeof loadDeckBank>>;
+  try {
+    loaded = await loadDeckBank(db, profile.id);
+  } catch {
+    return { error: "Could not load this deck. Please try again." };
+  }
+  const { cards, progress } = loaded;
+  // Legacy retry IDs are only a filter on the authorised live bank. JSON config IDs are ignored.
+  const bank = cards.filter(
+    (c) => !legacyIds.length || legacyIds.includes(c.id),
+  );
+  const selected = selectDeck(bank, setup, {
+    userId: profile.id,
+    today: sydneyToday(),
+    progress,
+  });
+  if (!selected.length)
     return {
-      error: due
-        ? "Nothing is due yet. Start a deck below."
-        : "No cards match this selection. Try another deck or card type.",
+      error:
+        setup.which === "due"
+          ? "Nothing is due yet. Start a deck below."
+          : "No cards match this selection. Try another deck or card type.",
     };
   const config: FlashcardConfig = {
-    mode,
-    topics: topic ? [topic] : [...new Set(cards.map((c) => c.topic_id))],
-    kinds,
-    due,
-    card_ids: cards.map((c) => c.id),
+    ...setup,
+    card_ids: selected.map((c) => c.id),
   };
   const { data, error } = await db
     .from("sessions")

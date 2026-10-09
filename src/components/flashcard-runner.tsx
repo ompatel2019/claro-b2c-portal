@@ -38,10 +38,22 @@ export function FlashcardRunner({
   const router = useRouter();
   const [db] = useState(createClient);
   const [queue, setQueue] = useState(() =>
-    resumeQueue(session.config.card_ids, reviews),
+    resumeQueue(
+      session.config.card_ids,
+      reviews,
+      session.config.repeat_missed !== false,
+    ),
   );
   const [marks, setMarks] = useState(
     () => new Map(reviews.map((r) => [r.flashcard_id, r.mark])),
+  );
+  const attempts = useRef(
+    new Map(
+      session.config.card_ids.map((id) => [
+        id,
+        reviews.filter((r) => r.flashcard_id === id).length,
+      ]),
+    ),
   );
   const [flipped, setFlipped] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -122,7 +134,14 @@ export function FlashcardRunner({
   }
   async function advance(mark: FlashcardMark) {
     if (!card) return;
-    const next = nextQueue(queue, card.id, mark);
+    const next = nextQueue(
+      queue,
+      card.id,
+      mark,
+      session.config.repeat_missed !== false,
+      attempts.current.get(card.id) ?? 0,
+    );
+    attempts.current.set(card.id, (attempts.current.get(card.id) ?? 0) + 1);
     setMarks((prev) => new Map(prev).set(card.id, mark));
     setQueue(next);
     setFlipped(false);
@@ -139,7 +158,15 @@ export function FlashcardRunner({
     // Optimistic: advance immediately. Persist in the background (ratings are not AI).
     // Queue survives navigation; missing-session errors drop the queued session.
     // On failure, roll back so the student can retry the same card.
-    const next = nextQueue(queue, cardId, mark);
+    const next = nextQueue(
+      queue,
+      cardId,
+      mark,
+      session.config.repeat_missed !== false,
+      attempts.current.get(cardId) ?? 0,
+    );
+    const prevAttempts = attempts.current.get(cardId) ?? 0;
+    attempts.current.set(cardId, prevAttempts + 1);
     setMarks((prev) => new Map(prev).set(cardId, mark));
     setQueue(next);
     setFlipped(false);
@@ -154,6 +181,7 @@ export function FlashcardRunner({
     const rollback = (e: unknown) => {
       if (isMissingSessionError(e)) dropPersistSession(sessionId);
       else enqueuePersistRating({ sessionId, cardId, mark });
+      attempts.current.set(cardId, prevAttempts);
       setQueue(prevQueue);
       setMarks(prevMarks);
       setError(
@@ -192,7 +220,7 @@ export function FlashcardRunner({
   return (
     <main className="mx-auto min-h-screen max-w-4xl space-y-4 px-4 py-4 sm:px-6">
       <header className="flex flex-wrap items-center justify-between gap-4">
-        <Link href="/flashcards" aria-label="Claro flashcards">
+        <Link href="/student/flashcards" aria-label="Claro flashcards">
           <Logo />
         </Link>
         <div className="flex flex-wrap gap-2">
@@ -205,7 +233,7 @@ export function FlashcardRunner({
             onClick={() =>
               act(async () => {
                 await saveTime();
-                router.push("/flashcards");
+                router.push("/student/flashcards");
               })
             }
           >

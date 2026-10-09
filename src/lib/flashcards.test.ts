@@ -182,3 +182,23 @@ describe("flashcard answer matching", () => {
     expect(result?.mark).not.toBe(0.5);
   });
 });
+
+it("honours disabled repeats and caps each card at three repeats", () => {
+  expect(nextQueue(["a", "b"], "a", 0, false, 0)).toEqual(["b"]);
+  expect(nextQueue(["a", "b"], "a", 0.5, true, 2)).toEqual(["b", "a"]);
+  expect(nextQueue(["a", "b"], "a", 0, true, 3)).toEqual(["b"]);
+});
+it("resumes with repeat settings and the per-card cap", () => {
+  const reviews = Array.from({ length: 4 }, (_, i) => ({
+    id: String(i),
+    flashcard_id: "a",
+    mark: 0 as const,
+    answer: null,
+    reason: null,
+    source: "self" as const,
+    created_at: "2026-10-09",
+  }));
+  expect(resumeQueue(["a", "b"], reviews)).toEqual(["b"]);
+  expect(resumeQueue(["a", "b"], reviews.slice(0, 3))).toEqual(["a", "b"]);
+  expect(resumeQueue(["a", "b"], reviews.slice(0, 1), false)).toEqual(["b"]);
+});

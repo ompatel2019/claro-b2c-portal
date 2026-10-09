@@ -51,7 +51,7 @@ export const nav: Record<
       items: [
         { label: "Home", href: "/student", icon: Dashboard },
         { label: "Topic Sprint", href: "/student/sprint", icon: Sprint },
-        { label: "Flashcards", href: "/flashcards", icon: Cards },
+        { label: "Flashcards", href: "/student/flashcards", icon: Cards },
       ],
     },
     {

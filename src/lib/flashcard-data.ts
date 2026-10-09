@@ -3,7 +3,13 @@ import { notFound, redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import type { Session, Topic } from "./practice";
-import type { Flashcard, FlashcardConfig, FlashcardReview } from "./flashcards";
+import type {
+  Flashcard,
+  FlashcardConfig,
+  FlashcardReview,
+  FlashcardProgress,
+} from "./flashcards";
+import type { DeckCard } from "./deck";
 export type FlashcardSession = Omit<Session, "config"> & {
   kind: "flashcards";
   config: FlashcardConfig;
@@ -49,4 +55,49 @@ export async function loadFlashcards(id: string) {
     topics: (topics.data ?? []) as Topic[],
     profile,
   };
+}
+
+/** Load every authorised row, including collections beyond the Data API row limit. */
+export async function loadDeckBank(
+  db: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+) {
+  async function pages<T>(
+    query: (
+      from: number,
+      to: number,
+    ) => PromiseLike<{ data: T[] | null; error: unknown }>,
+  ) {
+    const rows: T[] = [];
+    const pageSize = 500;
+    for (let from = 0; ; from += pageSize) {
+      const result = await query(from, from + pageSize - 1);
+      if (result.error) throw result.error;
+      const batch = result.data ?? [];
+      rows.push(...batch);
+      if (batch.length < pageSize) return rows;
+    }
+  }
+  const [cards, progress] = await Promise.all([
+    pages<DeckCard>((from, to) =>
+      db
+        .from("flashcards")
+        .select("id,topic_id,kind,owner_id")
+        .eq("status", "live")
+        .or(`owner_id.is.null,owner_id.eq.${userId}`)
+        .order("id")
+        .range(from, to),
+    ),
+    pages<FlashcardProgress>((from, to) =>
+      db
+        .from("flashcard_progress")
+        .select(
+          "flashcard_id,interval_days,due_on,last_mark,reviews,updated_at",
+        )
+        .eq("user_id", userId)
+        .order("flashcard_id")
+        .range(from, to),
+    ),
+  ]);
+  return { cards, progress };
 }

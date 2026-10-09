@@ -49,7 +49,7 @@ export default async function Results({
   return (
     <div className="space-y-4">
       <PageHeader
-        eyebrow={`${topicNames(session.config.topics, topics)} · Flashcards: ${session.config.mode === "study" ? "Study" : "Test"}`}
+        eyebrow={`${topicNames(session.config.subtopics?.length ? session.config.subtopics : session.config.topics, topics)} · Flashcards: ${session.config.mode === "study" ? "Study" : "Test"}`}
         title="Your flashcard results."
       />
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -98,7 +98,7 @@ export default async function Results({
             label="Practise missed cards again"
           />
         )}
-        <Link className="button-link" href="/flashcards">
+        <Link className="button-link" href="/student/flashcards">
           Back to flashcards
         </Link>
       </div>

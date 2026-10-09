@@ -1,3 +1,5 @@
+import type { DeckConfig } from "./deck";
+import { addDays } from "./activity";
 export type FlashcardMark = 0 | 0.5 | 1;
 export type Flashcard = {
   id: string;
@@ -6,13 +8,11 @@ export type Flashcard = {
   front: string;
   back: string;
 };
-export type FlashcardConfig = {
-  mode: "study" | "test";
-  topics: string[];
-  kinds: ("term" | "stat")[];
-  due: boolean;
-  card_ids: string[];
-};
+export type FlashcardConfig = Pick<DeckConfig, "mode" | "topics" | "kinds"> &
+  Partial<Omit<DeckConfig, "mode" | "topics" | "kinds">> & {
+    due?: boolean;
+    card_ids: string[];
+  };
 export type FlashcardReview = {
   id: string;
   flashcard_id: string;
@@ -28,6 +28,7 @@ export type FlashcardProgress = {
   due_on: string;
   last_mark: FlashcardMark;
   reviews: number;
+  updated_at: string;
 };
 export function schedule(
   prev: { interval_days: number } | null,
@@ -44,9 +45,7 @@ export function schedule(
           ? Math.ceil(prev.interval_days * 2.5)
           : 3,
   );
-  const due = new Date(`${today}T00:00:00Z`);
-  due.setUTCDate(due.getUTCDate() + interval_days);
-  return { interval_days, due_on: due.toISOString().slice(0, 10) };
+  return { interval_days, due_on: addDays(today, interval_days) };
 }
 export function shuffle<T>(items: readonly T[], random = Math.random): T[] {
   const result = [...items];
@@ -60,9 +59,11 @@ export function nextQueue(
   queue: readonly string[],
   cardId: string,
   mark: FlashcardMark,
+  repeatMissed = true,
+  attempts = 0,
 ) {
   const next = queue.filter((id) => id !== cardId);
-  if (mark < 1) next.push(cardId);
+  if (repeatMissed && mark < 1 && attempts < 3) next.push(cardId);
   return next;
 }
 export function sydneyToday(date = new Date()) {
@@ -84,9 +85,13 @@ export function firstReviews(reviews: readonly FlashcardReview[]) {
 export function resumeQueue(
   ids: readonly string[],
   reviews: readonly FlashcardReview[],
+  repeatMissed = true,
 ) {
   const latest = new Map(reviews.map((r) => [r.flashcard_id, r.mark]));
-  return ids.filter((id) => latest.get(id) !== 1);
+  return ids.filter((id) => {
+    const attempts = reviews.filter((r) => r.flashcard_id === id).length;
+    return !attempts || (repeatMissed && latest.get(id) !== 1 && attempts <= 3);
+  });
 }
 
 /** Normalise for flashcard matching. */

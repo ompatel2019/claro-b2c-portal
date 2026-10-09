@@ -114,13 +114,17 @@ export function percentage(score: number | null, max: number | null) {
 export function scoreTone(pct: number) {
   return pct >= 75 ? "success" : pct >= 50 ? "warning" : "destructive";
 }
-export function dateLabel(date: string) {
-  return new Date(date).toLocaleDateString("en-AU", {
-    timeZone: "Australia/Sydney",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+export function dateLabel(date: string, weekday = false) {
+  return new Date(date)
+    .toLocaleDateString("en-AU", {
+      timeZone: "Australia/Sydney",
+      day: "numeric",
+      month: "short",
+      ...(weekday
+        ? { weekday: "short" as const }
+        : { year: "numeric" as const }),
+    })
+    .replace(",", "");
 }
 export function topicNames(ids: string[] | undefined, topics: Topic[]) {
   return ids?.length

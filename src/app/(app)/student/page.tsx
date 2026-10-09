@@ -189,7 +189,7 @@ async function Kpis({ userId }: { userId: string }) {
         caption={`Longest ${activity.longest_streak}`}
       />
       <Link
-        href="/flashcards"
+        href="/student/flashcards"
         className="focus-visible:ring-ring/50 rounded-lg outline-none focus-visible:ring-3"
       >
         <StatCard
