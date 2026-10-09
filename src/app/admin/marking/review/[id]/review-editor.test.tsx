@@ -229,6 +229,33 @@ it.each([{ metaKey: true }, { ctrlKey: true }, {}])(
   },
 );
 
+it("deleting again after ⌘Z creates a fresh toast whose Undo restores the comment", () => {
+  const { key, bodies } = setup();
+  fireEvent.click(screen.getByRole("button", { name: "Delete comment 1" }));
+  const firstId = vi.mocked(toast).mock.calls[0][1]!.id;
+  expect(firstId).toBeDefined();
+  key("z", { metaKey: true });
+  expect(bodies()).toEqual(["Give a CPI figure.", "Correct cause."]);
+  expect(toast.dismiss).toHaveBeenCalledExactlyOnceWith(firstId);
+
+  fireEvent.click(screen.getByRole("button", { name: "Delete comment 1" }));
+  expect(bodies()).toEqual(["Correct cause."]);
+  expect(toast).toHaveBeenCalledTimes(2);
+  const [title, options] = vi.mocked(toast).mock.calls[1];
+  expect(title).toBe("Comment deleted");
+  expect(options!.id).toBeDefined();
+  expect(options!.id).not.toBe(firstId);
+  const action = options!.action as { label: string; onClick: () => void };
+  expect(action.label).toBe("Undo");
+  act(() => action.onClick());
+  expect(bodies()).toEqual(["Give a CPI figure.", "Correct cause."]);
+  expect(toast.dismiss).toHaveBeenLastCalledWith(options!.id);
+  expect(toast.dismiss).toHaveBeenCalledTimes(2);
+  act(() => action.onClick());
+  expect(bodies()).toEqual(["Give a CPI figure.", "Correct cause."]);
+  expect(toast.dismiss).toHaveBeenCalledTimes(2);
+});
+
 it("the delete toast's Undo restores that comment only, once, keeping later edits", () => {
   const { summary, bodies } = setup();
   fireEvent.click(screen.getByRole("button", { name: "Delete comment 1" }));

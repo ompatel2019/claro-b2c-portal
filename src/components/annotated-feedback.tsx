@@ -65,13 +65,14 @@ function Remembered({
 }
 
 export type EditableComment = FeedbackComment & { id: number };
-export const commentDeleteToastId = (id: number) => `deleted-comment-${id}`;
+let commentDeletionCount = 0;
 export type FeedbackEdit = {
   comments: EditableComment[];
   nextMark: string;
   onChange: (comments: EditableComment[], nextMark: string) => void;
   disabled?: boolean;
   onUndo: (deleted?: EditableComment) => void;
+  onDeleteToast?: (commentId: number, toastId: string) => void;
 };
 
 function CommentFields({
@@ -218,8 +219,10 @@ function CommentCard({
                 edit.comments.filter((item) => item.id !== c.id),
                 edit.nextMark,
               );
+              const toastId = `deleted-comment-${c.id}-${++commentDeletionCount}`;
+              edit.onDeleteToast?.(c.id, toastId);
               toast("Comment deleted", {
-                id: commentDeleteToastId(c.id),
+                id: toastId,
                 duration: 10000,
                 action: {
                   label: "Undo",

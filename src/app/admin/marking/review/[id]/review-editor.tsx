@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   AnnotatedFeedback,
-  commentDeleteToastId,
   type EditableComment,
 } from "@/components/annotated-feedback";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -74,10 +73,17 @@ export function ReviewEditor({
   const [undoCount, setUndoCount] = useState(0);
   const commentsRef = useRef({ comments, nextMark });
   const changeField = useRef<Element | null>(null);
+  const deleteToasts = useRef(new Map<number, string>());
+  const dismissDeleteToast = (commentId: number) => {
+    const toastId = deleteToasts.current.get(commentId);
+    if (toastId === undefined) return;
+    toast.dismiss(toastId);
+    deleteToasts.current.delete(commentId);
+  };
   const change = (items: EditableComment[], line: string) => {
     for (const item of items) {
       if (!commentsRef.current.comments.some((c) => c.id === item.id))
-        toast.dismiss(commentDeleteToastId(item.id));
+        dismissDeleteToast(item.id);
     }
     const field = document.activeElement;
     const typing = field?.matches("input,textarea,select");
@@ -101,7 +107,7 @@ export function ReviewEditor({
     if (!previous) return;
     for (const item of previous.comments) {
       if (!commentsRef.current.comments.some((c) => c.id === item.id))
-        toast.dismiss(commentDeleteToastId(item.id));
+        dismissDeleteToast(item.id);
     }
     commentsRef.current = previous;
     setComments(previous.comments);
@@ -258,6 +264,9 @@ export function ReviewEditor({
                     nextMark,
                     onChange: change,
                     onUndo: undo,
+                    onDeleteToast: (commentId, toastId) => {
+                      deleteToasts.current.set(commentId, toastId);
+                    },
                     disabled: pending,
                   }
             }

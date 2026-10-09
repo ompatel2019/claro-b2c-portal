@@ -1,0 +1,219 @@
+{
+  "meta": {
+    "stamp": "2026-10-09-1414",
+    "git": "b3e4027",
+    "dirty": false,
+    "label": "sonnet-smoke",
+    "limit": 1,
+    "marker": {
+      "model": "anthropic/claude-sonnet-5.5",
+      "effort": {
+        "grade": "low",
+        "check": "low",
+        "reconcile": "medium"
+      }
+    },
+    "judge": {
+      "model": "gpt-6-astra",
+      "effort": "low"
+    },
+    "spentBefore": 60.104931,
+    "spentAfter": 60.245148,
+    "blocked": false
+  },
+  "headline": {
+    "n": 1,
+    "exact": 0,
+    "within1": 1,
+    "band": 0,
+    "meanSigned": 1,
+    "meanAbs": 1,
+    "prosKept": 0.3333333333333333,
+    "consFixed": 0,
+    "judgeMean": 3,
+    "usdPerAnswer": 0.034839999999999996,
+    "secondsPerAnswer": 14.938456930000001,
+    "judgeUsd": 0.053505,
+    "blindAgreement": 1,
+    "secondPass": 0,
+    "inReview": 0,
+    "firstPass": {
+      "n": 1,
+      "exact": 0,
+      "within1": 1,
+      "band": 0,
+      "meanSigned": 1,
+      "meanAbs": 1,
+      "prosKept": 0.3333333333333333,
+      "consFixed": 0,
+      "judgeMean": 3,
+      "usdPerAnswer": 0.034839999999999996,
+      "secondsPerAnswer": 14.938456930000001
+    }
+  },
+  "heldOut": {
+    "n": 1,
+    "exact": 0,
+    "within1": 1,
+    "band": 0,
+    "meanSigned": 1,
+    "meanAbs": 1,
+    "prosKept": null,
+    "consFixed": null,
+    "judgeMean": null,
+    "usdPerAnswer": 0.029128,
+    "secondsPerAnswer": 13.567947708,
+    "judgeUsd": 0,
+    "blindAgreement": 1,
+    "secondPass": 0,
+    "inReview": 0,
+    "firstPass": {
+      "n": 1,
+      "exact": 0,
+      "within1": 1,
+      "band": 0,
+      "meanSigned": 1,
+      "meanAbs": 1,
+      "prosKept": null,
+      "consFixed": null,
+      "judgeMean": null,
+      "usdPerAnswer": 0.029128,
+      "secondsPerAnswer": 13.567947708
+    }
+  },
+  "items": [
+    {
+      "id": "ge-4",
+      "section": "A1",
+      "label": "",
+      "marks": 5,
+      "expected": 3,
+      "mark": 4,
+      "band": "Sound explanation with some analysis and limited judgement",
+      "check": {
+        "status": "agreed",
+        "marks": [4, 4]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true,
+        "lowConfidence": false
+      },
+      "usd": 0.034839999999999996,
+      "judgeUsd": 0.053505,
+      "seconds": 14.938456930000001,
+      "verdict": {
+        "pros": [
+          {
+            "pro": "More specific statistics are required.",
+            "delivered": false,
+            "evidence": "The feedback requests 'specific examples or data', but treats named cases as sufficient alternatives rather than asking for more specific statistics."
+          },
+          {
+            "pro": "Depth is needed.",
+            "delivered": true,
+            "evidence": "The IMF comment asks for a named case to show 'the evidence integrated into your analysis', and the World Bank comment asks for a specific project to substantiate the criticism."
+          },
+          {
+            "pro": "More judgement is required.",
+            "delivered": false,
+            "evidence": "It calls the existing judgement 'clear, balanced' and says it 'meets the directive verb'; supporting that judgement with examples is not guidance to develop further assessment."
+          }
+        ],
+        "cons": [
+          {
+            "con": "Give specific guidance on answering 'Assess', identifying exactly which sections need added assessment.",
+            "fixed": false,
+            "evidence": "The anchored improvements identify where to add evidence, but do not identify where and how to weigh the organisations' impacts."
+          },
+          {
+            "con": "Encourage more assessment through wording such as 'a key limitation can be seen through...'.",
+            "fixed": false,
+            "evidence": "No evaluative sentence stem or equivalent actionable guidance is supplied for developing the student's assessment."
+          },
+          {
+            "con": "Make the WTO and IMF definitions clearer.",
+            "fixed": false,
+            "evidence": "The feedback praises the WTO mechanism and suggests IMF cases, but gives no advice on clarifying either organisation's definition."
+          }
+        ],
+        "score": 3,
+        "lowConfidence": false,
+        "reasoning": "The feedback offers useful, response-specific evidence development, preserving some emphasis on depth. However, it only partly preserves the statistics requirement and loses the call for more judgement. The main actionable concern—showing exactly where and how to add assessment—remains untouched, as do clearer WTO and IMF definitions."
+      },
+      "feedback": "The answer gives a sound explanation across three organisations, such as 'helping stabilise exchange rates and prevent global financial contagion', and a balanced judgement, 'their impact is mixed'. However, it has no named examples or data, so the 5-5 band is not met.\n1. [Strength · Knowledge] \"The WTO facilitates global trade by reducing tariffs and enforcing trade rules\" — You link tariff reduction to comparative advantage and output, so the mechanism is explicit.\n2. [Fix · Evidence] \"IMF loans often come with strict conditions such as austerity measures\" — This point is generic. Adding a named case such as Greece's GDP contraction or the IMF's South Korea package would show the evidence integrated into your analysis. Next mark: Integrate a specific example or statistic for at least two organisations to reach 5.\n3. [Fix · Evidence] \"have sometimes been criticised for environmental damage\" — Name a specific project or criticism so the claim is supported. Next mark: Add a named example to support the judgement.\n4. [Strength · Analysis] \"their impact is mixed\" — You reach a clear, balanced judgement, which meets the directive verb 'assess'.\nNext band: To reach 5, integrate specific examples or data (e.g. Greece under IMF conditions, global trade value) into the analysis of multiple organisations and support the overall judgement with them.\nWhy not higher: Band 5 requires examples integrated with the analysis; this answer is generic and has no named episodes or figures.\nBetter-answer outline:\n- Thesis: organisations prevent systemic collapse, but their prescriptions can harm development\n- WTO: reduces trade barriers and raises trade volumes, but Doha stalled and developing nations gained little\n- IMF: emergency loans, e.g. South Korea 1997, but austerity, e.g. Greece, deepened contraction\n- World Bank: infrastructure funding raises productivity, with criticisms of its projects\n- Judgement: net positive but uneven",
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "a1-m2-21a",
+      "section": "Held-out",
+      "label": "",
+      "marks": 2,
+      "expected": 0,
+      "mark": 1,
+      "band": "Provides some relevant information",
+      "check": {
+        "status": "agreed",
+        "marks": [1, 1]
+      },
+      "delta": 1,
+      "flags": {
+        "validated": true
+      },
+      "usd": 0.029128,
+      "judgeUsd": 0,
+      "seconds": 13.567947708,
+      "verdict": null,
+      "feedback": null,
+      "error": null,
+      "score": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      },
+      "firstScore": {
+        "delta": 1,
+        "exact": false,
+        "within1": true,
+        "band": false
+      }
+    },
+    {
+      "id": "2024-q22a",
+      "section": "Claro",
+      "label": "strong",
+      "marks": 2,
+      "expected": [2, 2],
+      "mark": 2,
+      "band": "Outlines a cause of inflation in Australia",
+      "check": {
+        "status": "agreed",
+        "marks": [2, 2]
+      },
+      "delta": null,
+      "flags": {
+        "validated": true,
+        "inRange": true
+      },
+      "usd": 0.022744,
+      "judgeUsd": 0,
+      "seconds": 10.409165281999998,
+      "verdict": null,
+      "feedback": "The student outlines one valid cause and gives its main features and mechanism: \"Firms respond to the excess demand by raising prices, so the general price level rises.\" This matches the sample depth.\n1. [Strength · Knowledge] \"aggregate demand grows faster than the economy's productive capacity\" — Accurate and precise statement of demand-pull inflation using correct terminology.\n2. [Strength · Analysis] \"Firms respond to the excess demand by raising prices\" — You make the cause-and-effect link explicit, which is what turns a definition into an outline.\nNext band: \nWhy not higher: Full marks awarded.\nBetter-answer outline:\n- Name one cause, e.g. demand-pull inflation\n- State that aggregate demand exceeds productive capacity\n- Link excess demand to firms raising prices\n- Conclude with a rise in the general price level",
+      "error": null
+    }
+  ]
+}
