@@ -522,7 +522,7 @@ export function SprintSetup({
                     {(
                       [
                         ["nesa", "HSC papers"],
-                        ["a1", "Trial papers"],
+                        ["a1", "Practice"],
                       ] as const
                     ).map(([o, label]) => (
                       <Chip

@@ -107,8 +107,9 @@ test.describe("Topic Sprint setup", () => {
     await page.getByRole("button", { name: /^Economic Issues/ }).click();
     const subs = page.getByRole("group", { name: "Economic Issues subtopics" });
     await subs.getByRole("button", { name: /^Inflation · \d+$/ }).click();
+    // The year span follows the published content (HSC and A1 practice), so it is not pinned.
     await expect(bar).toContainText(
-      "30 marks · 45 min · Economic Issues (Inflation) · 2018–2025 · Prefer new",
+      /30 marks · 45 min · Economic Issues \(Inflation\) · \d{4}–\d{4} · Prefer new/,
     );
     // Inflation alone has fewer than 30 short-answer marks: the shortfall is explicit.
     await expect(
@@ -139,6 +140,36 @@ test.describe("Topic Sprint setup", () => {
     await expect(bar).toContainText(
       "20 questions · 20 marks · 20 min · Whole course",
     );
+  });
+
+  test("Source chips are HSC papers and Practice, and their counts add up", async ({
+    page,
+  }) => {
+    await page.goto("/student/sprint?type=mcq");
+    const match = page.getByText(/^\d+ questions match/).first();
+    const count = async () =>
+      Number((await match.textContent())!.match(/^(\d+)/)![1]);
+    await expect(match).toBeVisible();
+    await page.getByRole("button", { name: "More filters" }).click();
+    const source = page.getByRole("group", { name: "Source" });
+    await expect(
+      source.getByRole("button", { name: "HSC papers" }),
+    ).toBeVisible();
+    await expect(
+      source.getByRole("button", { name: "Practice" }),
+    ).toBeVisible();
+    await expect(page.getByText("Trial papers")).toHaveCount(0);
+    const both = await count();
+    await source.getByRole("button", { name: "Practice" }).click();
+    await expect.poll(count).toBeLessThan(both);
+    const hsc = await count();
+    await source.getByRole("button", { name: "Practice" }).click();
+    await source.getByRole("button", { name: "HSC papers" }).click();
+    // Practice only: the pool moves away from the HSC-only count before it is read.
+    await expect.poll(count).not.toBe(hsc);
+    const practice = await count();
+    expect(hsc + practice).toBe(both);
+    await page.getByRole("button", { name: "Reset" }).click();
   });
 
   test("a prefilled link starts a sized, timed sprint in exam order", async ({
