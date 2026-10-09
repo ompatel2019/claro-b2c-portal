@@ -221,7 +221,7 @@ export function ReviewEditor({
     <form
       ref={form}
       action={action}
-      className={`space-y-4 ${readonly ? "" : "pb-[calc(12rem+env(safe-area-inset-bottom))] lg:pb-0"}`}
+      className={`space-y-4 ${readonly ? "" : "pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-0"}`}
       onBlurCapture={() => {
         changeField.current = null;
       }}
@@ -444,10 +444,11 @@ export function ReviewEditor({
                   ...(added ? [`${added} added`] : []),
                 ].join(" · ")}
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap">
                 <Button
                   ref={resolve}
                   type="submit"
+                  className="px-2 text-xs whitespace-normal lg:px-4 lg:text-sm"
                   disabled={pending || guidelinesUnavailable}
                 >
                   {pending ? "Resolving…" : "Resolve (⌘/Ctrl+Enter)"}
@@ -457,6 +458,7 @@ export function ReviewEditor({
                   variant="outline"
                   name="unchanged"
                   value="yes"
+                  className="px-2 text-xs whitespace-normal lg:px-4 lg:text-sm"
                   disabled={pending || guidelinesUnavailable}
                 >
                   Resolve unchanged

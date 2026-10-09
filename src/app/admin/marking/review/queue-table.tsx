@@ -48,7 +48,11 @@ export function QueueTable({
       id: "student",
       header: "Student",
       cell: (r) => (
-        <Link className="underline" href={`/admin/students/${r.userId}`}>
+        <Link
+          className="block max-w-20 truncate underline"
+          title={r.name}
+          href={`/admin/students/${r.userId}`}
+        >
           {r.name}
         </Link>
       ),
@@ -58,13 +62,13 @@ export function QueueTable({
       header: "Question",
       cell: (r) => {
         const content = (
-          <>
-            <span className="block font-medium">{r.source}</span>
-            <span className="text-muted-foreground">
+          <div className="w-28" title={`${r.source}: ${r.stem}`}>
+            <span className="block truncate font-medium">{r.source}</span>
+            <span className="text-muted-foreground block truncate">
               {r.stem.slice(0, 60)}
               {r.stem.length > 60 ? "…" : ""}
             </span>
-          </>
+          </div>
         );
         return failed ? (
           content
@@ -87,7 +91,14 @@ export function QueueTable({
       id: "note",
       header: "Student note",
       cell: (r) =>
-        r.note ? `${r.note.slice(0, 80)}${r.note.length > 80 ? "…" : ""}` : "—",
+        r.note ? (
+          <span className="block w-20 truncate" title={r.note}>
+            {r.note.slice(0, 80)}
+            {r.note.length > 80 ? "…" : ""}
+          </span>
+        ) : (
+          "—"
+        ),
     },
   ];
   if (failed)
@@ -129,7 +140,7 @@ export function QueueTable({
       aria-label="Review table, scroll horizontally"
       tabIndex={0}
     >
-      <div className="min-w-[960px]">
+      <div className="min-w-[740px] [&_td]:px-2 [&_th]:px-2 [&_th]:whitespace-normal">
         <DataTable columns={columns} rows={rows} label="Marking review queue" />
       </div>
     </div>
