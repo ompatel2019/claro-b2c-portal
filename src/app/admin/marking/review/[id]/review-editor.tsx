@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   AnnotatedFeedback,
+  commentDeleteToastId,
   type EditableComment,
 } from "@/components/annotated-feedback";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -73,6 +75,10 @@ export function ReviewEditor({
   const commentsRef = useRef({ comments, nextMark });
   const changeField = useRef<Element | null>(null);
   const change = (items: EditableComment[], line: string) => {
+    for (const item of items) {
+      if (!commentsRef.current.comments.some((c) => c.id === item.id))
+        toast.dismiss(commentDeleteToastId(item.id));
+    }
     const field = document.activeElement;
     const typing = field?.matches("input,textarea,select");
     if (!typing || changeField.current !== field)
@@ -93,6 +99,10 @@ export function ReviewEditor({
     changeField.current = null;
     const previous = history.current.pop();
     if (!previous) return;
+    for (const item of previous.comments) {
+      if (!commentsRef.current.comments.some((c) => c.id === item.id))
+        toast.dismiss(commentDeleteToastId(item.id));
+    }
     commentsRef.current = previous;
     setComments(previous.comments);
     setNextMark(previous.nextMark);

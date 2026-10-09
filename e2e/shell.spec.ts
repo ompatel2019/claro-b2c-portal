@@ -104,7 +104,7 @@ test.describe("Admin shell", () => {
       "Dashboard",
       "All students",
       "Questions",
-      "Review",
+      "Review queue",
       "AI spend",
     ]);
     await expect(

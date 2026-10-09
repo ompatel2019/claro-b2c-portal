@@ -65,6 +65,7 @@ function Remembered({
 }
 
 export type EditableComment = FeedbackComment & { id: number };
+export const commentDeleteToastId = (id: number) => `deleted-comment-${id}`;
 export type FeedbackEdit = {
   comments: EditableComment[];
   nextMark: string;
@@ -218,6 +219,7 @@ function CommentCard({
                 edit.nextMark,
               );
               toast("Comment deleted", {
+                id: commentDeleteToastId(c.id),
                 duration: 10000,
                 action: {
                   label: "Undo",

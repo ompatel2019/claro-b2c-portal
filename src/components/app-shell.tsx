@@ -77,7 +77,9 @@ export const nav: Record<
     },
     {
       label: "Marking",
-      items: [{ label: "Review", href: "/admin/marking/review", icon: Pen }],
+      items: [
+        { label: "Review queue", href: "/admin/marking/review", icon: Pen },
+      ],
     },
     {
       label: "Spend & settings",
@@ -178,7 +180,9 @@ export function AppShell({
                           <span>{item.label}</span>
                         </SidebarMenuButton>
                         {!!badge && (
-                          <SidebarMenuBadge aria-label={`${badge} due`}>
+                          <SidebarMenuBadge
+                            aria-label={`${badge} ${kind === "admin" ? "open" : "due"}`}
+                          >
                             {badge}
                           </SidebarMenuBadge>
                         )}

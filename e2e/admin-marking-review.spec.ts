@@ -228,8 +228,8 @@ test.describe("admin marking review", () => {
     await deleteSecond.click();
     await expect(summary).toHaveText(deleted);
     await page
-      .getByRole("button", { name: "Undo", exact: true })
-      .last()
+      .locator('[data-sonner-toast][data-front="true"]')
+      .getByRole("button", { name: "Undo" })
       .click();
     await expect(summary).toHaveText("Mark 2 → 3 · 1 comment edited");
     await expect(bodies).toHaveCount(3);

@@ -7,7 +7,7 @@ vi.mock("next/form", () => ({
 }));
 vi.mock("@/app/(auth)/actions", () => ({ signOut: vi.fn() }));
 vi.mock("@/utils/supabase/client", () => ({ createClient: vi.fn() }));
-import { activeItem, nav } from "./app-shell";
+import { activeItem, AppShell, nav } from "./app-shell";
 import { DataTable, sortRows, type Column } from "./data-table";
 import { EmptyState } from "./empty-state";
 import { FilterBar } from "./filter-bar";
@@ -46,6 +46,27 @@ it("marks the section root only on an exact match", () => {
   expect(activeItem("student", "/profile")).toBeUndefined();
   expect(activeItem("admin", "/admin")?.label).toBe("Dashboard");
   expect(activeItem("admin", "/admin/students/x")?.label).toBe("All students");
+  expect(activeItem("admin", "/admin/marking/review/x")?.label).toBe(
+    "Review queue",
+  );
+});
+
+it.each([
+  ["admin", "/admin/marking/review", "open"],
+  ["student", "/student/flashcards", "due"],
+] as const)("labels %s badges as %s", (kind, href, label) => {
+  window.matchMedia = () =>
+    ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }) as unknown as MediaQueryList;
+  render(
+    <AppShell kind={kind} name="Test" defaultOpen badges={{ [href]: 3 }}>
+      Content
+    </AppShell>,
+  );
+  expect(screen.getByLabelText(`3 ${label}`)).toHaveTextContent("3");
 });
 
 it("renders the page header, stat card and empty state", () => {

@@ -10,7 +10,9 @@ const push = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh: vi.fn() }),
 }));
-vi.mock("sonner", () => ({ toast: vi.fn() }));
+vi.mock("sonner", () => ({
+  toast: Object.assign(vi.fn(), { dismiss: vi.fn() }),
+}));
 vi.mock("../actions", () => ({ resolveReview: vi.fn() }));
 import { toast } from "sonner";
 import type { ReviewRow } from "@/lib/feedback";
@@ -28,6 +30,7 @@ beforeAll(() => {
 beforeEach(() => {
   push.mockClear();
   vi.mocked(toast).mockClear();
+  vi.mocked(toast.dismiss).mockClear();
 });
 
 const text = "Inflation rose because demand grew. Wages lagged behind.";
@@ -208,6 +211,24 @@ it("summarises edits, deletions and additions; ⌘Z undoes one change at a time"
   ).toBe("Add a CPI figure.");
 });
 
+it.each([{ metaKey: true }, { ctrlKey: true }, {}])(
+  "undo dismisses the restored comment's delete toast (%j)",
+  (modifiers) => {
+    const { key, bodies } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Delete comment 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete comment 1" }));
+    const [first, second] = vi
+      .mocked(toast)
+      .mock.calls.map((call) => call[1]!.id);
+    expect(first).toBeDefined();
+    expect(second).not.toBe(first);
+    if (modifiers.metaKey || modifiers.ctrlKey) key("z", modifiers);
+    else fireEvent.click(screen.getByRole("button", { name: /^Undo/ }));
+    expect(bodies()).toEqual(["Correct cause."]);
+    expect(toast.dismiss).toHaveBeenCalledExactlyOnceWith(second);
+  },
+);
+
 it("the delete toast's Undo restores that comment only, once, keeping later edits", () => {
   const { summary, bodies } = setup();
   fireEvent.click(screen.getByRole("button", { name: "Delete comment 1" }));
@@ -229,6 +250,9 @@ it("the delete toast's Undo restores that comment only, once, keeping later edit
     .map((action) => () => act(() => action.onClick()));
   // Undo on the first toast brings back "Give a CPI figure." and nothing else.
   first();
+  expect(toast.dismiss).toHaveBeenCalledWith(
+    vi.mocked(toast).mock.calls[0][1]!.id,
+  );
   expect(bodies()).toEqual(["Give a CPI figure."]);
   expect(summary()).toBe("Mark 3 → 3 · 1 deleted");
   expect(line).toHaveValue("Add a CPI figure.");
