@@ -80,7 +80,7 @@ export function FeedbackWidget({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const pathSession = pathname.match(
-    /^\/(?:student\/sprint|flashcards)\/([0-9a-f-]{36})/,
+    /^\/(?:student\/sprint|student\/flashcards)\/([0-9a-f-]{36})/,
   )?.[1];
   // label "" = the student removed the link chip.
   const sessionId =

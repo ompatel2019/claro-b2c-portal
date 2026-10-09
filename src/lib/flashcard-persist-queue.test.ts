@@ -39,3 +39,17 @@ describe("flashcard persist queue", () => {
     expect(isMissingSessionError(new Error("network down"))).toBe(false);
   });
 });
+
+it("keeps spoken answer metadata with an offline self rating", () => {
+  const rating = {
+    sessionId: "s",
+    cardId: "c",
+    mark: 0.5 as const,
+    answer: "Spoken answer",
+    answerMode: "spoken" as const,
+  };
+  enqueuePersistRating(rating);
+  expect(loadPersistQueue()).toEqual([rating]);
+  removePersistRating("s", "c");
+  expect(localStorage.getItem(PERSIST_QUEUE_KEY)).toBeNull();
+});

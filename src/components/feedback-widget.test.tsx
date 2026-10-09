@@ -18,7 +18,7 @@ vi.mock("@/utils/supabase/client", () => ({
 const success = vi.fn();
 vi.mock("sonner", () => ({ toast: { success: (m: string) => success(m) } }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/flashcards/11111111-2222-3333-4444-555555555555",
+  usePathname: () => "/student/flashcards/11111111-2222-3333-4444-555555555555",
 }));
 import { FeedbackWidget, ReportProblem } from "./feedback-widget";
 

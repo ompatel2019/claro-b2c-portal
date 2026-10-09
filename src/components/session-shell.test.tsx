@@ -114,3 +114,26 @@ it("treats text fields as typing but not radio cards", () => {
   expect(isTyping(text)).toBe(true);
   expect(isTyping(radio)).toBe(false);
 });
+
+it("shows flashcard position and known count without the sprint tools", () => {
+  shell({
+    flashcards: { known: 5, shortcuts: [["L", "List view"]] },
+    position: 7,
+    total: 20,
+    answered: 6,
+    clock: { mode: "up", seconds: 42 },
+  });
+  expect(screen.getByText("Card 7 of 20")).toBeVisible();
+  expect(screen.getByText("Knew 5")).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Booklet (B)" })).toBeNull();
+  expect(screen.queryByText("Booklet body")).toBeNull();
+  expect(screen.getByRole("button", { name: "Time used 0:42" })).toBeVisible();
+});
+
+it("ignores J/K in flashcards while preserving arrow navigation", () => {
+  const { props } = shell({ flashcards: { known: 0, shortcuts: [] } });
+  for (const key of ["j", "J", "k", "K"]) fireEvent.keyDown(window, { key });
+  expect(props.onMove).not.toHaveBeenCalled();
+  fireEvent.keyDown(window, { key: "ArrowRight" });
+  expect(props.onMove).toHaveBeenCalledWith(1);
+});

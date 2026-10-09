@@ -204,3 +204,11 @@ export const Shield = icon(
   "shield",
   <path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Zm-4 9 3 3 5-6" />,
 );
+
+export const Microphone = icon(
+  "microphone",
+  <>
+    <rect x="9" y="3" width="6" height="12" rx="3" />
+    <path d="M6 11v1a6 6 0 0 0 12 0v-1M12 18v3M9 21h6" />
+  </>,
+);

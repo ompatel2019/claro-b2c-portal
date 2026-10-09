@@ -97,7 +97,7 @@ export default async function Flashcards({
             </p>
             <Link
               className={buttonVariants({ size: "sm" })}
-              href={`/flashcards/${open.id}`}
+              href={`/student/flashcards/${open.id}`}
             >
               Continue
             </Link>

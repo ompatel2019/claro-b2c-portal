@@ -1,42 +1,32 @@
+import { normaliseAnswer } from "../src/lib/flashcards";
 import { expect, test, type Page } from "@playwright/test";
-import { adminClient, cleanupSessions, signIn } from "./helpers";
+import {
+  cleanupSessions,
+  signIn,
+  snapshotFlashcardProgress,
+  restoreFlashcardProgress,
+} from "./helpers";
 
 test.describe("Student flashcards", () => {
   test.skip(
-    !process.env.STUDENT_EMAIL || !process.env.STUDENT_PASSWORD,
+    !process.env.STUDENT_EMAIL ||
+      !process.env.STUDENT_PASSWORD ||
+      !process.env.SUPABASE_SECRET_KEY,
     "Requires a real student account",
   );
   test.describe.configure({ mode: "serial" });
   const sessionIds: string[] = [];
   const reviewedCards = new Set<string>();
+  let snapshot: Awaited<ReturnType<typeof snapshotFlashcardProgress>>;
+  test.beforeAll(async () => {
+    snapshot = await snapshotFlashcardProgress();
+  });
   test.beforeEach(async ({ page }) => {
     await signIn(page);
   });
   test.afterAll(async () => {
     await cleanupSessions(sessionIds);
-    const db = adminClient();
-    if (!db || !reviewedCards.size) return;
-    let userId: string | undefined;
-    for (let page = 1; !userId; page++) {
-      const { data, error } = await db.auth.admin.listUsers({
-        page,
-        perPage: 1000,
-      });
-      if (error)
-        throw new Error("Could not look up the E2E student for cleanup.");
-      userId = data.users.find(
-        (u) =>
-          u.email?.toLowerCase() === process.env.STUDENT_EMAIL?.toLowerCase(),
-      )?.id;
-      if (data.users.length < 1000) break;
-    }
-    if (!userId) throw new Error("Could not find the E2E student for cleanup.");
-    const { error } = await db
-      .from("flashcard_progress")
-      .delete()
-      .eq("user_id", userId)
-      .in("flashcard_id", [...reviewedCards]);
-    if (error) throw new Error("Could not clean up E2E flashcard progress.");
+    if (snapshot) await restoreFlashcardProgress(snapshot, reviewedCards);
   });
   async function startDeck(page: Page, mode: "study" | "test") {
     await page.goto("/student/flashcards?topic=t3-inflation");
@@ -102,27 +92,29 @@ test.describe("Student flashcards", () => {
     await startDeck(page, "study");
     const first = await cardId(page);
     const front = await page.locator("article h2").innerText();
-    const countText = await page
-      .getByText(/^Card \d+ of \d+ · Study$/)
-      .innerText();
+    const countText = await page.getByText(/^Card \d+ of \d+$/).innerText();
     const count = Number(countText.match(/of (\d+)/)![1]);
     await page.getByRole("button", { name: "Flip card", exact: true }).click();
     await expect(
       page.getByRole("heading", { name: "Model answer", exact: true }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Missed", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Missed it (1)", exact: true })
+      .click();
     await expect(
       page.getByText("1 card coming back", { exact: true }),
     ).toBeVisible();
     for (let i = 1; i < count; i++) {
       await expect(
-        page.getByText(`Card ${i + 1} of ${count} · Study`, { exact: true }),
+        page.getByText(`Card ${i + 1} of ${count}`, { exact: true }),
       ).toBeVisible();
       await cardId(page);
       await page
         .getByRole("button", { name: "Flip card", exact: true })
         .click();
-      await page.getByRole("button", { name: "Knew it", exact: true }).click();
+      await page
+        .getByRole("button", { name: "Knew it (3)", exact: true })
+        .click();
     }
     await expect(page.locator("article")).toHaveAttribute(
       "data-card-id",
@@ -136,77 +128,84 @@ test.describe("Student flashcards", () => {
       first,
     );
     await page.getByRole("button", { name: "Flip card", exact: true }).click();
-    await page.getByRole("button", { name: "Knew it", exact: true }).click();
-    // Finish hard-navigates; if the runner lands on the complete state
-    // instead (slow save under load), click through. Poll for either.
-    const see = page.getByRole("button", { name: "See results", exact: true });
-    await expect(async () => {
-      if (!/\/results$/.test(new URL(page.url()).pathname)) {
-        if (await see.isVisible()) await see.click();
-        expect(new URL(page.url()).pathname).toMatch(/\/results$/);
-      }
-    }).toPass({ timeout: 60000 });
-    await page.waitForLoadState();
+    await page
+      .getByRole("button", { name: "Knew it (3)", exact: true })
+      .click();
     await expect(
-      page.getByText(`${count - 1}/${count}`, { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Your cards", exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("First mark: 0/1 · 2 attempts", { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", {
-        name: "Practise missed cards again",
+      page.getByRole("heading", {
+        name: "Your flashcard results",
         exact: true,
       }),
+    ).toBeVisible({ timeout: 60000 });
+    await expect(
+      page.getByText(`${count - 1} / ${count}`, { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("table")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Practise missed (1)", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Test these cards", exact: true }),
     ).toBeVisible();
     expect(aiRequests).toBe(0);
     const id = sessionIds.at(-1)!;
     await page.goto("/activity?mode=study");
     await expect(
-      page.locator(`a[href="/flashcards/${id}/results"]`),
+      page.locator(`a[href="/student/flashcards/${id}"]`),
     ).toContainText("Flashcards: Study");
   });
   test("test mode checks one answer and finishes with a model answer", async ({
     page,
   }) => {
-    test.skip(!process.env.E2E_AI, "Calls OpenAI: set E2E_AI=1");
-    test.setTimeout(180000);
-    let aiRequests = 0;
-    page.on("request", (r) => {
-      if (/\/api\/flashcards\/[^/]+\/mark$/.test(new URL(r.url()).pathname))
-        aiRequests++;
+    const verdictResponses: boolean[] = [];
+    page.on("response", async (response) => {
+      if (
+        /\/api\/flashcards\/[^/]+\/mark$/.test(
+          new URL(response.url()).pathname,
+        ) &&
+        response.ok()
+      ) {
+        const result = await response.json();
+        verdictResponses.push(result.local === true && result.source !== "ai");
+      }
     });
     await startDeck(page, "test");
-    await cardId(page);
+    const currentId = await cardId(page);
+    await page.getByRole("button", { name: "List (L)", exact: true }).click();
+    const exactAnswer = await page
+      .locator(`tr[data-card-id="${currentId}"] td`)
+      .nth(1)
+      .innerText();
+    await page.getByRole("button", { name: "One by one", exact: true }).click();
+    expect(normaliseAnswer(exactAnswer)).not.toBe("");
     await page
       .getByRole("textbox", { name: "Your answer", exact: true })
-      .fill(
-        "Inflation is a sustained increase in the general price level, reducing the purchasing power of money.",
-      );
+      .fill(exactAnswer);
+    const checked = page.waitForResponse((r) =>
+      /\/api\/flashcards\/[^/]+\/mark$/.test(new URL(r.url()).pathname),
+    );
     await page
-      .getByRole("button", { name: "Check answer", exact: true })
+      .getByRole("button", { name: "Check (⌘Enter)", exact: true })
       .click();
+    expect(await (await checked).json()).toMatchObject({
+      local: true,
+      mark: 1,
+      source: "self",
+    });
     await expect(
-      page
-        .getByRole("status")
-        .filter({ hasText: /^(Knew it|Nearly there|Not yet)$/ }),
-    ).toBeVisible({ timeout: 120000 });
-    await expect(
-      page.getByRole("heading", { name: "Model answer", exact: true }),
+      page.getByRole("status").filter({ hasText: /^Knew it$/ }),
     ).toBeVisible();
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
     await expect(
-      page.getByRole("button", { name: "Next card", exact: true }),
-    ).toBeEnabled();
-    await page.getByRole("button", { name: "Finish now", exact: true }).click();
-    await expect(page).toHaveURL(/\/results$/);
+      page.getByRole("heading", {
+        name: "Your flashcard results",
+        exact: true,
+      }),
+    ).toBeVisible({ timeout: 60000 });
     await expect(
-      page.getByText("First-try marks / cards reviewed", { exact: true }),
+      page.getByRole("columnheader", { name: "Model answer", exact: true }),
     ).toBeVisible();
-    await expect(page.getByText(/^AI feedback:/)).toBeVisible();
-    expect(aiRequests).toBe(1);
+    expect(verdictResponses).toEqual([true]);
   });
 });
 

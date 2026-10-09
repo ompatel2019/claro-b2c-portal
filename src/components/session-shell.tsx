@@ -85,6 +85,7 @@ function Timer({ mode, seconds }: { mode: "down" | "up"; seconds: number }) {
 /** §2.2 K13: the session screen — top bar, booklet, timer, calculator and shortcuts. */
 export function SessionShell({
   title,
+  flashcards,
   position,
   total,
   answered,
@@ -99,6 +100,7 @@ export function SessionShell({
   children,
 }: {
   title: string;
+  flashcards?: { known: number; shortcuts: string[][] };
   position: number;
   total: number;
   answered: number;
@@ -140,17 +142,19 @@ export function SessionShell({
       )
         return;
       const k = e.key;
-      if (k === "ArrowLeft" || k === "j" || k === "J") move.current(-1);
-      else if (k === "ArrowRight" || k === "k" || k === "K") move.current(1);
-      else if (k === "b" || k === "B") toggleRef.current();
-      else if (k === "c" || k === "C") setCalc((c) => !c);
+      if (k === "ArrowLeft" || (!flashcards && (k === "j" || k === "J")))
+        move.current(-1);
+      else if (k === "ArrowRight" || (!flashcards && (k === "k" || k === "K")))
+        move.current(1);
+      else if (!flashcards && (k === "b" || k === "B")) toggleRef.current();
+      else if (!flashcards && (k === "c" || k === "C")) setCalc((c) => !c);
       else if (k === "?") setHelp(true);
       else return;
       e.preventDefault();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [flashcards]);
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -170,7 +174,7 @@ export function SessionShell({
         </p>
         <div className="flex min-w-14 flex-col gap-1 sm:min-w-24">
           <p className="text-xs font-medium tabular-nums">
-            Q {position} of {total}
+            {flashcards ? "Card" : "Q"} {position} of {total}
           </p>
           <div
             role="progressbar"
@@ -186,6 +190,9 @@ export function SessionShell({
             />
           </div>
         </div>
+        {flashcards && (
+          <p className="text-xs tabular-nums">Knew {flashcards.known}</p>
+        )}
         <p
           role="status"
           className={cn(
@@ -208,47 +215,53 @@ export function SessionShell({
         </p>
         <div className="ml-auto flex shrink-0 items-center gap-1">
           {/* Below sm the tools collapse into one menu so Finish always fits. */}
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="hover:bg-muted inline-flex size-8 items-center justify-center rounded-full sm:hidden"
-              aria-label="More tools"
-            >
-              <More className="size-5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={toggleBooklet}>
+          {!flashcards && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="hover:bg-muted inline-flex size-8 items-center justify-center rounded-full sm:hidden"
+                aria-label="More tools"
+              >
+                <More className="size-5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={toggleBooklet}>
+                  <Book />
+                  Booklet
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCalc(!calc)}>
+                  <CalculatorIcon />
+                  Calculator
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => feedback()}>
+                  <Message />
+                  Send feedback
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {!flashcards && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="hidden sm:inline-flex"
+                aria-label="Booklet (B)"
+                onClick={toggleBooklet}
+              >
                 <Book />
-                Booklet
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCalc(!calc)}>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="hidden sm:inline-flex"
+                aria-label="Calculator (C)"
+                aria-pressed={calc}
+                onClick={() => setCalc(!calc)}
+              >
                 <CalculatorIcon />
-                Calculator
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => feedback()}>
-                <Message />
-                Send feedback
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="hidden sm:inline-flex"
-            aria-label="Booklet (B)"
-            onClick={toggleBooklet}
-          >
-            <Book />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="hidden sm:inline-flex"
-            aria-label="Calculator (C)"
-            aria-pressed={calc}
-            onClick={() => setCalc(!calc)}
-          >
-            <CalculatorIcon />
-          </Button>
+              </Button>
+            </>
+          )}
           <Timer {...clock} />
           <Button
             variant="ghost"
@@ -270,7 +283,7 @@ export function SessionShell({
         </div>
       </header>
       <div className="flex flex-1">
-        {rail && (
+        {!flashcards && rail && (
           <aside className="bg-card sticky top-14 hidden h-[calc(100svh-3.5rem)] w-60 shrink-0 overflow-y-auto border-r p-3 lg:block">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Booklet</h2>
@@ -310,7 +323,7 @@ export function SessionShell({
         <DialogContent>
           <DialogTitle>Keyboard shortcuts</DialogTitle>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-            {SHORTCUTS.map(([k, v]) => (
+            {(flashcards?.shortcuts ?? SHORTCUTS).map(([k, v]) => (
               <div key={k} className="contents">
                 <dt className="font-mono font-semibold">{k}</dt>
                 <dd>{v}</dd>

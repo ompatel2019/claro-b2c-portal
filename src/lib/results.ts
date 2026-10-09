@@ -115,7 +115,7 @@ export function nextActions(
       .filter(({ id }) => cards[id])
       .map(({ id }) => ({
         label: `Review ${cards[id]} flashcard${cards[id] === 1 ? "" : "s"} on ${name(id)}`,
-        href: `/flashcards?topic=${id}`,
+        href: `/student/flashcards?topic=${id}`,
       })),
   ];
 }

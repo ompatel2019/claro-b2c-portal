@@ -3,7 +3,11 @@ export type PersistRating = {
   sessionId: string;
   cardId: string;
   mark: 0 | 0.5 | 1;
+  answer?: string;
+  answerMode?: "typed" | "spoken";
 };
+
+export const activeSessions = new Set<string>();
 
 export const PERSIST_QUEUE_KEY = "claro.flashcard.persist";
 

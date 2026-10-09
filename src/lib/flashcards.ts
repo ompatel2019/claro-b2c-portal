@@ -42,7 +42,7 @@ export function schedule(
       : mark === 0.5
         ? Math.max(1, Math.ceil((prev?.interval_days ?? 0) * 1.2))
         : prev
-          ? Math.ceil(prev.interval_days * 2.5)
+          ? Math.max(3, Math.ceil(prev.interval_days * 2.5))
           : 3,
   );
   return { interval_days, due_on: addDays(today, interval_days) };
@@ -87,11 +87,22 @@ export function resumeQueue(
   reviews: readonly FlashcardReview[],
   repeatMissed = true,
 ) {
-  const latest = new Map(reviews.map((r) => [r.flashcard_id, r.mark]));
-  return ids.filter((id) => {
-    const attempts = reviews.filter((r) => r.flashcard_id === id).length;
-    return !attempts || (repeatMissed && latest.get(id) !== 1 && attempts <= 3);
-  });
+  let queue = [...ids];
+  const attempts = new Map<string, number>();
+  const available = new Set(ids);
+  for (const review of reviews) {
+    if (!available.has(review.flashcard_id)) continue;
+    const count = attempts.get(review.flashcard_id) ?? 0;
+    queue = nextQueue(
+      queue,
+      review.flashcard_id,
+      review.mark,
+      repeatMissed,
+      count,
+    );
+    attempts.set(review.flashcard_id, count + 1);
+  }
+  return queue;
 }
 
 /** Normalise for flashcard matching. */
@@ -183,4 +194,8 @@ export function matchFlashcardAnswer(
     if (f && (a === f || sortedJoin(a) === sortedJoin(f))) return null;
   }
   return null;
+}
+
+export function skipQueue(queue: readonly string[]) {
+  return queue.length > 1 ? [...queue.slice(1), queue[0]] : [];
 }

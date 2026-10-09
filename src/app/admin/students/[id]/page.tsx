@@ -51,7 +51,7 @@ export default async function StudentDetail({
           {sessions.map((s) => {
             const href =
               s.kind === "flashcards"
-                ? `/flashcards/${s.id}${s.finished_at ? "/results" : ""}`
+                ? `/student/flashcards/${s.id}`
                 : `/student/sprint/${s.id}${s.finished_at ? "/results" : ""}`;
             const cfg =
               s.config &&

@@ -40,6 +40,7 @@ export async function startFlashcards(
     if (!legacy.success) return { error: "Choose a valid deck setup." };
     configInput = {
       ...DECK_DEFAULTS,
+      mode: form.get("mode") ?? "study",
       size: legacyIds.length ? "all" : DECK_DEFAULTS.size,
       which: form.get("due") === "1" ? "due" : "all",
     };
@@ -81,20 +82,24 @@ export async function startFlashcards(
     .select("id")
     .single();
   if (error) return { error: "Could not start your deck. Please try again." };
-  redirect(`/flashcards/${data.id}`);
+  redirect(`/student/flashcards/${data.id}`);
 }
 export async function rateFlashcard(
   sessionId: string,
   cardId: string,
   mark: number,
+  answer = "",
+  answerMode: "typed" | "spoken" = "typed",
 ) {
   const parsed = z
     .object({
       sessionId: z.uuid(),
       cardId: z.string().min(1).max(200),
       mark: z.union([z.literal(0), z.literal(0.5), z.literal(1)]),
+      answer: z.string().max(1000),
+      answerMode: z.enum(["typed", "spoken"]),
     })
-    .safeParse({ sessionId, cardId, mark });
+    .safeParse({ sessionId, cardId, mark, answer, answerMode });
   if (!parsed.success) throw new Error("Choose a valid card rating.");
   const profile = await requireProfile();
   if (profile.role !== "student") throw new Error("Student access required.");
@@ -110,16 +115,19 @@ export async function rateFlashcard(
   if (!session || session.finished_at)
     throw new Error("This session was reset or expired. Start the deck again.");
   if (
-    session.config.mode !== "study" ||
+    !["study", "test"].includes(session.config.mode) ||
     !session.config.card_ids?.includes(cardId)
   )
-    throw new Error("This card is not available in an active study session.");
+    throw new Error(
+      "This card is not available in an active flashcard session.",
+    );
   const { data: review } = await db
     .from("flashcard_reviews")
     .insert({
       session_id: sessionId,
       flashcard_id: cardId,
-      answer: null,
+      answer: answer || null,
+      answer_mode: answerMode,
       mark: parsed.data.mark,
       source: "self",
     })
@@ -160,15 +168,19 @@ export async function drainPersistRating(item: {
   sessionId: string;
   cardId: string;
   mark: 0 | 0.5 | 1;
+  answer?: string;
+  answerMode?: "typed" | "spoken";
 }): Promise<"ok" | "missing" | "error"> {
   const parsed = z
     .object({
       sessionId: z.uuid(),
       cardId: z.string().min(1).max(200),
       mark: z.union([z.literal(0), z.literal(0.5), z.literal(1)]),
+      answer: z.string().max(1000).optional(),
+      answerMode: z.enum(["typed", "spoken"]).optional(),
     })
     .safeParse(item);
-  if (!parsed.success) return "error";
+  if (!parsed.success) return "missing";
   const profile = await requireProfile();
   if (profile.role !== "student") return "error";
   const db = await createClient();
@@ -185,6 +197,8 @@ export async function drainPersistRating(item: {
       parsed.data.sessionId,
       parsed.data.cardId,
       parsed.data.mark,
+      parsed.data.answer,
+      parsed.data.answerMode,
     );
     return "ok";
   } catch {

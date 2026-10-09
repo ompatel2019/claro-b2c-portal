@@ -57,27 +57,28 @@ export async function loadFlashcards(id: string) {
   };
 }
 
+export async function pages<T>(
+  query: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: unknown }>,
+) {
+  const rows: T[] = [];
+  const pageSize = 500;
+  for (let from = 0; ; from += pageSize) {
+    const result = await query(from, from + pageSize - 1);
+    if (result.error) throw result.error;
+    const batch = result.data ?? [];
+    rows.push(...batch);
+    if (batch.length < pageSize) return rows;
+  }
+}
+
 /** Load every authorised row, including collections beyond the Data API row limit. */
 export async function loadDeckBank(
   db: Awaited<ReturnType<typeof createClient>>,
   userId: string,
 ) {
-  async function pages<T>(
-    query: (
-      from: number,
-      to: number,
-    ) => PromiseLike<{ data: T[] | null; error: unknown }>,
-  ) {
-    const rows: T[] = [];
-    const pageSize = 500;
-    for (let from = 0; ; from += pageSize) {
-      const result = await query(from, from + pageSize - 1);
-      if (result.error) throw result.error;
-      const batch = result.data ?? [];
-      rows.push(...batch);
-      if (batch.length < pageSize) return rows;
-    }
-  }
   const [cards, progress] = await Promise.all([
     pages<DeckCard>((from, to) =>
       db

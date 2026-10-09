@@ -351,7 +351,7 @@ async function Continue({ userId }: { userId: string }) {
                 </p>
               </div>
               <Link
-                href={`/${cards ? "flashcards" : "student/sprint"}/${s.id}`}
+                href={`/${cards ? "student/flashcards" : "student/sprint"}/${s.id}`}
                 className={buttonVariants({ size: "sm" })}
               >
                 Continue

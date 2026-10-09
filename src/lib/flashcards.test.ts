@@ -7,6 +7,7 @@ import {
   resumeQueue,
   schedule,
   shuffle,
+  skipQueue,
   sydneyToday,
   type FlashcardReview,
 } from "./flashcards";
@@ -19,7 +20,7 @@ describe("flashcard schedules", () => {
     [{ interval_days: 8 }, 0.5, 10],
     [{ interval_days: 3 }, 1, 8],
     [{ interval_days: 30 }, 1, 60],
-    [{ interval_days: 0 }, 1, 0],
+    [{ interval_days: 0 }, 1, 3],
     [{ interval_days: 60 }, 0.5, 60],
     [{ interval_days: 0 }, 0.5, 1],
   ] as const)("schedules %#", (prev, mark, days) => {
@@ -77,7 +78,7 @@ it("uses first reviews for scoring and latest reviews for ordered resume", () =>
   expect([...firstReviews(reviews).values()].map((r) => r.mark)).toEqual([
     0, 1, 0.5,
   ]);
-  expect(resumeQueue(["a", "b", "c", "d"], reviews)).toEqual(["c", "d"]);
+  expect(resumeQueue(["a", "b", "c", "d"], reviews)).toEqual(["d", "c"]);
 });
 
 describe("flashcard answer matching", () => {
@@ -199,6 +200,22 @@ it("resumes with repeat settings and the per-card cap", () => {
     created_at: "2026-10-09",
   }));
   expect(resumeQueue(["a", "b"], reviews)).toEqual(["b"]);
-  expect(resumeQueue(["a", "b"], reviews.slice(0, 3))).toEqual(["a", "b"]);
+  expect(resumeQueue(["a", "b"], reviews.slice(0, 3))).toEqual(["b", "a"]);
   expect(resumeQueue(["a", "b"], reviews.slice(0, 1), false)).toEqual(["b"]);
+});
+
+it("moves skips to the end and leaves a last skipped card unrated", () => {
+  expect(skipQueue(["a", "b", "c"])).toEqual(["b", "c", "a"]);
+  expect(skipQueue(["a"])).toEqual([]);
+  expect(skipQueue([])).toEqual([]);
+});
+it("caps repeats at three and rebuilds an exhausted deck", () => {
+  expect(nextQueue(["a"], "a", 0, true, 2)).toEqual(["a"]);
+  expect(nextQueue(["a"], "a", 0, true, 3)).toEqual([]);
+  const reviews = Array.from({ length: 4 }, () => ({
+    flashcard_id: "a",
+    mark: 0,
+  })) as FlashcardReview[];
+  expect(resumeQueue(["a"], reviews)).toEqual([]);
+  expect(resumeQueue(["a"], reviews.slice(0, 1), false)).toEqual([]);
 });

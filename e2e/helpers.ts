@@ -57,3 +57,61 @@ export async function finish(page: Page) {
     .click();
   await expect(page).toHaveURL(/\/results$/, { timeout: 90000 });
 }
+
+/** Snapshot before any ratings; restore existing rows and delete only test-created rows. */
+export async function snapshotFlashcardProgress() {
+  const db = adminClient()!;
+  let userId = "";
+  for (let page = 1; !userId; page++) {
+    const { data, error } = await db.auth.admin.listUsers({
+      page,
+      perPage: 1000,
+    });
+    if (error) throw error;
+    userId =
+      data.users.find(
+        (u) =>
+          u.email?.toLowerCase() === process.env.STUDENT_EMAIL?.toLowerCase(),
+      )?.id ?? "";
+    if (data.users.length < 1000) break;
+  }
+  if (!userId) throw new Error("Could not find the E2E student for cleanup.");
+  const before: Record<string, unknown>[] = [];
+  for (let from = 0; ; from += 500) {
+    const { data, error } = await db
+      .from("flashcard_progress")
+      .select("*")
+      .eq("user_id", userId)
+      .order("flashcard_id")
+      .range(from, from + 499);
+    if (error) throw error;
+    before.push(...(data ?? []));
+    if (!data || data.length < 500) break;
+  }
+  return { userId, before };
+}
+export async function restoreFlashcardProgress(
+  snapshot: Awaited<ReturnType<typeof snapshotFlashcardProgress>>,
+  reviewed: Set<string>,
+) {
+  const db = adminClient()!;
+  const { userId, before } = snapshot;
+  const created = [...reviewed].filter(
+    (id) => !before.some((p) => p.flashcard_id === id),
+  );
+  if (created.length) {
+    const { error } = await db
+      .from("flashcard_progress")
+      .delete()
+      .eq("user_id", userId)
+      .in("flashcard_id", created);
+    if (error) throw error;
+  }
+  const existing = before.filter((p) => reviewed.has(p.flashcard_id as string));
+  if (existing.length) {
+    const { error } = await db
+      .from("flashcard_progress")
+      .upsert(existing, { onConflict: "user_id,flashcard_id" });
+    if (error) throw error;
+  }
+}

@@ -10,7 +10,7 @@ vi.mock("@/lib/auth", () => ({ requireProfile: vi.fn() }));
 vi.mock("@/utils/supabase/server", () => ({ createClient: vi.fn() }));
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
-import { rateFlashcard, startFlashcards } from "./actions";
+import { drainPersistRating, rateFlashcard, startFlashcards } from "./actions";
 function query(data: unknown, error: unknown = null) {
   const chain = {
     select: vi.fn(),
@@ -76,7 +76,7 @@ it("starts a default study deck without legacy mode, type or topic fields", asyn
   const session = query({ id: sessionId });
   const db = client(cards, query([]), session);
   await expect(startFlashcards({}, new FormData())).rejects.toThrow(
-    `redirect:/flashcards/${sessionId}`,
+    `redirect:/student/flashcards/${sessionId}`,
   );
   expect(db.from.mock.calls).toEqual([
     ["flashcards"],
@@ -250,7 +250,7 @@ it.each([
   },
 );
 it.each([
-  { finished_at: null, config: { mode: "test", card_ids: ["c"] } },
+  { finished_at: null, config: { mode: "invalid", card_ids: ["c"] } },
   { finished_at: null, config: { mode: "study", card_ids: ["other"] } },
 ])(
   "rejects invalid study sessions before inserting reviews %#",
@@ -258,7 +258,7 @@ it.each([
     const owned = query(session);
     const db = client(owned);
     await expect(rateFlashcard(sessionId, "c", 1)).rejects.toThrow(
-      "active study session",
+      "active flashcard session",
     );
     expect(owned.eq).toHaveBeenCalledWith("user_id", "user");
     expect(owned.eq).toHaveBeenCalledWith("kind", "flashcards");
@@ -284,6 +284,7 @@ it("saves a self rating and schedules only the first review", async () => {
     session_id: sessionId,
     flashcard_id: "c",
     answer: null,
+    answer_mode: "typed",
     source: "self",
     mark: 0.5,
   });
@@ -319,4 +320,22 @@ it("retries all 200 posted legacy cards", async () => {
   await expect(startFlashcards({}, form)).rejects.toThrow("redirect:");
   expect(session.insert.mock.calls[0][0].config.card_ids).toHaveLength(200);
   expect(session.insert.mock.calls[0][0].config.size).toBe("all");
+});
+
+it.each([
+  { answer: 3 },
+  { answer: "x".repeat(1001) },
+  { answerMode: "invalid" },
+  { sessionId: "invalid" },
+])("drops malformed durable ratings %j before querying", async (invalid) => {
+  const db = client();
+  expect(
+    await drainPersistRating({
+      sessionId,
+      cardId: "c",
+      mark: 1,
+      ...invalid,
+    } as never),
+  ).toBe("missing");
+  expect(db.from).not.toHaveBeenCalled();
 });

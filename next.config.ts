@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/flashcards/:id/results",
+        destination: "/student/flashcards/:id",
+        permanent: false,
+      },
+      {
+        source: "/flashcards/:id",
+        destination: "/student/flashcards/:id",
+        permanent: false,
+      },
+      {
         source: "/flashcards",
         destination: "/student/flashcards",
         permanent: false,

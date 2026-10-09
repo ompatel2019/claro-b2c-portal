@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { updateFlashcardProgress } from "@/lib/flashcard-progress";
+import {
+  updateFlashcardProgress,
+  rescheduleFlashcardProgress,
+} from "@/lib/flashcard-progress";
 import { matchFlashcardAnswer } from "@/lib/flashcards";
 import { markFlashcard } from "@/lib/marking/engine";
 import {
@@ -10,10 +13,18 @@ import { admin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 export const maxDuration = 60;
-const Body = z.strictObject({
-  answer: z.string().trim().min(1).max(2000),
-  sessionId: z.uuid().nullable().optional(),
-});
+const Mark = z.union([z.literal(0), z.literal(0.5), z.literal(1)]);
+const Body = z.union([
+  z.strictObject({
+    answer: z.string().trim().min(1).max(1000),
+    answer_mode: z.enum(["typed", "spoken"]).default("typed"),
+    sessionId: z.uuid().nullable().optional(),
+  }),
+  z.strictObject({
+    sessionId: z.uuid(),
+    override: z.strictObject({ reviewId: z.uuid(), mark: Mark }),
+  }),
+]);
 
 export async function POST(
   request: Request,
@@ -35,7 +46,7 @@ export async function POST(
     .maybeSingle();
   if (!card)
     return Response.json({ error: "Flashcard not found" }, { status: 404 });
-  const { answer, sessionId } = body.data;
+  const { sessionId } = body.data;
   if (sessionId) {
     const { data: session } = await supabase
       .from("sessions")
@@ -64,6 +75,35 @@ export async function POST(
       );
   }
   try {
+    const db = admin();
+    if ("override" in body.data) {
+      const { reviewId, mark } = body.data.override;
+      const { data: review } = await db
+        .from("flashcard_reviews")
+        .update({
+          mark,
+          source: "self",
+          reason: "Self-rated after checking the model answer.",
+        })
+        .eq("id", reviewId)
+        .eq("user_id", user.id)
+        .eq("session_id", sessionId!)
+        .eq("flashcard_id", id)
+        .select("id")
+        .maybeSingle()
+        .throwOnError();
+      if (!review)
+        return Response.json({ error: "Review not found" }, { status: 404 });
+      await rescheduleFlashcardProgress(db, user.id, id);
+      return Response.json({
+        reviewId,
+        mark,
+        source: "self",
+        reason: "Self-rated after checking the model answer.",
+        back: card.back,
+      });
+    }
+    const { answer, answer_mode } = body.data;
     const local = matchFlashcardAnswer(answer, card.back, card.front);
     let result = local;
     if (!result) {
@@ -75,7 +115,6 @@ export async function POST(
         user.id,
       );
     }
-    const db = admin();
     const { data: review } = await db
       .from("flashcard_reviews")
       .insert({
@@ -83,6 +122,7 @@ export async function POST(
         user_id: user.id,
         session_id: sessionId ?? null,
         answer,
+        answer_mode,
         source: local ? "self" : "ai",
         ...result,
       })
@@ -98,7 +138,13 @@ export async function POST(
         review.id,
         result.mark,
       );
-    return Response.json({ ...result, back: card.back, local: Boolean(local) });
+    return Response.json({
+      ...result,
+      reviewId: review.id,
+      source: local ? "self" : "ai",
+      back: card.back,
+      local: Boolean(local),
+    });
   } catch (error) {
     console.error(error);
     return Response.json(

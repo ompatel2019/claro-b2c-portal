@@ -55,7 +55,7 @@ test.describe("Student home", () => {
         page.getByRole("link", { name: "Continue" }).first(),
       ).toHaveAttribute(
         "href",
-        /^\/(student\/sprint|flashcards)\/[0-9a-f-]{36}$/,
+        /^\/student\/(sprint|flashcards)\/[0-9a-f-]{36}$/,
       );
   });
 

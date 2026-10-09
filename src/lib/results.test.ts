@@ -94,7 +94,7 @@ describe("results", () => {
       },
       {
         label: "Review 6 flashcards on Inflation",
-        href: "/flashcards?topic=t3-inflation",
+        href: "/student/flashcards?topic=t3-inflation",
       },
     ]);
     expect(nextActions([row({})], "short", topics, {})).toEqual([]);

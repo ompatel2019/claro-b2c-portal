@@ -213,6 +213,8 @@ it("stores an AI review against the caller and returns the card back", async () 
     reason: "Correct",
     back: "Back",
     local: false,
+    reviewId: "review",
+    source: "ai",
   });
   expect(progress.upsert).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -230,6 +232,7 @@ it("stores an AI review against the caller and returns the card back", async () 
     user_id: userId,
     session_id: sessionId,
     answer: "Answer",
+    answer_mode: "typed",
     source: "ai",
     mark: 1,
     reason: "Correct",
@@ -435,23 +438,31 @@ function adminQuery(data: unknown) {
   const chain = {
     select: vi.fn(),
     eq: vi.fn(),
+    not: vi.fn(),
+    then: (resolve: (value: unknown) => unknown) =>
+      Promise.resolve({ data, error: null }).then(resolve),
     order: vi.fn(),
     limit: vi.fn(),
     maybeSingle: vi.fn(),
     single: vi.fn(),
     insert: vi.fn(),
     upsert: vi.fn(),
+    update: vi.fn(),
+    range: vi.fn(),
     throwOnError: vi.fn().mockResolvedValue({ data }),
   };
   for (const key of [
     "select",
     "eq",
+    "not",
     "order",
     "limit",
     "maybeSingle",
     "single",
     "insert",
     "upsert",
+    "update",
+    "range",
   ] as const)
     chain[key].mockReturnValue(chain);
   return chain;
@@ -545,4 +556,101 @@ it("returns 429 when the student AI rate limit is hit on mark", async () => {
     error: "You're going a bit fast, try again in a minute",
   });
   expect(markAttempt).not.toHaveBeenCalled();
+});
+
+it("overrides only the caller's review and replays first-review schedules without adding a review", async () => {
+  const reviewId = "00000000-0000-4000-8000-000000000001";
+  client([
+    { kind: "term", front: "Front", back: "Back" },
+    {
+      kind: "flashcards",
+      finished_at: null,
+      config: { mode: "test", card_ids: ["id"] },
+    },
+  ]);
+  const update = adminQuery({ id: reviewId });
+  const history = adminQuery([
+    {
+      id: "old",
+      session_id: "old-session",
+      mark: 1,
+      created_at: "2026-10-01T00:00:00Z",
+    },
+    {
+      id: reviewId,
+      session_id: sessionId,
+      mark: 0.5,
+      created_at: "2026-10-08T00:00:00Z",
+    },
+    {
+      id: "repeat",
+      session_id: sessionId,
+      mark: 1,
+      created_at: "2026-10-08T01:00:00Z",
+    },
+  ]);
+  const progress = adminQuery(null);
+  vi.mocked(admin().from)
+    .mockReturnValueOnce(update as never)
+    .mockReturnValueOnce(history as never)
+    .mockReturnValueOnce(progress as never);
+  const response = await flashcard(
+    request({ sessionId, override: { reviewId, mark: 0.5 } }),
+    ctx,
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    reviewId,
+    mark: 0.5,
+    source: "self",
+  });
+  expect(update.eq).toHaveBeenCalledWith("user_id", userId);
+  expect(update.eq).toHaveBeenCalledWith("session_id", sessionId);
+  expect(update.eq).toHaveBeenCalledWith("flashcard_id", "id");
+  expect(history.not).toHaveBeenCalledWith("session_id", "is", null);
+  expect(progress.upsert).toHaveBeenCalledWith(
+    expect.objectContaining({
+      interval_days: 4,
+      reviews: 2,
+      last_mark: 0.5,
+      due_on: "2026-10-12",
+    }),
+    { onConflict: "user_id,flashcard_id" },
+  );
+  expect(markFlashcard).not.toHaveBeenCalled();
+  expect(update.insert).not.toHaveBeenCalled();
+});
+it.each([null, { finished_at: "2026-10-08" }])(
+  "rejects overrides in missing or finished sessions",
+  async (session) => {
+    client([{ kind: "term", front: "Front", back: "Back" }, session]);
+    const response = await flashcard(
+      request({ sessionId, override: { reviewId: sessionId, mark: 0 } }),
+      ctx,
+    );
+    expect(response.status).toBe(session ? 409 : 404);
+    expect(admin().from).not.toHaveBeenCalled();
+    expect(markFlashcard).not.toHaveBeenCalled();
+  },
+);
+it("rejects an override whose review is not owned or belongs to another session", async () => {
+  client([
+    { kind: "term", front: "Front", back: "Back" },
+    {
+      kind: "flashcards",
+      finished_at: null,
+      config: { mode: "test", card_ids: ["id"] },
+    },
+  ]);
+  const update = adminQuery(null);
+  vi.mocked(admin().from).mockReturnValueOnce(update as never);
+  expect(
+    (
+      await flashcard(
+        request({ sessionId, override: { reviewId: sessionId, mark: 1 } }),
+        ctx,
+      )
+    ).status,
+  ).toBe(404);
+  expect(admin().from).toHaveBeenCalledTimes(1);
 });

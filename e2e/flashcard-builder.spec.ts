@@ -124,7 +124,7 @@ test.describe("Flashcard deck builder", () => {
     await page.keyboard.press("Control+Enter");
     await expect(page).toHaveURL(/\/flashcards\/[0-9a-f-]{36}$/);
     ids.push(page.url().split("/").at(-1)!);
-    await expect(page.getByText(/^Card 1 of \d+ · Study$/)).toBeVisible();
+    await expect(page.getByText(/^Card 1 of \d+$/)).toBeVisible();
   });
 
   test("the old setup route redirects", async ({ page }) => {
