@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { Icon as IconType } from "@/components/icons";
 import { Card } from "@/components/ui/card";
 
 /** Shown in place of empty content: icon tile, title, one sentence, ≤1 action. */
@@ -8,7 +8,7 @@ export function EmptyState({
   description,
   action,
 }: {
-  icon: LucideIcon;
+  icon: IconType;
   title: string;
   description: string;
   action?: React.ReactNode;

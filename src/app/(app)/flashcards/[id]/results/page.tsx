@@ -5,7 +5,7 @@ import { firstReviews, type FlashcardProgress } from "@/lib/flashcards";
 import { createClient } from "@/utils/supabase/server";
 import { dateLabel, timer, topicNames } from "@/lib/practice";
 import { FlashcardStart } from "@/components/flashcard-start";
-import { Layers } from "lucide-react";
+import { Cards } from "@/components/icons";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { EmptyState } from "@/components/empty-state";
@@ -127,7 +127,7 @@ export default async function Results({
           </ul>
         ) : (
           <EmptyState
-            icon={Layers}
+            icon={Cards}
             title="No cards reviewed"
             description="No cards were reviewed in this session."
           />

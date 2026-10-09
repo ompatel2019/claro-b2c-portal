@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { History } from "lucide-react";
+import { History } from "@/components/icons";
 import {
   modeLabel,
   dateLabel,

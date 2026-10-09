@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import { Target } from "lucide-react";
+import { Target } from "@/components/icons";
 vi.mock("next/navigation", () => ({ usePathname: () => "/activity" }));
 vi.mock("next/form", () => ({
   default: (props: React.ComponentProps<"form">) => <form {...props} />,

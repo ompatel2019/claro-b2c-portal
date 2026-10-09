@@ -1,6 +1,6 @@
 "use client";
 import { useActionState, useEffect, useRef, useState } from "react";
-import { ChevronDown, Minus, Plus, SearchX } from "lucide-react";
+import { ChevronDown, Minus, Plus, SearchOff } from "@/components/icons";
 import { startSprint } from "@/app/(app)/actions";
 import { createClient } from "@/utils/supabase/client";
 import { modes, type Mode, type Topic } from "@/lib/practice";
@@ -695,7 +695,7 @@ export function SprintSetup({
 
       {pool?.questions === 0 && (
         <EmptyState
-          icon={SearchX}
+          icon={SearchOff}
           title="No questions match"
           description="Widen your filters to build a sprint."
           action={

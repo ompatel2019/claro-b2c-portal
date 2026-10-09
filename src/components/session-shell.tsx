@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import {
-  BookOpen,
+  Book,
   Calculator as CalculatorIcon,
-  MessageSquare,
-  PanelLeftClose,
-} from "lucide-react";
+  Message,
+  PanelLeft,
+} from "@/components/icons";
 import { toast } from "sonner";
 import { timer } from "@/lib/practice";
 import { cn } from "@/lib/utils";
@@ -199,7 +199,7 @@ export function SessionShell({
             aria-label="Booklet (B)"
             onClick={toggleBooklet}
           >
-            <BookOpen />
+            <Book />
           </Button>
           <Button
             variant="ghost"
@@ -217,7 +217,7 @@ export function SessionShell({
             aria-label="Send feedback"
             onClick={() => feedback()}
           >
-            <MessageSquare />
+            <Message />
           </Button>
           <Button
             size="sm"
@@ -240,7 +240,7 @@ export function SessionShell({
                 aria-label="Hide booklet"
                 onClick={() => setRail(false)}
               >
-                <PanelLeftClose />
+                <PanelLeft />
               </Button>
             </div>
             {booklet}

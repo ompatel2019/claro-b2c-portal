@@ -4,17 +4,17 @@ import { usePathname } from "next/navigation";
 import { useRef } from "react";
 import {
   History,
-  Layers,
-  LayoutDashboard,
-  LogOut,
-  PenLine,
+  Cards,
+  Dashboard,
+  SignOut,
+  Pen,
   User,
   Users,
   Wallet,
-  Zap,
-  FileQuestion,
-  type LucideIcon,
-} from "lucide-react";
+  Sprint,
+  QuestionFile,
+  type Icon,
+} from "@/components/icons";
 import { signOut } from "@/app/(auth)/actions";
 import { Logo } from "@/components/logo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -40,7 +40,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-type NavItem = { label: string; href: string; icon: LucideIcon };
+type NavItem = { label: string; href: string; icon: Icon };
 export const nav: Record<
   "student" | "admin",
   { label: string; items: NavItem[] }[]
@@ -49,9 +49,9 @@ export const nav: Record<
     {
       label: "Practise",
       items: [
-        { label: "Home", href: "/", icon: LayoutDashboard },
-        { label: "Topic Sprint", href: "/student/sprint", icon: Zap },
-        { label: "Flashcards", href: "/flashcards", icon: Layers },
+        { label: "Home", href: "/", icon: Dashboard },
+        { label: "Topic Sprint", href: "/student/sprint", icon: Sprint },
+        { label: "Flashcards", href: "/flashcards", icon: Cards },
       ],
     },
     {
@@ -62,7 +62,7 @@ export const nav: Record<
   admin: [
     {
       label: "Overview",
-      items: [{ label: "Dashboard", href: "/admin", icon: LayoutDashboard }],
+      items: [{ label: "Dashboard", href: "/admin", icon: Dashboard }],
     },
     {
       label: "Students",
@@ -71,14 +71,12 @@ export const nav: Record<
     {
       label: "Content",
       items: [
-        { label: "Questions", href: "/admin/questions", icon: FileQuestion },
+        { label: "Questions", href: "/admin/questions", icon: QuestionFile },
       ],
     },
     {
       label: "Marking",
-      items: [
-        { label: "Submissions", href: "/admin/submissions", icon: PenLine },
-      ],
+      items: [{ label: "Submissions", href: "/admin/submissions", icon: Pen }],
     },
     {
       label: "Spend & settings",
@@ -252,7 +250,7 @@ export function AppShell({
               <DropdownMenuItem
                 onClick={() => signOutForm.current?.requestSubmit()}
               >
-                <LogOut />
+                <SignOut />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

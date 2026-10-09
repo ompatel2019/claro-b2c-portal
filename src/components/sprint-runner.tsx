@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Flag } from "lucide-react";
+import { Flag } from "@/components/icons";
 import { toast } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 import { ensureSession, withAuthRetry } from "@/lib/auth-client";

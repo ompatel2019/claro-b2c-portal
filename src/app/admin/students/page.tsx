@@ -1,4 +1,4 @@
-import { Users } from "lucide-react";
+import { Users } from "@/components/icons";
 import { loadStudents } from "@/lib/admin-data";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";

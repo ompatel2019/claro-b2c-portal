@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ImagePlus, MessageSquare, X } from "lucide-react";
+import { ImagePlus, Message, Close } from "@/components/icons";
 import { toast } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "./ui/button";
@@ -54,7 +54,7 @@ function Thumb({ file, onRemove }: { file: File; onRemove: () => void }) {
         onClick={onRemove}
         className="bg-ink absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full text-white"
       >
-        <X className="size-3" />
+        <Close className="size-3" />
       </button>
     </li>
   );
@@ -164,7 +164,7 @@ export function FeedbackWidget({
           aria-label="Feedback"
           className="group bg-ink fixed right-6 bottom-6 z-40 flex h-12 min-w-12 items-center justify-center gap-2 rounded-full px-3.5 text-white shadow-lg print:hidden"
         >
-          <MessageSquare aria-hidden className="size-5" />
+          <Message aria-hidden className="size-5" />
           <span className="hidden text-sm font-medium group-hover:inline group-focus-visible:inline">
             Feedback
           </span>
@@ -205,7 +205,7 @@ export function FeedbackWidget({
                   className="hover:bg-background rounded-full p-0.5"
                   onClick={() => setPreset({ label: "" })}
                 >
-                  <X className="size-3" />
+                  <Close className="size-3" />
                 </button>
               </span>
             )}

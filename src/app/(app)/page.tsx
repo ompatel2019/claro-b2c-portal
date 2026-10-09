@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Target } from "lucide-react";
+import { Target } from "@/components/icons";
 import { sydneyToday } from "@/lib/flashcards";
 import { addDays, type ActivityDay } from "@/lib/activity";
 import { ActivityHeatmap } from "@/components/activity-heatmap";

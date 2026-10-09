@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { History } from "lucide-react";
+import { History } from "@/components/icons";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { notFound } from "next/navigation";

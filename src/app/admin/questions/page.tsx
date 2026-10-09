@@ -1,4 +1,4 @@
-import { FileQuestion } from "lucide-react";
+import { QuestionFile } from "@/components/icons";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { FilterBar } from "@/components/filter-bar";
@@ -143,7 +143,7 @@ export default async function QuestionsBrowser({
       {questions.length > 0 && pager}
       {!questions.length && (
         <EmptyState
-          icon={FileQuestion}
+          icon={QuestionFile}
           title="No questions match"
           description="Try a different topic, type, year or search."
         />

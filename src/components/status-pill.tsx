@@ -1,30 +1,30 @@
 import {
-  CircleAlert,
-  CircleCheck,
-  CircleDashed,
-  CircleDot,
-  CircleHelp,
+  Alert,
+  CheckCircle,
+  Pending,
+  Dot,
+  Help,
   Clock,
   EyeOff,
-  LoaderCircle,
-  ShieldCheck,
-  type LucideIcon,
-} from "lucide-react";
+  Spinner,
+  Shield,
+  type Icon,
+} from "@/components/icons";
 import type { MarkingState, MarkReview } from "@/lib/feedback";
 import { cn } from "@/lib/utils";
 
 /** Fixed vocabulary (§1 K16): every state has an icon, a word and a soft colour. */
 const pills = {
-  Marking: [LoaderCircle, "bg-muted text-muted-foreground"],
-  Marked: [CircleCheck, "bg-success-soft text-success"],
+  Marking: [Spinner, "bg-muted text-muted-foreground"],
+  Marked: [CheckCircle, "bg-success-soft text-success"],
   Provisional: [Clock, "bg-warning-soft text-warning"],
-  "Checked by our team": [ShieldCheck, "border-success text-success"],
-  "Being double-checked": [CircleDashed, "border-warning text-warning"],
-  "Couldn't mark": [CircleAlert, "bg-destructive-soft text-destructive"],
-  "Couldn't read photo": [CircleHelp, "bg-warning-soft text-warning"],
+  "Checked by our team": [Shield, "border-success text-success"],
+  "Being double-checked": [Pending, "border-warning text-warning"],
+  "Couldn't mark": [Alert, "bg-destructive-soft text-destructive"],
+  "Couldn't read photo": [Help, "bg-warning-soft text-warning"],
   "Not answered": [EyeOff, "bg-muted text-muted-foreground"],
-  "In progress": [CircleDot, "border-ink text-ink"],
-} satisfies Record<string, [LucideIcon, string]>;
+  "In progress": [Dot, "border-ink text-ink"],
+} satisfies Record<string, [Icon, string]>;
 export type Pill = keyof typeof pills;
 
 export function StatusPill({ pill }: { pill: Pill }) {

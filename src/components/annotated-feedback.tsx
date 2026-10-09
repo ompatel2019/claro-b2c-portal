@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowUpRight, CircleAlert, CircleCheck } from "lucide-react";
+import { ArrowUpRight, Alert, CheckCircle } from "@/components/icons";
 import {
   bandOf,
   layoutCards,
@@ -70,7 +70,7 @@ function CommentCard({
   active?: boolean;
 } & React.ComponentProps<"div">) {
   const strength = c.kind === "strength";
-  const Icon = strength ? CircleCheck : ArrowUpRight;
+  const Icon = strength ? CheckCircle : ArrowUpRight;
   return (
     <div
       data-card={c.id}
@@ -488,7 +488,7 @@ export function AnnotatedFeedback({
               className="bg-destructive-soft space-y-2 rounded-xl p-3"
             >
               <p className="text-destructive flex items-center gap-2 font-semibold">
-                <CircleAlert aria-hidden className="size-4" />
+                <Alert aria-hidden className="size-4" />
                 We couldn’t mark this one.
               </p>
               <RetryAnswer id={row.attempt_id} />

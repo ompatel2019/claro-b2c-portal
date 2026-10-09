@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Close } from "@/components/icons";
 import { calculate } from "@/lib/calc";
 import { cn } from "@/lib/utils";
 
@@ -122,7 +122,7 @@ export function Calculator({ onClose }: { onClose: () => void }) {
       >
         Calculator
         <button type="button" aria-label="Close calculator" onClick={onClose}>
-          <X className="size-4" />
+          <Close className="size-4" />
         </button>
       </div>
       <div className="bg-muted mb-2 rounded-lg px-3 py-2 text-right tabular-nums">

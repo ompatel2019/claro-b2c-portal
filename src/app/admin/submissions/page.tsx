@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PenLine } from "lucide-react";
+import { Pen } from "@/components/icons";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ export default async function SubmissionsPage() {
       />
       {!rows.length ? (
         <EmptyState
-          icon={PenLine}
+          icon={Pen}
           title="No submissions yet"
           description="Marked short and extended answers appear here."
         />
