@@ -106,13 +106,24 @@ test.describe("Schema and RLS", () => {
       p_config: { mode: "mcq", topics: ["t1", "t2", "t3"] },
     });
     expect(tooMany.error?.message).toMatch(/at most two topics/);
+    const tooBig = await db.rpc("start_sprint", {
+      p_config: { mode: "mcq", target: 41 },
+    });
+    expect(tooBig.error?.message).toMatch(/size is out of range/);
+    const pool = await db.rpc("sprint_pool", {
+      p_config: { mode: "mcq", topics: ["t3"], subtopics: ["t3-inflation"] },
+    });
+    expect(pool.error).toBeNull();
+    expect(pool.data.questions).toBeGreaterThanOrEqual(5);
+    expect(pool.data.subtopics["t3-inflation"]).toBe(pool.data.questions);
+    expect(pool.data.all_subtopics).toBeGreaterThan(pool.data.questions);
     const { data: id, error } = await db.rpc("start_sprint", {
       p_config: {
         mode: "mcq",
         topics: ["t3"],
         subtopics: ["t3-inflation"],
-        target_marks: 5,
-        time_limit_min: null,
+        target: 5,
+        timed: false,
       },
     });
     expect(error).toBeNull();
@@ -124,8 +135,9 @@ test.describe("Schema and RLS", () => {
       .single();
     expect(session.data!.config).toMatchObject({
       mode: "mcq",
-      target_marks: 5,
-      time_limit_min: null,
+      target: 5,
+      time_limit_s: null,
+      actual_questions: 5,
     });
     const attempts = session.data!.attempts as unknown as {
       question: { topic_id: string };
@@ -174,19 +186,20 @@ test.describe("Schema and RLS", () => {
     expect(
       (await db.from("marking_examples").select("id").limit(1)).error,
     ).toBeNull();
-    // The 20 A1 eval questions are retired, with their held-out test answers.
+    // The 20 A1 eval questions (0020) and 41 mock-exam questions (0022) are retired;
+    // the eval set's held-out answers are there (claro-ml may import more).
     const evalSet = await db
       .from("marking_examples")
       .select("question_id")
       .eq("split", "test")
       .like("question_id", "a1-%");
     expect(evalSet.error).toBeNull();
-    expect(evalSet.data).toHaveLength(20);
+    expect(evalSet.data!.length).toBeGreaterThanOrEqual(20);
     const evalQuestions = await db
       .from("questions")
       .select("status")
       .like("id", "a1-%");
-    expect(evalQuestions.data).toEqual(Array(20).fill({ status: "retired" }));
+    expect(evalQuestions.data).toEqual(Array(61).fill({ status: "retired" }));
     const hidden = await student.db
       .from("questions")
       .select("id")
