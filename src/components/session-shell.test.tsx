@@ -147,33 +147,6 @@ it("warns sprints at ten minutes and keeps Finish visible", () => {
   expect(screen.getByRole("button", { name: "Finish" })).toBeVisible();
 });
 
-it("renders a read-only booklet without marking, saving or timer controls", () => {
-  const onExit = vi.fn();
-  render(
-    <SessionShell
-      readOnly
-      title="Paper preview"
-      onExit={onExit}
-      booklet={<p>Sections</p>}
-    >
-      <p>Question text</p>
-    </SessionShell>,
-  );
-  expect(screen.getByText("Question text")).toBeTruthy();
-  for (const name of [
-    "Finish",
-    "Save and exit",
-    "Calculator (C)",
-    "Send feedback",
-  ])
-    expect(screen.queryByRole("button", { name })).toBeNull();
-  expect(screen.queryByRole("progressbar")).toBeNull();
-  fireEvent.keyDown(window, { key: "c" });
-  expect(screen.queryByRole("dialog")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "Close preview" }));
-  expect(onExit).toHaveBeenCalledOnce();
-});
-
 it("opens the sprint calculator from More tools and keeps Finish available", async () => {
   const { props } = shell();
   fireEvent.click(screen.getByRole("button", { name: "More tools" }));

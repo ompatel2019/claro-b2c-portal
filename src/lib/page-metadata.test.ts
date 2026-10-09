@@ -2,7 +2,7 @@
 import { expect, it } from "vitest";
 import { pageMetadata } from "./page-metadata";
 
-it.each(["Profile", "Questions", "Flashcards", "Papers"])(
+it.each(["Profile", "Questions", "Flashcards"])(
   "leaves %s for the root title template",
   (title) => {
     expect(pageMetadata(title)).toEqual({ title });
@@ -48,4 +48,15 @@ it("has no student Papers pages or links from student pages", () => {
     expect(path).not.toContain("/student/papers/");
     expect(source).not.toContain("/student/papers");
   }
+});
+
+it("has no admin Papers routes or links and retains Questions", () => {
+  for (const [path, source] of Object.entries(pages)) {
+    expect(path).not.toContain("/admin/content/papers/");
+    expect(source).not.toContain("/admin/content/papers");
+  }
+  const questions = pages["../app/admin/content/questions/page.tsx"];
+  expect(questions).toContain('pageMetadata("Questions")');
+  expect(questions).toContain("<QuestionsTable");
+  expect(questions).toContain("<ImportReview");
 });

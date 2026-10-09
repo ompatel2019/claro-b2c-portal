@@ -182,11 +182,11 @@ async function Dashboard() {
                 kind:
                   s.kind === "flashcards"
                     ? "Flashcards"
-                    : s.kind === "paper"
-                      ? "Paper"
-                      : s.kind === "single"
-                        ? "Mark my answer"
-                        : `${modeLabel(s.mode ?? undefined)} sprint`,
+                    : s.kind === "single"
+                      ? "Mark my answer"
+                      : s.kind === "sprint"
+                        ? `${modeLabel(s.mode ?? undefined)} sprint`
+                        : "Removed session",
                 score: percentage(s.score, s.max),
                 tone:
                   s.max && s.score != null

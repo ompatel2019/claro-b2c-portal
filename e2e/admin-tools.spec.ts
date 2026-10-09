@@ -8,6 +8,27 @@ test.describe("Admin tools", () => {
   );
   test.setTimeout(120000);
 
+  test("removed content routes are unavailable and Questions still opens", async ({
+    page,
+  }) => {
+    await signInAdmin(page);
+    for (const path of [
+      "/admin/content/papers",
+      "/admin/content/papers/new",
+      "/admin/content/papers/11111111-1111-4111-8111-111111111111",
+    ])
+      expect((await page.goto(path))?.status()).toBe(404);
+    await page.goto("/admin/content/questions");
+    await expect(
+      page.getByRole("heading", { name: "Questions", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole("navigation", { name: "Admin navigation" })
+        .getByRole("link", { name: "Questions", exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+  });
+
   test("admin can open the marking review queue", async ({ page }) => {
     await signInAdmin(page);
     await page.goto("/admin/marking/review");
@@ -40,7 +61,6 @@ test.describe("Admin tools denied to students", () => {
       "/admin/marking/review",
       "/admin/content/questions",
       "/admin/content/flashcards",
-      "/admin/content/papers",
       "/admin/feedback",
       "/admin/spend",
     ]) {

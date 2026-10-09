@@ -29,12 +29,13 @@ export type SessionRow = {
 
 export function sessionKind(kind: string) {
   return (
-    { sprint: "Sprint", paper: "Paper", flashcards: "Flashcards" }[kind] ??
-    "Mark my answer"
+    { sprint: "Sprint", single: "Mark my answer", flashcards: "Flashcards" }[
+      kind
+    ] ?? "Removed session"
   );
 }
 
-/** "Short answer sprint · Inflation", "Flashcards · Study", "Paper", "Mark my answer". */
+/** "Short answer sprint · Inflation", "Flashcards · Study", "Removed session", "Mark my answer". */
 export function sessionTitle(s: SessionRow, topics: Topic[]) {
   if (s.kind === "flashcards")
     return `Flashcards · ${s.config.mode === "test" ? "Test" : "Study"}`;

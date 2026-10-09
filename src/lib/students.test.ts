@@ -6,6 +6,7 @@ import {
   safeLocalPath,
   ownQuestionReview,
   filterStudents,
+  sessionKind,
   sessionItems,
   sessionStatus,
   sessionTitle,
@@ -219,4 +220,10 @@ it("restores own-question context without inventing a marking band or replacing 
   });
   const bank = { ...row, question_id: "q" };
   expect(ownQuestionReview(bank, { stem: "Other" })).toBe(bank);
+});
+
+it("labels removed session kinds without treating them as answer checks", () => {
+  expect(sessionKind("paper")).toBe("Removed session");
+  expect(sessionKind("unknown")).toBe("Removed session");
+  expect(sessionKind("single")).toBe("Mark my answer");
 });

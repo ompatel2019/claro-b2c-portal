@@ -322,15 +322,6 @@ export function QuestionEditor({
       }}
     >
       <fieldset disabled={pending || uploading} className="min-w-0 space-y-4">
-        {loaded && loaded.livePapers.length > 0 && (
-          <p
-            role="status"
-            className="bg-warning-soft text-warning rounded-xl px-4 py-3 text-sm"
-          >
-            In live paper: {loaded.livePapers.join(", ")}. Excluded from
-            sprints.
-          </p>
-        )}
         {loaded?.duplicate && (
           <p role="status" className="bg-muted rounded-xl px-4 py-3 text-sm">
             Duplicate of{" "}

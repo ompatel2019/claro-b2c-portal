@@ -121,15 +121,6 @@ export default async function QuestionsPage({
           inputMode: "numeric",
         },
         {
-          name: "paper",
-          label: "In a live paper",
-          all: "Any",
-          options: [
-            { value: "yes", label: "Yes" },
-            { value: "no", label: "No" },
-          ],
-        },
-        {
           name: "missing",
           label: "Completeness",
           all: "Any",

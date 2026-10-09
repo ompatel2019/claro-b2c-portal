@@ -65,12 +65,17 @@ test.describe("Admin dashboard", () => {
     }
     // Sidebar follows the §1 admin navigation.
     const nav = page.getByRole("navigation", { name: "Admin navigation" });
+    await expect(
+      nav.getByRole("link", { name: "Papers", exact: true }),
+    ).toHaveCount(0);
+    await expect(nav.locator('a[href^="/admin/content/papers"]')).toHaveCount(
+      0,
+    );
     for (const name of [
       "Dashboard",
       "All students",
       "Questions",
       "Flashcards",
-      "Papers",
       "Review queue",
       "Accuracy",
       "Engine",

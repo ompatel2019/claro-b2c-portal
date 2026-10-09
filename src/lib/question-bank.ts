@@ -13,7 +13,6 @@ export const QUESTION_FILTER_KEYS = [
   "origin",
   "verb",
   "marks",
-  "paper",
   "missing",
 ] as const;
 

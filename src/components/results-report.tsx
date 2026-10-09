@@ -124,22 +124,15 @@ export type OverallSummary = {
   improvements?: string[];
   top_fixes?: string[];
   next_steps?: string[];
-  sections?:
-    Record<string, OverallSummary> | (OverallSummary & { section: string })[];
 };
 export function OverallFeedback({
   summary,
   pending,
   actions,
-  section,
-  context = "sprint",
 }: {
   summary: OverallSummary | null;
   pending: boolean;
   actions?: { label: string; href: string }[];
-  section?: string;
-  /** Admin historical reports still describe their original session kind. */
-  context?: "paper" | "sprint";
 }) {
   const actionLinks = actions && actions.length > 0 && (
     <div className="flex flex-wrap gap-2">
@@ -163,7 +156,7 @@ export function OverallFeedback({
     <Card>
       <CardHeader>
         <CardTitle>
-          <h2>{section ?? "Overall feedback"}</h2>
+          <h2>Overall feedback</h2>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -192,7 +185,7 @@ export function OverallFeedback({
             <p role="status" className="text-muted-foreground">
               {pending
                 ? "Your overall feedback will appear here once marking finishes."
-                : `An overall summary isn’t available for this ${context}. Each answer’s feedback is below.`}
+                : "An overall summary isn’t available for this sprint. Each answer’s feedback is below."}
             </p>
             {pending && (
               <div aria-hidden="true" className="grid gap-4 md:grid-cols-3">

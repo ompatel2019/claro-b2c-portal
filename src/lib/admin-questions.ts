@@ -55,31 +55,6 @@ const KEYS: Record<string, (r: QuestionListRow) => string | number | null> = {
   updated: (r) => r.updated_at,
 };
 
-/** Live paper titles per question id (those questions are excluded from sprints). */
-export async function livePaperTitles() {
-  await requireAdmin();
-  const data = await pages<{ question_id: string; paper: { title: string } }>(
-    (from, to) =>
-      admin()
-        .from("paper_questions")
-        .select("question_id,paper:papers!inner(status,title)")
-        .eq("paper.status", "live")
-        .order("paper_id")
-        .order("position")
-        .range(from, to)
-        .overrideTypes<
-          { question_id: string; paper: { title: string } }[],
-          { merge: false }
-        >(),
-  );
-  const titles = new Map<string, string[]>();
-  for (const r of data ?? []) {
-    const title = (r.paper as unknown as { title: string }).title;
-    titles.set(r.question_id, [...(titles.get(r.question_id) ?? []), title]);
-  }
-  return titles;
-}
-
 type QuestionStats = {
   id: string;
   attempts: number;
@@ -238,16 +213,11 @@ export async function loadQuestionList(f: QuestionFilters) {
     q = q.neq("type", "mcq").or("criteria.is.null,criteria.eq.[]");
   if (f.missing === "stimulus")
     q = q.not("stimulus", "is", null).neq("stimulus", "");
-  const [data, papers] = await Promise.all([
-    pages((from, to) => q.order("id").range(from, to)),
-    f.paper ? livePaperTitles() : null,
-  ]);
-  let rows = (data ?? []) as Omit<
+  const data = await pages((from, to) => q.order("id").range(from, to));
+  const rows = (data ?? []) as Omit<
     QuestionListRow,
     "attempts" | "avg" | "disagreements" | "reports"
   >[];
-  if (papers)
-    rows = rows.filter((r) => papers.has(r.id) === (f.paper === "yes"));
   const { sort, page } = tableParams(f, { id: "updated", dir: "desc" });
   const byAggregate = AGGREGATE.includes(sort.id) || !!f.q?.trim();
   const keys = {
@@ -331,7 +301,7 @@ export async function loadQuestion(id: string) {
     .throwOnError();
   if (!data) return null;
   const question = data as StoredQuestion;
-  const [statsById, duplicate, papers, reports, recent] = await Promise.all([
+  const [statsById, duplicate, reports, recent] = await Promise.all([
     aggregates([id], true),
     question.duplicate_of
       ? db
@@ -341,7 +311,6 @@ export async function loadQuestion(id: string) {
           .maybeSingle()
           .throwOnError()
       : null,
-    livePaperTitles(),
     pages<{ id: string; message: string; created_at: string }>((from, to) =>
       db
         .from("feedback")
@@ -369,7 +338,6 @@ export async function loadQuestion(id: string) {
     question,
     attemptCount: stats.attempts,
     duplicate: duplicate?.data ?? null,
-    livePapers: papers.get(id) ?? [],
     stats: { ...stats, reportCount: stats.reports, reports },
     recentAnswers: (recent.data ?? [])
       .map((a) => (a.transcript ?? a.answer_text ?? "").trim())

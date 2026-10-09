@@ -148,3 +148,12 @@ it("propagates auth read errors rather than showing an unblocked student", async
   });
   await expect(loadStudentDetail(id)).rejects.toThrow("Auth unavailable");
 });
+
+it("does not read attempts or sign answer URLs for a removed session kind", async () => {
+  mocks.from.mockReturnValue(
+    query([], { id, kind: "paper", config: {}, finished_at: "2026-10-09" }),
+  );
+  await expect(loadSessionReport(id, id)).resolves.toBeNull();
+  expect(mocks.from).toHaveBeenCalledExactlyOnceWith("sessions");
+  expect(mocks.rpc).not.toHaveBeenCalled();
+});

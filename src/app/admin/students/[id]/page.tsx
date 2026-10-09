@@ -82,6 +82,8 @@ async function Report({
   userId: string;
   session: SessionRow | undefined;
 }) {
+  if (session && !["sprint", "single", "flashcards"].includes(session.kind))
+    return <p className="text-sm">This session kind has been removed.</p>;
   const r = await loadSessionReport(sessionId, userId);
   if (!r || !session) return <p className="text-sm">Session not found.</p>;
   if (session.kind === "flashcards")
@@ -139,9 +141,6 @@ async function Report({
     );
   const rows = visibleResults(r.rows);
   const summary = session.summary as OverallSummary | null;
-  const sections = Array.isArray(summary?.sections)
-    ? summary.sections.map((s) => [s.section, s] as const)
-    : Object.entries(summary?.sections ?? {});
   const settled = !rows.some((row) => markingState(row) === "marking");
   return (
     <>
@@ -158,20 +157,7 @@ async function Report({
           </p>
         </Card>
       )}
-      <OverallFeedback
-        summary={summary}
-        pending={!settled}
-        context={session.kind === "paper" ? "paper" : "sprint"}
-      />
-      {sections.map(([section, summary]) => (
-        <OverallFeedback
-          key={section}
-          section={section}
-          summary={summary}
-          pending={!settled}
-          context="paper"
-        />
-      ))}
+      <OverallFeedback summary={summary} pending={!settled} />
       <ResultsAnswers
         rows={rows}
         id={sessionId}
@@ -383,7 +369,6 @@ export default async function StudentDetail({
                   all: "All",
                   options: [
                     { value: "sprint", label: "Sprints" },
-                    { value: "paper", label: "Papers" },
                     { value: "flashcards", label: "Flashcards" },
                     { value: "single", label: "Mark my answer" },
                   ],

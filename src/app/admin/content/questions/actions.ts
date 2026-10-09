@@ -256,7 +256,7 @@ export async function bulkQuestions(
           id: r.id,
           problem:
             error?.code === "23503"
-              ? "Used by a paper, example or duplicate. Retire it instead."
+              ? "This question is still referenced. Retire it instead."
               : "Only drafts with no attempts can be deleted. Retire it instead.",
         });
       else done++;

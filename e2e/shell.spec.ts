@@ -105,6 +105,12 @@ test.describe("Admin shell", () => {
     await page.context().clearCookies({ name: "sidebar_state" });
     await signInAdmin(page);
     const nav = page.getByRole("navigation", { name: "Admin navigation" });
+    await expect(
+      nav.getByRole("link", { name: "Papers", exact: true }),
+    ).toHaveCount(0);
+    await expect(nav.locator('a[href^="/admin/content/papers"]')).toHaveCount(
+      0,
+    );
     for (const group of [
       "Overview",
       "Students",
@@ -119,7 +125,6 @@ test.describe("Admin shell", () => {
       "All students",
       "Questions",
       "Flashcards",
-      "Papers",
       "Review queue",
       "Accuracy",
       "Engine",

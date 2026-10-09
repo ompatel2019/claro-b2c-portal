@@ -269,7 +269,8 @@ export async function loadSessionReport(sessionId: string, userId: string) {
     .eq("user_id", userId)
     .maybeSingle()
     .throwOnError();
-  if (!session) return null;
+  if (!session || !["sprint", "single", "flashcards"].includes(session.kind))
+    return null;
   const cards =
     session.kind === "flashcards"
       ? await pages<FlashcardReportRow>((from, to) =>

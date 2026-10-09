@@ -8,7 +8,6 @@ import {
   Book,
   Dashboard,
   Message,
-  Paper,
   SignOut,
   Pen,
   Target,
@@ -86,7 +85,6 @@ export const nav: Record<
           icon: QuestionFile,
         },
         { label: "Flashcards", href: "/admin/content/flashcards", icon: Cards },
-        { label: "Papers", href: "/admin/content/papers", icon: Paper },
       ],
     },
     {

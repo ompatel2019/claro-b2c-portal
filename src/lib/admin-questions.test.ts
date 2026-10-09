@@ -83,7 +83,6 @@ import {
   loadQuestionList,
   loadQuestion,
   loadTopics,
-  livePaperTitles,
   loadImportReview,
   loadQuestionCounts,
 } from "./admin-questions";
@@ -110,7 +109,6 @@ beforeEach(() => {
 });
 it.each([
   loadTopics,
-  livePaperTitles,
   loadQuestionCounts,
   () => loadQuestionList({}),
   () => loadQuestion("q-0000"),
@@ -370,4 +368,21 @@ it("marks only the failed status badge unavailable and preserves zero counts", a
     draft: null,
     retired: 0,
   });
+});
+
+it("ignores the removed filter when loading import review", async () => {
+  await loadImportReview(0.82, 1, true, { paper: "yes", type: "mcq" });
+  expect(mocks.reviewRpc).toHaveBeenCalledWith("question_import_review", {
+    p_threshold: 0.82,
+    p_filters: { type: "mcq" },
+  });
+});
+
+it("loads Questions without reading removed content tables", async () => {
+  const result = await loadQuestionList({});
+  expect(result.pager.total).toBe(bank.length);
+  expect(mocks.reads.length).toBeGreaterThan(0);
+  expect(
+    mocks.reads.every((table) => ["questions", "topics"].includes(table)),
+  ).toBe(true);
 });

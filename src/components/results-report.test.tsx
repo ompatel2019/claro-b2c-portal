@@ -39,15 +39,16 @@ it("renders stored feedback and deterministic next-step links", () => {
     screen.getByRole("link", { name: "Practise Inflation questions" }),
   ).toHaveAttribute("href", "/student/sprint?sub=inflation");
 });
-it("renders a section's top fixes and pending summary skeletons", () => {
+it("renders top fixes and pending summary skeletons", () => {
   const { rerender } = render(
     <OverallFeedback
-      section="Section II"
       summary={{ top_fixes: ["Use evidence"] }}
       pending={false}
     />,
   );
-  expect(screen.getByText("Section II")).toBeVisible();
+  expect(
+    screen.getByRole("heading", { name: "Overall feedback" }),
+  ).toBeVisible();
   expect(screen.getByText("Use evidence")).toBeVisible();
   rerender(<OverallFeedback summary={null} pending />);
   expect(screen.getByRole("status")).toHaveTextContent("once marking finishes");
@@ -100,7 +101,7 @@ it("reuses the MC review and selects the first lost-mark question with original 
   ).toBeVisible();
 });
 
-it("uses real section headings and sprint unavailable copy without skeletons", () => {
+it("uses a real heading and sprint unavailable copy without skeletons", () => {
   const { container } = render(
     <OverallFeedback summary={null} pending={false} />,
   );
@@ -109,9 +110,4 @@ it("uses real section headings and sprint unavailable copy without skeletons", (
   ).toBeVisible();
   expect(screen.getByText(/isn’t available for this sprint/)).toBeVisible();
   expect(container.querySelector(".animate-pulse")).toBeNull();
-});
-
-it("retains the context used by admin historical reports", () => {
-  render(<OverallFeedback summary={null} pending={false} context="paper" />);
-  expect(screen.getByText(/isn’t available for this paper/)).toBeVisible();
 });

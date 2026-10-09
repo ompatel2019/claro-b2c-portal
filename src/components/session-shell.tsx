@@ -98,19 +98,7 @@ type SessionProps = {
   booklet: React.ReactNode;
   children: React.ReactNode;
 };
-/** K13 also supports an admin read-only booklet, with no save, finish or marking controls. */
-export function SessionShell(
-  props:
-    | SessionProps
-    | {
-        readOnly: true;
-        title: string;
-        onExit: () => void;
-        booklet: React.ReactNode;
-        children: React.ReactNode;
-      },
-) {
-  const readOnly = "readOnly" in props;
+export function SessionShell(props: SessionProps) {
   const {
     title,
     flashcards,
@@ -126,21 +114,7 @@ export function SessionShell(
     onMove,
     booklet,
     children,
-  } = readOnly
-    ? {
-        flashcards: undefined,
-        position: 0,
-        total: 0,
-        answered: 0,
-        saveState: "saved" as const,
-        onRetry: () => {},
-        clock: { mode: "up" as const, seconds: 0 },
-        busy: false,
-        onFinish: props.onExit,
-        onMove: () => {},
-        ...props,
-      }
-    : props;
+  } = props;
   const [rail, setRail] = useState(true);
   const [sheet, setSheet] = useState(false);
   const [calc, setCalc] = useState(false);
@@ -161,7 +135,6 @@ export function SessionShell(
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (
-        readOnly ||
         e.defaultPrevented ||
         e.metaKey ||
         e.ctrlKey ||
@@ -182,7 +155,7 @@ export function SessionShell(
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [flashcards, readOnly]);
+  }, [flashcards]);
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -190,147 +163,125 @@ export function SessionShell(
         <Button
           variant="ghost"
           size="sm"
-          aria-label={readOnly ? "Close preview" : "Save and exit"}
+          aria-label="Save and exit"
           disabled={busy}
           onClick={onExit}
         >
-          {readOnly ? (
-            "Close preview"
-          ) : (
-            <>
-              <span className="sm:hidden">Exit</span>
-              <span className="hidden sm:inline">Save and exit</span>
-            </>
-          )}
+          <span className="sm:hidden">Exit</span>
+          <span className="hidden sm:inline">Save and exit</span>
         </Button>
         <p className="hidden min-w-0 truncate text-sm font-semibold md:block">
           {title}
         </p>
-        {!readOnly && (
-          <div className="flex min-w-14 flex-col gap-1 sm:min-w-24">
-            <p className="text-xs font-medium tabular-nums">
-              {flashcards ? "Card" : "Q"} {position} of {total}
-            </p>
+        <div className="flex min-w-14 flex-col gap-1 sm:min-w-24">
+          <p className="text-xs font-medium tabular-nums">
+            {flashcards ? "Card" : "Q"} {position} of {total}
+          </p>
+          <div
+            role="progressbar"
+            aria-label="Answered"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={answered}
+            className="bg-muted h-1 overflow-hidden rounded-full"
+          >
             <div
-              role="progressbar"
-              aria-label="Answered"
-              aria-valuemin={0}
-              aria-valuemax={total}
-              aria-valuenow={answered}
-              className="bg-muted h-1 overflow-hidden rounded-full"
-            >
-              <div
-                className="bg-ink h-full transition-[width]"
-                style={{ width: `${(answered / Math.max(total, 1)) * 100}%` }}
-              />
-            </div>
+              className="bg-ink h-full transition-[width]"
+              style={{ width: `${(answered / Math.max(total, 1)) * 100}%` }}
+            />
           </div>
-        )}
+        </div>
         {flashcards && (
           <p className="text-xs tabular-nums">Knew {flashcards.known}</p>
         )}
-        {!readOnly && (
-          <p
-            role="status"
-            className={cn(
-              "hidden items-center gap-1 text-xs sm:flex",
-              saveState === "error"
-                ? "text-destructive"
-                : "text-muted-foreground",
-            )}
-          >
-            {saveState === "saved"
-              ? "Saved"
-              : saveState === "saving"
-                ? "Saving…"
-                : "Not saved. Retrying"}
-            {saveState === "error" && (
-              <button type="button" className="underline" onClick={onRetry}>
-                Retry
-              </button>
-            )}
-          </p>
-        )}
-        {readOnly && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="ml-auto"
-            onClick={toggleBooklet}
-          >
-            Booklet
-          </Button>
-        )}
-        {!readOnly && (
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            {!flashcards && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="hidden sm:inline-flex"
-                  aria-label="Booklet (B)"
-                  onClick={toggleBooklet}
-                >
+        <p
+          role="status"
+          className={cn(
+            "hidden items-center gap-1 text-xs sm:flex",
+            saveState === "error"
+              ? "text-destructive"
+              : "text-muted-foreground",
+          )}
+        >
+          {saveState === "saved"
+            ? "Saved"
+            : saveState === "saving"
+              ? "Saving…"
+              : "Not saved. Retrying"}
+          {saveState === "error" && (
+            <button type="button" className="underline" onClick={onRetry}>
+              Retry
+            </button>
+          )}
+        </p>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {!flashcards && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="hidden sm:inline-flex"
+                aria-label="Booklet (B)"
+                onClick={toggleBooklet}
+              >
+                <Book />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="hidden sm:inline-flex"
+                aria-label="Calculator (C)"
+                aria-pressed={calc}
+                onClick={() => setCalc(!calc)}
+              >
+                <CalculatorIcon />
+              </Button>
+            </>
+          )}
+          <Timer {...clock} />
+          {/* Below sm the tools collapse into one menu so Finish always fits; it sits beside Finish so the menu opens under its own button. */}
+          {!flashcards && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="hover:bg-muted inline-flex size-8 items-center justify-center rounded-full sm:hidden"
+                aria-label="More tools"
+              >
+                <More className="size-5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={toggleBooklet}>
                   <Book />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="hidden sm:inline-flex"
-                  aria-label="Calculator (C)"
-                  aria-pressed={calc}
-                  onClick={() => setCalc(!calc)}
-                >
+                  Booklet
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCalc(!calc)}>
                   <CalculatorIcon />
-                </Button>
-              </>
-            )}
-            <Timer {...clock} />
-            {/* Below sm the tools collapse into one menu so Finish always fits; it sits beside Finish so the menu opens under its own button. */}
-            {!flashcards && (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  className="hover:bg-muted inline-flex size-8 items-center justify-center rounded-full sm:hidden"
-                  aria-label="More tools"
-                >
-                  <More className="size-5" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={toggleBooklet}>
-                    <Book />
-                    Booklet
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCalc(!calc)}>
-                    <CalculatorIcon />
-                    Calculator
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => feedback()}>
-                    <Message />
-                    Send feedback
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="hidden sm:inline-flex"
-              aria-label="Send feedback"
-              onClick={() => feedback()}
-            >
-              <Message />
-            </Button>
-            <Button
-              size="sm"
-              className="rounded-full"
-              disabled={busy}
-              onClick={onFinish}
-            >
-              Finish
-            </Button>
-          </div>
-        )}
+                  Calculator
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => feedback()}>
+                  <Message />
+                  Send feedback
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="hidden sm:inline-flex"
+            aria-label="Send feedback"
+            onClick={() => feedback()}
+          >
+            <Message />
+          </Button>
+          <Button
+            size="sm"
+            className="rounded-full"
+            disabled={busy}
+            onClick={onFinish}
+          >
+            Finish
+          </Button>
+        </div>
       </header>
       <div className="flex flex-1">
         {!flashcards && rail && (
@@ -350,7 +301,7 @@ export function SessionShell(
           </aside>
         )}
         <main
-          id={readOnly ? "paper-preview" : "main"}
+          id="main"
           className="mx-auto w-full max-w-3xl min-w-0 flex-1 space-y-4 p-4 sm:p-6"
         >
           {children}

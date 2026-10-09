@@ -28,7 +28,7 @@ test("all question tabs and search load without the error boundary", async ({
       const content =
         query === "?status=review"
           ? page
-              .locator('[aria-label^="Review "]')
+              .locator('[aria-label^="Review "]:not([data-sidebar])')
               .first()
               .or(
                 page.getByText("Nothing to review", {
