@@ -195,6 +195,19 @@ test.describe("admin marking engine", () => {
           page.getByRole("navigation", { name: "Engine documents" }),
         ).toBeVisible();
       expect(await noOverflow(page)).toBe(true);
+      if (query === "tab=docs&doc=ENGINE") {
+        const tables = page.getByRole("table");
+        expect(await tables.count()).toBeGreaterThan(0);
+        expect(
+          await tables.evaluateAll((tables) =>
+            tables.every(
+              (table) =>
+                table.getBoundingClientRect().right <= window.innerWidth &&
+                table.scrollWidth <= table.parentElement!.clientWidth,
+            ),
+          ),
+        ).toBe(true);
+      }
       if (query === "tab=runs") {
         const wrapper = page.getByTestId("runs-region");
         expect(

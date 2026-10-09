@@ -115,12 +115,16 @@ function content(text: string) {
       <Fragment key={`text-${i}`}>{prose(block.text)}</Fragment>
     ) : (
       <div key={`table-${i}`} className="min-w-0 overflow-x-auto">
-        <table className="w-full min-w-80 border-collapse text-left text-sm">
-          <thead>
-            <tr>
+        <table
+          role="table"
+          className="block w-full min-w-0 border-collapse text-left text-sm sm:table sm:min-w-80"
+        >
+          <thead role="rowgroup" className="sr-only sm:not-sr-only">
+            <tr role="row">
               {block.headers.map((cell, c) => (
                 <th
                   key={c}
+                  scope="col"
                   className="min-w-32 border px-3 py-2 break-normal wrap-normal"
                 >
                   {inline(cell)}
@@ -128,14 +132,25 @@ function content(text: string) {
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup" className="block sm:table-row-group">
             {block.rows.map((row, r) => (
-              <tr key={r}>
+              <tr
+                key={r}
+                role="row"
+                className="mb-3 block border last:mb-0 sm:mb-0 sm:table-row sm:border-0"
+              >
                 {row.map((cell, c) => (
                   <td
                     key={c}
-                    className="min-w-32 border px-3 py-2 break-normal wrap-normal"
+                    role="cell"
+                    className="block min-w-0 px-3 py-2 break-normal wrap-anywhere sm:table-cell sm:min-w-32 sm:border sm:wrap-normal"
                   >
+                    <span
+                      aria-hidden="true"
+                      className="text-muted-foreground block text-xs font-medium sm:hidden"
+                    >
+                      {inline(block.headers[c] ?? "")}
+                    </span>
                     {inline(cell)}
                   </td>
                 ))}

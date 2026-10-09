@@ -77,3 +77,26 @@ it("caps demoted headings at h6 and gives tables their own scrolling space", () 
     "break-normal",
   );
 });
+it("labels every body cell with its column header for the mobile layout", () => {
+  const { container } = render(
+    <Markdown
+      text={
+        "| **Pass** | Sees | Writes | Thinking |\n| --- | --- | --- | --- |\n| Grade | Answer | Feedback | low |\n| Check | Answer | Review | medium |"
+      }
+    />,
+  );
+  const table = container.querySelector("table")!;
+  const headers = Array.from(table.querySelectorAll("th"));
+  const rows = table.querySelectorAll("tbody tr");
+  expect(rows).toHaveLength(2);
+  for (const row of rows) {
+    const cells = row.querySelectorAll("td");
+    expect(cells).toHaveLength(headers.length);
+    cells.forEach((cell, c) => {
+      const label = cell.querySelector("span")!;
+      expect(label).toHaveTextContent(headers[c].textContent!);
+      expect(label).toHaveClass("sm:hidden");
+      expect(label).toHaveAttribute("aria-hidden", "true");
+    });
+  }
+});
