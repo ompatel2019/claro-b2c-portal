@@ -271,31 +271,6 @@ export function SessionShell(
         )}
         {!readOnly && (
           <div className="ml-auto flex shrink-0 items-center gap-1">
-            {/* Below sm the tools collapse into one menu so Finish always fits. */}
-            {!flashcards && (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  className="hover:bg-muted inline-flex size-8 items-center justify-center rounded-full sm:hidden"
-                  aria-label="More tools"
-                >
-                  <More className="size-5" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={toggleBooklet}>
-                    <Book />
-                    Booklet
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCalc(!calc)}>
-                    <CalculatorIcon />
-                    Calculator
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => feedback()}>
-                    <Message />
-                    Send feedback
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
             {!flashcards && (
               <>
                 <Button
@@ -320,6 +295,31 @@ export function SessionShell(
               </>
             )}
             <Timer {...clock} />
+            {/* Below sm the tools collapse into one menu so Finish always fits; it sits beside Finish so the menu opens under its own button. */}
+            {!flashcards && (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className="hover:bg-muted inline-flex size-8 items-center justify-center rounded-full sm:hidden"
+                  aria-label="More tools"
+                >
+                  <More className="size-5" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={toggleBooklet}>
+                    <Book />
+                    Booklet
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCalc(!calc)}>
+                    <CalculatorIcon />
+                    Calculator
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => feedback()}>
+                    <Message />
+                    Send feedback
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button
               variant="ghost"
               size="icon-sm"
