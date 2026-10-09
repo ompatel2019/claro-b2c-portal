@@ -309,7 +309,9 @@ test.describe("admin marking review", () => {
     await expect(mark).toBeDisabled();
     await expect(page.getByRole("button", { name: /Resolve/ })).toHaveCount(0);
     await expect(page.getByRole("textbox", { name: "Comment" })).toHaveCount(0);
-    await expect(page.getByText("Give the latest CPI figure.")).toBeVisible();
+    await expect(
+      page.getByText("Give the latest CPI figure.", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByLabel(/Admin note/)).toBeDisabled();
     await page.keyboard.press("c");
     await expect(mark).toHaveValue("3");
