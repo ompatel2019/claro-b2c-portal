@@ -17,7 +17,13 @@ vi.mock("@/utils/supabase/admin", () => ({
     throw new Error("Unexpected service-role access");
   }),
 }));
-import { loadAdminBadges, loadDashboard } from "./admin-data";
+import {
+  loadAdminBadges,
+  loadDashboard,
+  loadStudentRows,
+  loadStudent,
+  loadSpend,
+} from "./admin-data";
 
 const empty = {
   students: 0,
@@ -45,14 +51,17 @@ beforeEach(() => {
   mocks.rpc.mockReturnValue({ throwOnError: mocks.throwOnError });
   mocks.throwOnError.mockResolvedValue({ data: empty });
 });
-it.each([loadDashboard, loadAdminBadges])(
-  "authorises before reading admin data",
-  async (load) => {
-    mocks.requireAdmin.mockRejectedValue(new Error("redirect:/student"));
-    await expect(load()).rejects.toThrow("redirect:/student");
-    expect(mocks.createClient).not.toHaveBeenCalled();
-  },
-);
+it.each([
+  loadDashboard,
+  loadAdminBadges,
+  loadStudentRows,
+  () => loadStudent("id"),
+  loadSpend,
+])("authorises before reading admin data", async (load) => {
+  mocks.requireAdmin.mockRejectedValue(new Error("redirect:/student"));
+  await expect(load()).rejects.toThrow("redirect:/student");
+  expect(mocks.createClient).not.toHaveBeenCalled();
+});
 it("reads SQL aggregates through the signed-in client", async () => {
   expect(await loadDashboard()).toEqual({
     ...empty,

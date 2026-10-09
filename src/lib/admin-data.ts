@@ -5,66 +5,50 @@ import { createClient } from "@/utils/supabase/server";
 import { requireAdmin } from "@/lib/auth";
 import { sydneyDay } from "@/lib/admin";
 import { z } from "zod";
+import { pages } from "@/lib/flashcard-data";
+import type { StudentRow } from "@/lib/students";
 
 export const SPEND_CAP_USD = 100;
 
-export async function loadStudents() {
-  await requireAdmin();
-  const db = await createClient();
-  const { data: profiles } = await db
-    .from("profiles")
-    .select("id,full_name,created_at")
-    .eq("role", "student")
-    .order("created_at", { ascending: false })
-    .throwOnError();
-  const rows = profiles ?? [];
-  if (!rows.length) return [];
-  const ids = rows.map((p) => p.id);
-  const { data: sessions } = await db
-    .from("sessions")
-    .select("id,user_id,finished_at,score,max_score,started_at")
-    .in("user_id", ids)
-    .throwOnError();
-  const byUser = new Map<
-    string,
-    { sessions: number; scored: number; totalPct: number; last: string | null }
-  >();
-  for (const id of ids)
-    byUser.set(id, { sessions: 0, scored: 0, totalPct: 0, last: null });
-  for (const s of sessions ?? []) {
-    const row = byUser.get(s.user_id)!;
-    row.sessions += 1;
-    if (s.finished_at && s.max_score) {
-      row.scored += 1;
-      row.totalPct += (Number(s.score ?? 0) / Number(s.max_score)) * 100;
-    }
-    const t = s.finished_at ?? s.started_at;
-    if (!row.last || t > row.last) row.last = t;
-  }
-  const emails = new Map<string, string>();
+/** Auth users by id: email and whether sign-in is blocked (banned_until in the future). */
+async function authUsers(ids: string[]) {
+  const users = new Map<string, { email: string; blocked: boolean }>();
   const svc = admin();
-  for (let page = 1; page < 20; page++) {
+  const now = Date.now();
+  const wanted = new Set(ids);
+  for (let page = 1; ; page++) {
     const { data, error } = await svc.auth.admin.listUsers({
       page,
       perPage: 1000,
     });
     if (error) throw new Error("Could not load student emails.");
     for (const u of data.users)
-      if (ids.includes(u.id) && u.email) emails.set(u.id, u.email);
-    if (data.users.length < 1000) break;
+      if (wanted.has(u.id)) {
+        const until = (u as { banned_until?: string | null }).banned_until;
+        users.set(u.id, {
+          email: u.email ?? "",
+          blocked: !!until && Date.parse(until) > now,
+        });
+      }
+    if (data.users.length < 1000 || users.size === wanted.size) break;
   }
-  return rows.map((p) => {
-    const s = byUser.get(p.id)!;
-    return {
-      id: p.id,
-      full_name: p.full_name,
-      email: emails.get(p.id) ?? "",
-      joined: p.created_at,
-      sessions: s.sessions,
-      average_pct: s.scored ? Math.round(s.totalPct / s.scored) : null,
-      last_active: s.last,
-    };
-  });
+  return users;
+}
+
+/** SQL owns §4.2 aggregates; auth emails never leave this admin-only loader. */
+export async function loadStudentRows(): Promise<StudentRow[]> {
+  await requireAdmin();
+  const db = await createClient();
+  const rows = await pages<Omit<StudentRow, "email" | "blocked">>((from, to) =>
+    db.rpc("admin_student_rows").order("id").range(from, to),
+  );
+  if (!rows.length) return [];
+  const users = await authUsers(rows.map((r) => r.id));
+  return rows.map((r) => ({
+    ...r,
+    email: users.get(r.id)?.email ?? "",
+    blocked: users.get(r.id)?.blocked ?? false,
+  }));
 }
 
 export async function loadStudent(id: string) {

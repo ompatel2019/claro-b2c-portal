@@ -1,5 +1,8 @@
 "use client";
 import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import type { Pager, Sorting } from "@/lib/admin";
 import { ArrowDown, ArrowUp } from "@/components/icons";
 import {
   Table,
@@ -14,45 +17,39 @@ export type Column<T> = {
   id: string;
   header: string;
   cell: (row: T) => React.ReactNode;
-  /** Sort key; missing values always sort last. Omit for unsortable columns. */
-  sort?: (row: T) => string | number | null;
+  /** Sort key (missing values sort last), or `true` when the server sorts by this column id. */
+  sort?: ((row: T) => string | number | null) | true;
   className?: string;
 };
 
-/** Sorts rows by a column; null keys go last in both directions. */
-export function sortRows<T>(
-  rows: T[],
-  key: (row: T) => string | number | null,
-  dir: "asc" | "desc",
-) {
-  return [...rows].sort((a, b) => {
-    const x = key(a);
-    const y = key(b);
-    if (x === y) return 0;
-    if (x === null) return 1;
-    if (y === null) return -1;
-    return (x < y ? -1 : 1) * (dir === "asc" ? 1 : -1);
-  });
-}
+import { sortRows } from "@/lib/admin";
+export { sortRows } from "@/lib/admin";
 
-/** Admin table: 48px rows, header click sorts asc → desc → off. */
-export function DataTable<T extends { id: string }>({
-  columns,
-  rows,
-  label,
-  onRow,
-}: {
+type Props<T> = {
   columns: Column<T>[];
   rows: T[];
   label: string;
   onRow?: (row: T) => void;
-}) {
-  const [sorting, setSorting] = useState<{
-    id: string;
-    dir: "asc" | "desc";
-  } | null>(null);
-  const sortBy = columns.find((c) => c.id === sorting?.id)?.sort;
-  const shown = sorting && sortBy ? sortRows(rows, sortBy, sorting.dir) : rows;
+  pager?: Pager;
+  selectable?: boolean;
+};
+
+/** Router hooks are confined to the opt-in server paging component. */
+export function DataTable<T extends { id: string }>(props: Props<T>) {
+  return props.pager ? (
+    <PagedTable {...props} pager={props.pager} />
+  ) : (
+    <LocalTable {...props} />
+  );
+}
+
+function LocalTable<T extends { id: string }>(props: Props<T>) {
+  const [sorting, setSorting] = useState<Sorting | null>(null);
+  const sortBy = props.columns.find((c) => c.id === sorting?.id)?.sort;
+  const shown =
+    sorting && typeof sortBy === "function"
+      ? sortRows(props.rows, sortBy, sorting.dir)
+      : props.rows;
   const toggle = (id: string) =>
     setSorting((s) =>
       s?.id !== id
@@ -62,10 +59,112 @@ export function DataTable<T extends { id: string }>({
           : null,
     );
   return (
-    <div className="bg-card overflow-hidden rounded-lg border">
+    <TableView {...props} rows={shown} sorting={sorting} toggle={toggle} />
+  );
+}
+
+function PagedTable<T extends { id: string }>(
+  props: Props<T> & { pager: Pager },
+) {
+  const router = useRouter();
+  const path = usePathname();
+  const params = useSearchParams();
+  const { pager } = props;
+  const navigate = (changes: Record<string, string>) => {
+    const next = new URLSearchParams(params.toString());
+    for (const [key, value] of Object.entries(changes)) next.set(key, value);
+    router.push(`${path}?${next}`, { scroll: false });
+  };
+  const toggle = (id: string) =>
+    navigate({
+      sort: id,
+      dir: pager.sort.id === id && pager.sort.dir === "asc" ? "desc" : "asc",
+      page: "1",
+    });
+  return (
+    <>
+      <TableView
+        key={params.toString()}
+        {...props}
+        sorting={pager.sort}
+        toggle={toggle}
+      />
+      <nav
+        aria-label={`${props.label} pagination`}
+        className="flex flex-wrap items-center justify-between gap-2 text-sm"
+      >
+        <span aria-live="polite">
+          Page {pager.page} of {pager.pages} · {pager.total} rows
+        </span>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            disabled={pager.page <= 1}
+            onClick={() => navigate({ page: String(pager.page - 1) })}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            disabled={pager.page >= pager.pages}
+            onClick={() => navigate({ page: String(pager.page + 1) })}
+          >
+            Next
+          </Button>
+        </div>
+      </nav>
+    </>
+  );
+}
+
+function TableView<T extends { id: string }>({
+  columns,
+  rows: shown,
+  label,
+  onRow,
+  sorting,
+  toggle,
+  selectable,
+}: Props<T> & { sorting: Sorting | null; toggle: (id: string) => void }) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  return (
+    <div className="bg-card min-w-0 overflow-hidden rounded-2xl border">
+      {selectable && selected.size > 0 && (
+        <div role="status" className="border-b px-5 py-2 text-sm">
+          {selected.size} selected
+          <Button variant="ghost" onClick={() => setSelected(new Set())}>
+            Clear selection
+          </Button>
+        </div>
+      )}
       <Table aria-label={label}>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
+            {selectable && (
+              <TableHead className="w-10">
+                <input
+                  type="checkbox"
+                  aria-label="Select all rows on this page"
+                  className="accent-primary size-4"
+                  checked={
+                    shown.length > 0 && shown.every((r) => selected.has(r.id))
+                  }
+                  ref={(node) => {
+                    if (node)
+                      node.indeterminate =
+                        selected.size > 0 &&
+                        !shown.every((r) => selected.has(r.id));
+                  }}
+                  onChange={(e) =>
+                    setSelected(
+                      e.target.checked
+                        ? new Set(shown.map((r) => r.id))
+                        : new Set(),
+                    )
+                  }
+                />
+              </TableHead>
+            )}
             {columns.map((c) => {
               const dir = sorting?.id === c.id ? sorting.dir : undefined;
               return (
@@ -112,6 +211,24 @@ export function DataTable<T extends { id: string }>({
                   onRow?.(row);
               }}
             >
+              {selectable && (
+                <TableCell>
+                  <input
+                    type="checkbox"
+                    aria-label={`Select ${row.id}`}
+                    className="accent-primary size-4"
+                    checked={selected.has(row.id)}
+                    onChange={(e) =>
+                      setSelected((current) => {
+                        const next = new Set(current);
+                        if (e.target.checked) next.add(row.id);
+                        else next.delete(row.id);
+                        return next;
+                      })
+                    }
+                  />
+                </TableCell>
+              )}
               {columns.map((c) => (
                 <TableCell key={c.id} className={c.className}>
                   {c.cell(row)}

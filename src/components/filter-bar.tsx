@@ -12,6 +12,7 @@ export type Filter =
       options: { value: string; label: string }[];
       all: string;
     }
+  | { name: string; label: string; checkbox: true }
   | { name: string; label: string; placeholder: string; inputMode?: "numeric" };
 
 /** URL-synced filters: selects apply on change, text applies on Enter. */
@@ -43,9 +44,23 @@ export function FilterBar({
           key={f.name}
           className="text-muted-foreground grid min-w-0 gap-1 text-[13px] font-medium"
         >
-          {f.label}
-          {"options" in f ? (
+          {!("checkbox" in f) && f.label}
+          {"checkbox" in f ? (
+            <span className="flex h-9 items-center gap-2">
+              <input
+                type="checkbox"
+                name={f.name}
+                value="1"
+                defaultChecked={values[f.name] === "1"}
+                onChange={(e) => e.currentTarget.form?.requestSubmit()}
+                className="accent-primary size-4"
+              />
+              {f.label}
+            </span>
+          ) : "options" in f ? (
             <select
+              // The wrapping label's name would also include the selected option.
+              aria-label={f.label}
               className="field h-9 max-w-64 bg-white py-0"
               name={f.name}
               defaultValue={values[f.name] ?? ""}
@@ -60,7 +75,7 @@ export function FilterBar({
             </select>
           ) : (
             <Input
-              className="w-48"
+              className="w-48 max-w-full"
               name={f.name}
               inputMode={f.inputMode}
               placeholder={f.placeholder}
