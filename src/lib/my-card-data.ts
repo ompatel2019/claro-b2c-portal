@@ -31,7 +31,6 @@ export function myCardQuery(
       { count: "exact", head },
     )
     .eq("owner_id", userId)
-    .eq("origin", "student")
     .eq("status", "live")
     .eq("flashcard_progress.user_id", userId);
   if (params.q) {

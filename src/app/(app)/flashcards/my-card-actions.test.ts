@@ -190,7 +190,9 @@ it("retires, relives and moves only the owner's student cards; never hard-delete
   expect(writes.map((q) => q.op)).toEqual(["update", "update", "update"]);
   for (const q of writes) {
     expect(q.calls).toContainEqual(["eq", ["owner_id", "me"]]);
-    expect(q.calls).toContainEqual(["eq", ["origin", "student"]]);
+    // Ownership alone scopes the write (owner_id is set only on student cards, by a table check),
+    // and students cannot read the origin column.
+    expect(q.calls).not.toContainEqual(["eq", ["origin", "student"]]);
     expect(q.calls).toContainEqual(["in", ["id", ["mine"]]]);
   }
   expect(writes.map((q) => (q.payload as { status?: string }).status)).toEqual([

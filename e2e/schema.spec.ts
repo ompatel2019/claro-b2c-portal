@@ -169,6 +169,24 @@ test.describe("Schema and RLS", () => {
     const stats = await student.db.rpc("dashboard_stats");
     expect(stats.data.streak_days).toBe(current_streak);
   });
+  test("students cannot read where a flashcard came from", async () => {
+    const hidden = await student.db
+      .from("flashcards")
+      .select("origin")
+      .limit(1);
+    expect(hidden.error).not.toBeNull();
+    const hiddenRef = await student.db
+      .from("flashcards")
+      .select("origin_ref")
+      .limit(1);
+    expect(hiddenRef.error).not.toBeNull();
+    const ok = await student.db
+      .from("flashcards")
+      .select("id,front,back,kind,topic_id,owner_id,status")
+      .limit(1);
+    expect(ok.error).toBeNull();
+    expect(ok.data!.length).toBe(1);
+  });
   test("admins see drafts and marking examples", async () => {
     const { db } = await as(
       process.env.ADMIN_EMAIL,

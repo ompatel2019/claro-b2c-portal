@@ -90,7 +90,6 @@ async function save(inputs: CardInput[], editId?: string): Promise<Result> {
           .update(payload[0])
           .eq("id", editId)
           .eq("owner_id", userId)
-          .eq("origin", "student")
           .eq("status", "live")
       : db.from("flashcards").insert(
           payload.map((card) => ({
@@ -134,7 +133,6 @@ async function setStatus(
       .from("flashcards")
       .update({ status: to, updated_at: now() })
       .eq("owner_id", userId)
-      .eq("origin", "student")
       .eq("status", from)
       .in("id", parsed.data)
       .select("id")
@@ -182,7 +180,6 @@ export async function moveMyCards(
       .from("flashcards")
       .update({ topic_id: topicId, updated_at: now() })
       .eq("owner_id", userId)
-      .eq("origin", "student")
       .eq("status", "live")
       .in("id", parsed.data)
       .select("id")
@@ -226,7 +223,6 @@ export async function loadMyCardFronts(): Promise<{
         .from("flashcards")
         .select("front")
         .eq("owner_id", userId)
-        .eq("origin", "student")
         .eq("status", "live")
         .order("id")
         .range(from, to),
