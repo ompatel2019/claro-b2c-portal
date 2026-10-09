@@ -1,6 +1,6 @@
 import { addDays, type ActivityDay } from "./activity";
 
-import { timer } from "./practice";
+import { timer, modeLabel, topicNames } from "./practice";
 
 const SYDNEY = "Australia/Sydney";
 
@@ -127,4 +127,23 @@ export function continueTime(
         ? `${Math.floor(minutes / 60)}h`
         : `${Math.floor(minutes / 1440)}d`;
   return `Started ${relative} ago`;
+}
+
+/** One session title for history and resume cards, using the shared mode/topic labels. */
+export function sessionTitle(
+  session: {
+    kind?: string;
+    config: { mode?: string; topics?: string[]; subtopics?: string[] };
+    paper_title?: string | null;
+  },
+  topics: import("./practice").Topic[],
+) {
+  if (session.kind === "paper") return session.paper_title ?? "Mock paper";
+  if (session.kind === "single") return "Mark my answer";
+  if (session.kind === "flashcards")
+    return `Flashcards · ${session.config.mode === "test" ? "Test" : "Study"}`;
+  const ids = session.config.subtopics?.length
+    ? session.config.subtopics
+    : session.config.topics;
+  return `${modeLabel(session.config.mode)} sprint · ${topicNames(ids, topics)}`;
 }

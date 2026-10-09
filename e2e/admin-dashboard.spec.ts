@@ -73,6 +73,7 @@ test.describe("Admin dashboard", () => {
       "Papers",
       "Review queue",
       "Accuracy",
+      "Engine",
       "Inbox",
       "AI spend",
     ])

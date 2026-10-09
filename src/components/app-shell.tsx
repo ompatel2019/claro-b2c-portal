@@ -62,7 +62,10 @@ export const nav: Record<
     },
     {
       label: "Track",
-      items: [{ label: "Activity", href: "/activity", icon: History }],
+      items: [
+        { label: "Activity", href: "/activity", icon: History },
+        { label: "Progress", href: "/student/progress", icon: Target },
+      ],
     },
   ],
   admin: [

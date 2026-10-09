@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { Pager, Sorting } from "@/lib/admin";
 import { ArrowDown, ArrowUp } from "@/components/icons";
 import {
@@ -25,6 +26,8 @@ export type Column<T> = {
 import { sortRows } from "@/lib/admin";
 export { sortRows } from "@/lib/admin";
 
+export type TableSorting = Sorting | null;
+
 type Props<T> = {
   columns: Column<T>[];
   rows: T[];
@@ -32,6 +35,13 @@ type Props<T> = {
   onRow?: (row: T) => void;
   pager?: Pager;
   selectable?: boolean;
+  /** A full-width row under a row (e.g. expanded subtopics). */
+  renderDetail?: (row: T) => React.ReactNode;
+  /** Student-app density: taller rows. */
+  student?: boolean;
+  /** Controlled local sorting (e.g. kept in the URL by the caller). */
+  sorting?: TableSorting;
+  onSortChange?: (sorting: TableSorting) => void;
 };
 
 /** Router hooks are confined to the opt-in server paging component. */
@@ -44,20 +54,23 @@ export function DataTable<T extends { id: string }>(props: Props<T>) {
 }
 
 function LocalTable<T extends { id: string }>(props: Props<T>) {
-  const [sorting, setSorting] = useState<Sorting | null>(null);
+  const [local, setLocal] = useState<TableSorting>(null);
+  const sorting = props.sorting === undefined ? local : props.sorting;
   const sortBy = props.columns.find((c) => c.id === sorting?.id)?.sort;
   const shown =
     sorting && typeof sortBy === "function"
       ? sortRows(props.rows, sortBy, sorting.dir)
       : props.rows;
-  const toggle = (id: string) =>
-    setSorting((s) =>
-      s?.id !== id
+  const toggle = (id: string) => {
+    const next: TableSorting =
+      sorting?.id !== id
         ? { id, dir: "asc" }
-        : s.dir === "asc"
+        : sorting.dir === "asc"
           ? { id, dir: "desc" }
-          : null,
-    );
+          : null;
+    if (props.onSortChange) props.onSortChange(next);
+    else setLocal(next);
+  };
   return (
     <TableView {...props} rows={shown} sorting={sorting} toggle={toggle} />
   );
@@ -125,6 +138,8 @@ function TableView<T extends { id: string }>({
   sorting,
   toggle,
   selectable,
+  renderDetail,
+  student,
 }: Props<T> & { sorting: Sorting | null; toggle: (id: string) => void }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   return (
@@ -198,44 +213,58 @@ function TableView<T extends { id: string }>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {shown.map((row) => (
-            <TableRow
-              key={row.id}
-              className={onRow ? "cursor-pointer" : undefined}
-              onClick={(e) => {
-                if (
-                  !(e.target as HTMLElement).closest(
-                    "a, button, input, select, textarea, [role=button], [role=menuitem]",
-                  )
-                )
-                  onRow?.(row);
-              }}
-            >
-              {selectable && (
-                <TableCell>
-                  <input
-                    type="checkbox"
-                    aria-label={`Select ${row.id}`}
-                    className="accent-primary size-4"
-                    checked={selected.has(row.id)}
-                    onChange={(e) =>
-                      setSelected((current) => {
-                        const next = new Set(current);
-                        if (e.target.checked) next.add(row.id);
-                        else next.delete(row.id);
-                        return next;
-                      })
-                    }
-                  />
-                </TableCell>
-              )}
-              {columns.map((c) => (
-                <TableCell key={c.id} className={c.className}>
-                  {c.cell(row)}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
+          {shown.map((row) => {
+            const detail = renderDetail?.(row);
+            return (
+              <Fragment key={row.id}>
+                <TableRow
+                  className={cn(student && "h-14", onRow && "cursor-pointer")}
+                  onClick={(e) => {
+                    if (
+                      !(e.target as HTMLElement).closest(
+                        "a, button, input, select, textarea, [role=button], [role=menuitem]",
+                      )
+                    )
+                      onRow?.(row);
+                  }}
+                >
+                  {selectable && (
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${row.id}`}
+                        className="accent-primary size-4"
+                        checked={selected.has(row.id)}
+                        onChange={(e) =>
+                          setSelected((current) => {
+                            const next = new Set(current);
+                            if (e.target.checked) next.add(row.id);
+                            else next.delete(row.id);
+                            return next;
+                          })
+                        }
+                      />
+                    </TableCell>
+                  )}
+                  {columns.map((c) => (
+                    <TableCell key={c.id} className={c.className}>
+                      {c.cell(row)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+                {detail && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length + (selectable ? 1 : 0)}
+                      className="p-0 whitespace-normal"
+                    >
+                      {detail}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

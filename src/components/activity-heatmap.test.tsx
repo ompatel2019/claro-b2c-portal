@@ -62,4 +62,5 @@ it("shows an in-card alert on error", () => {
     />,
   );
   screen.getByRole("alert");
+  expect(screen.queryByText(/Current streak/)).toBeNull();
 });

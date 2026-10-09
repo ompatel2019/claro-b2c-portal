@@ -122,6 +122,7 @@ test.describe("Admin shell", () => {
       "Papers",
       "Review queue",
       "Accuracy",
+      "Engine",
       "Inbox",
       "AI spend",
     ]);

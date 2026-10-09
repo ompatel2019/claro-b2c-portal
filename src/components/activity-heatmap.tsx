@@ -24,6 +24,7 @@ export function ActivityHeatmap({
   longest,
   link = "/activity?date=",
   error,
+  errorContent,
 }: {
   days: ActivityDay[];
   today: string;
@@ -32,6 +33,7 @@ export function ActivityHeatmap({
   /** Prefix for a day's link; the ISO date is appended. */
   link?: string;
   error?: boolean;
+  errorContent?: React.ReactNode;
 }) {
   const weeks = heatmapWeeks(today);
   const byDay = new Map(days.map((d) => [d.day, d]));
@@ -77,18 +79,22 @@ export function ActivityHeatmap({
     <Card>
       <CardContent className="space-y-3">
         <h2 className="sr-only">Activity</h2>
-        <p className="text-sm">
-          Current streak <strong>{plural(current, "day")}</strong> · Longest{" "}
-          <strong>{plural(longest, "day")}</strong> ·{" "}
-          {plural(active, "active day")} in the last year
-        </p>
-        {error ? (
-          <p
-            role="alert"
-            className="bg-destructive-soft text-destructive rounded-xl p-3 text-sm"
-          >
-            We couldn’t load your activity. Refresh to try again.
+        {!error && (
+          <p className="text-sm">
+            Current streak <strong>{plural(current, "day")}</strong> · Longest{" "}
+            <strong>{plural(longest, "day")}</strong> ·{" "}
+            {plural(active, "active day")} in the last year
           </p>
+        )}
+        {error ? (
+          (errorContent ?? (
+            <p
+              role="alert"
+              className="bg-destructive-soft text-destructive rounded-xl p-3 text-sm"
+            >
+              We couldn’t load your activity. Refresh to try again.
+            </p>
+          ))
         ) : (
           <div ref={scroller} className="overflow-x-auto pb-1">
             <div className="relative w-max pt-5 pl-8 text-[11px]">
