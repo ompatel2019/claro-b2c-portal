@@ -211,3 +211,21 @@ it("submits Calendar endpoints from its portal through the owning form", async (
     }),
   );
 });
+
+it("shows 'Any date' on the date button instead of repeating the label", () => {
+  render(
+    <FilterBar
+      values={{}}
+      filters={[
+        {
+          name: "dates",
+          label: "Date range",
+          dateRange: { from: "from", to: "to", today: "2026-10-10" },
+        },
+      ]}
+    />,
+  );
+  const button = screen.getByRole("button", { name: "Date range: Any date" });
+  expect(button).toHaveTextContent(/^Any date$/);
+  expect(screen.getAllByText("Date range")).toHaveLength(1);
+});

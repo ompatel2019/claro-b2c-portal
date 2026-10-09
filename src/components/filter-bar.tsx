@@ -245,6 +245,11 @@ function DateRangeFilter({
   const [endpoint, setEndpoint] = useState<"from" | "to">("from");
   const [open, setOpen] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  // The label above already says "Date range"; the button shows the current value.
+  const summary =
+    from || to
+      ? `${from ? dateLabel(from, true) : "Any date"} to ${to ? dateLabel(to, true) : "Any date"}`
+      : "Any date";
   return (
     <div className="grid gap-1 text-[13px]">
       <span className="text-muted-foreground font-medium">{filter.label}</span>
@@ -252,11 +257,10 @@ function DateRangeFilter({
       <input type="hidden" name={toName} value={to} />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverPrimitive.Trigger
+          aria-label={`${filter.label}: ${summary}`}
           render={<Button type="button" variant="outline" />}
         >
-          {from || to
-            ? `${from ? dateLabel(from, true) : "Any date"} to ${to ? dateLabel(to, true) : "Any date"}`
-            : filter.label}
+          {summary}
         </PopoverPrimitive.Trigger>
         <PopoverContent>
           <ToggleGroup
