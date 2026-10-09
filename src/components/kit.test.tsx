@@ -48,7 +48,7 @@ it("marks the section root only on an exact match", () => {
     nav.student.flatMap((g) => g.items).find((i) => i.label === "Flashcards")
       ?.href,
   ).toBe("/student/flashcards");
-  expect(activeItem("student", "/profile")).toBeUndefined();
+  expect(activeItem("student", "/student/profile")).toBeUndefined();
   expect(activeItem("student", "/student/activity/check-id")?.label).toBe(
     "Activity",
   );

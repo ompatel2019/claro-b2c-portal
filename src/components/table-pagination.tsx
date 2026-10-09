@@ -7,16 +7,19 @@ import { Button } from "./ui/button";
 export function TablePagination({
   pager,
   label,
+  paramPrefix = "",
 }: {
   pager: Pager;
   label: string;
+  /** Independent URL state for multiple paged tables on one page. */
+  paramPrefix?: string;
 }) {
   const router = useRouter();
   const path = usePathname();
   const params = useSearchParams();
   const go = (page: number) => {
     const next = new URLSearchParams(params.toString());
-    next.set("page", String(page));
+    next.set(`${paramPrefix}page`, String(page));
     router.push(`${path}?${next}`, { scroll: false });
   };
   return (

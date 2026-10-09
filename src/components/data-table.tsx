@@ -34,6 +34,8 @@ type Props<T> = {
   label: string;
   onRow?: (row: T) => void;
   pager?: Pager;
+  /** Independent URL state for multiple server-paged tables on one page. */
+  paramPrefix?: string;
   selectable?: boolean;
   /** Opt-in actions for selected rows on the current page. */
   bulk?: (ids: string[], clear: () => void) => React.ReactNode;
@@ -87,7 +89,8 @@ function PagedTable<T extends { id: string }>(
   const { pager } = props;
   const navigate = (changes: Record<string, string>) => {
     const next = new URLSearchParams(params.toString());
-    for (const [key, value] of Object.entries(changes)) next.set(key, value);
+    for (const [key, value] of Object.entries(changes))
+      next.set(`${props.paramPrefix ?? ""}${key}`, value);
     router.push(`${path}?${next}`, { scroll: false });
   };
   const toggle = (id: string) =>
@@ -104,7 +107,11 @@ function PagedTable<T extends { id: string }>(
         sorting={pager.sort}
         toggle={toggle}
       />
-      <TablePagination pager={pager} label={props.label} />
+      <TablePagination
+        pager={pager}
+        label={props.label}
+        paramPrefix={props.paramPrefix}
+      />
     </>
   );
 }

@@ -49,6 +49,23 @@ export function ResultsBrowser({
   const [index, setIndex] = useState(initial);
   const [table, setTable] = useState(false);
   useEffect(() => {
+    let active = true;
+    const selectHash = () => {
+      const match = /^#q-(\d+)$/.exec(window.location.hash);
+      if (!match || !active) return;
+      const target = items.findIndex(
+        (item) => item.position === Number(match[1]),
+      );
+      if (target >= 0) setIndex(target);
+    };
+    queueMicrotask(selectHash);
+    window.addEventListener("hashchange", selectHash);
+    return () => {
+      active = false;
+      window.removeEventListener("hashchange", selectHash);
+    };
+  }, [items]);
+  useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (
         e.defaultPrevented ||

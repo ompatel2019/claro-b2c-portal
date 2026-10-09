@@ -2,9 +2,17 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { createClient as createAuthClient } from "@supabase/supabase-js";
+import { clientEnv } from "@/env/client";
+import { profileSchema, passwordSchema } from "@/lib/profile";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
-export type FormState = { error?: string; message?: string };
+export type FormState = {
+  error?: string;
+  message?: string;
+  fieldErrors?: Record<string, string[] | undefined>;
+  sessionExpired?: boolean;
+};
 const SprintConfig = z.object({
   mode: z.enum(["mcq", "short", "extended", "mixed"]),
   include_extended: z.boolean().default(false),
@@ -64,45 +72,82 @@ export async function saveProfile(
   _: FormState,
   form: FormData,
 ): Promise<FormState> {
-  const profile = await requireProfile();
-  const parsed = z
-    .object({
-      full_name: z.string().trim().min(1, "Enter your name.").max(100),
-      year_level: z
-        .union([z.literal("11"), z.literal("12"), z.literal("")])
-        .transform((v) => (v ? Number(v) : null)),
-      school: z.string().trim().max(200),
-    })
-    .safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
   const db = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await db.auth.getUser();
+  if (authError || !user)
+    return {
+      error: "Your session expired. Sign in again.",
+      sessionExpired: true,
+    };
+  const parsed = profileSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success)
+    return {
+      error: parsed.error.issues[0].message,
+      fieldErrors: z.flattenError(parsed.error).fieldErrors,
+    };
   const { error } = await db
     .from("profiles")
     .update(parsed.data)
-    .eq("id", profile.id);
-  if (error) return { error: error.message };
+    .eq("id", user.id)
+    .select("id")
+    .single();
+  if (error) return { error: "Couldn't save your details. Try again" };
   revalidatePath("/", "layout");
-  return { message: "Your profile is saved." };
+  return { message: "Saved" };
 }
 
 export async function changePassword(
   _: FormState,
   form: FormData,
 ): Promise<FormState> {
-  await requireProfile();
-  const parsed = z
-    .object({
-      password: z.string().min(8, "Password must be at least 8 characters."),
-      confirm: z.string().min(8, "Confirm your new password."),
-    })
-    .safeParse({
-      password: form.get("password"),
-      confirm: form.get("confirm"),
-    });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-  if (parsed.data.password !== parsed.data.confirm)
-    return { error: "Passwords do not match." };
+  const parsed = passwordSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success)
+    return {
+      error: parsed.error.issues[0].message,
+      fieldErrors: z.flattenError(parsed.error).fieldErrors,
+    };
   const db = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await db.auth.getUser();
+  if (userError || !user?.email)
+    return {
+      error: "Your session expired. Sign in again.",
+      sessionExpired: true,
+    };
+  // Verify in an isolated client: never replace the browser's current session.
+  const verifier = createAuthClient(
+    clientEnv.NEXT_PUBLIC_SUPABASE_URL,
+    clientEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    },
+  );
+  const { data: verified, error: verifyError } =
+    await verifier.auth.signInWithPassword({
+      email: user.email,
+      password: parsed.data.current_password,
+    });
+  if (verifyError || verified.user?.id !== user.id)
+    return {
+      error:
+        verifyError?.code === "invalid_credentials"
+          ? "Current password is wrong"
+          : "Couldn't verify your password. Try again",
+      fieldErrors:
+        verifyError?.code === "invalid_credentials"
+          ? { current_password: ["Current password is wrong"] }
+          : undefined,
+    };
+  await verifier.auth.signOut({ scope: "local" });
   const { error } = await db.auth.updateUser({
     password: parsed.data.password,
   });

@@ -182,3 +182,37 @@ it("clears bulk selection when the server page or filters change", () => {
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
   expect(screen.getByRole("checkbox", { name: "Select b" })).not.toBeChecked();
 });
+
+it("keeps the other profile table's page when sorting or paging a namespaced table", () => {
+  nav.router.mockReturnValue({ push: nav.push });
+  nav.path.mockReturnValue("/student/profile");
+  nav.search.mockReturnValue(
+    new URLSearchParams(
+      "reviews_page=3&feedback_page=2&feedback_sort=value&feedback_dir=desc",
+    ),
+  );
+  render(
+    <DataTable
+      label="Feedback"
+      columns={columns}
+      rows={rows}
+      paramPrefix="feedback_"
+      pager={{
+        page: 2,
+        pages: 4,
+        total: 70,
+        sort: { id: "value", dir: "desc" },
+      }}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Value" }));
+  expect(nav.push).toHaveBeenLastCalledWith(
+    "/student/profile?reviews_page=3&feedback_page=1&feedback_sort=value&feedback_dir=asc",
+    { scroll: false },
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Next" }));
+  expect(nav.push).toHaveBeenLastCalledWith(
+    "/student/profile?reviews_page=3&feedback_page=3&feedback_sort=value&feedback_dir=desc",
+    { scroll: false },
+  );
+});

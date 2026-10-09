@@ -9,6 +9,7 @@ vi.mock("./session-shell", () => ({
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  window.history.replaceState(null, "", "/");
 });
 const items = [1, 24, 26].map((position) => ({
   position,
@@ -100,5 +101,17 @@ it("ignores consumed keys and keys within comment navigation", () => {
   fireEvent.keyDown(screen.getByText("Comment"), { key: "k" });
   expect(screen.getByText("Comment")).toBeVisible();
   fireEvent.keyDown(window, { key: "k" });
+  expect(screen.getByText("Answer to Q24")).toBeVisible();
+});
+
+it("opens the questioned mark from a report hash and responds to hash changes", async () => {
+  window.history.replaceState(null, "", "/student/sprint/sit/results#q-26");
+  render(<ResultsBrowser items={items} views={views} initial={0} />);
+  expect(await screen.findByText("Answer to Q26")).toBeVisible();
+  window.history.replaceState(null, "", "#q-24");
+  fireEvent(window, new Event("hashchange"));
+  expect(screen.getByText("Answer to Q24")).toBeVisible();
+  window.history.replaceState(null, "", "#q-999");
+  fireEvent(window, new Event("hashchange"));
   expect(screen.getByText("Answer to Q24")).toBeVisible();
 });

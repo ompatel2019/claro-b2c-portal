@@ -146,7 +146,7 @@ export function AppShell({
   const signOutForm = useRef<HTMLFormElement>(null);
   const home = nav[kind][0].items[0].href;
   const pageLabel =
-    active?.label ?? (path.startsWith("/profile") ? "Profile" : "");
+    active?.label ?? (path.startsWith("/student/profile") ? "Profile" : "");
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <a
@@ -236,7 +236,7 @@ export function AppShell({
               <SidebarMenuButton
                 size="lg"
                 tooltip={name ?? "Profile"}
-                render={<Link href="/profile" aria-label="Profile" />}
+                render={<Link href="/student/profile" aria-label="Profile" />}
               >
                 <Avatar>
                   <AvatarFallback className="bg-accent text-ink font-semibold">
@@ -274,7 +274,7 @@ export function AppShell({
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem render={<Link href="/profile" />}>
+              <DropdownMenuItem render={<Link href="/student/profile" />}>
                 <User />
                 Profile
               </DropdownMenuItem>
