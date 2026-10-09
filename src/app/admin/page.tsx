@@ -35,9 +35,9 @@ export default async function AdminHome() {
       "/admin/students",
     ],
     [
-      "Submissions",
-      "Spot-check recent AI-marked short and extended answers.",
-      "/admin/submissions",
+      "Marking review",
+      "Review model disagreements, student disputes and spot checks.",
+      "/admin/marking/review",
     ],
     [
       "Questions",

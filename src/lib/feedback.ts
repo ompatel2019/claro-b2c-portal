@@ -126,6 +126,8 @@ export function nextMarkLine(
   feedback: ReviewRow["feedback"],
   full: boolean,
 ) {
+  if (typeof feedback?.next_mark_line === "string")
+    return feedback.next_mark_line;
   if (full) return "Full marks. Nothing missing.";
   const fix = comments.find((c) => c.kind === "fix" && c.next_mark);
   if (fix) return fix.next_mark;

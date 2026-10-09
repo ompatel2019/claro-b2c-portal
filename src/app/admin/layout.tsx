@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { AppShell } from "@/components/app-shell";
+import { Toaster } from "sonner";
 export default async function AdminLayout({
   children,
 }: {
@@ -17,6 +18,7 @@ export default async function AdminLayout({
       defaultOpen={jar.get("sidebar_state")?.value !== "false"}
     >
       {children}
+      <Toaster position="bottom-center" />
     </AppShell>
   );
 }

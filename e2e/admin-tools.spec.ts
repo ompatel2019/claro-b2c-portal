@@ -8,7 +8,7 @@ test.describe("Admin tools", () => {
   );
   test.setTimeout(120000);
 
-  test("admin can open students, submissions, questions and spend", async ({
+  test("admin can open students, marking review, questions and spend", async ({
     page,
   }) => {
     await page.goto("/sign-in");
@@ -27,14 +27,17 @@ test.describe("Admin tools", () => {
     await expect(page.getByRole("heading", { name: "Students" })).toBeVisible();
     const count = await page.getByText(/^\d+ students?$/).textContent();
     expect(count).toMatch(/^(1 student|([02-9]|\d{2,}) students)$/);
-    await page.goto("/admin/submissions");
+    await page.goto("/admin/marking/review");
     await expect(
-      page.getByRole("heading", { name: "Submissions" }),
+      page.getByRole("heading", { name: "Marking review" }),
     ).toBeVisible({ timeout: 30000 });
     await expect(
-      page.getByText(
-        /Recent AI-marked short and extended|No marked written answers yet/,
-      ),
+      page
+        .getByRole("navigation", { name: "Review queues" })
+        .getByRole("link", { name: /^Open \(\d+\)$/ }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.getByRole("button", { name: "Add 5 spot checks" }),
     ).toBeVisible();
     await page.goto("/admin/questions?type=mcq");
     await expect(
@@ -68,7 +71,7 @@ test.describe("Admin tools denied to students", () => {
     for (const path of [
       "/admin",
       "/admin/students",
-      "/admin/submissions",
+      "/admin/marking/review",
       "/admin/questions",
       "/admin/spend",
     ]) {

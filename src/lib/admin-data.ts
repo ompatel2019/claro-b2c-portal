@@ -98,25 +98,6 @@ export async function loadStudent(id: string) {
   };
 }
 
-export async function loadSubmissions() {
-  await requireAdmin();
-  // Service role so we can join question type reliably for the feed.
-  const { data, error } = await admin()
-    .from("attempts")
-    .select(
-      "id,session_id,user_id,mark,max_marks,band,status,marked_at,created_at,question:questions(id,type,stem,source,marks,topic_id)",
-    )
-    .eq("status", "marked")
-    .order("marked_at", { ascending: false, nullsFirst: false })
-    .limit(80);
-  if (error) throw new Error("Could not load submissions.");
-  return (data ?? []).filter((a) => {
-    const q = a.question as { type?: string } | { type?: string }[] | null;
-    const type = Array.isArray(q) ? q[0]?.type : q?.type;
-    return ["short", "extended"].includes(type ?? "");
-  });
-}
-
 export const QUESTION_PAGE = 100;
 export async function loadQuestions(filters: {
   topic?: string;

@@ -10,6 +10,8 @@ import {
   nextMarkLine,
   readComments,
   uncertainParts,
+  TAGS,
+  type FeedbackComment,
   type NumberedComment,
   type ReviewRow,
 } from "@/lib/feedback";
@@ -18,7 +20,9 @@ import { cn } from "@/lib/utils";
 import { RetryAnswer } from "./retry-answer";
 import { StatusPill, statePill } from "./status-pill";
 import { Badge } from "./ui/badge";
-import { buttonVariants } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
+import { Textarea } from "./ui/textarea";
+import { toast } from "sonner";
 import { Card, CardContent } from "./ui/card";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
 import { Popover, PopoverContent } from "./ui/popover";
@@ -60,15 +64,106 @@ function Remembered({
   );
 }
 
+export type EditableComment = FeedbackComment & { id: number };
+export type FeedbackEdit = {
+  comments: EditableComment[];
+  nextMark: string;
+  onChange: (comments: EditableComment[], nextMark: string) => void;
+  disabled?: boolean;
+  onUndo: (deleted?: EditableComment) => void;
+};
+
+function CommentFields({
+  value,
+  onChange,
+}: {
+  value: FeedbackComment;
+  onChange: (value: FeedbackComment) => void;
+}) {
+  return (
+    <div
+      className="mt-2 grid gap-2"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
+      <div className="grid grid-cols-2 gap-2">
+        <label className="grid gap-1">
+          Kind
+          <select
+            className="h-9 rounded-md border bg-white px-2"
+            value={value.kind}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                kind: e.target.value as FeedbackComment["kind"],
+                next_mark:
+                  e.target.value === "strength" ? null : value.next_mark,
+              })
+            }
+          >
+            <option value="strength">Strength</option>
+            <option value="fix">Fix</option>
+          </select>
+        </label>
+        <label className="grid gap-1">
+          Tag
+          <select
+            className="h-9 rounded-md border bg-white px-2"
+            value={value.tag ?? ""}
+            onChange={(e) =>
+              onChange({
+                ...value,
+                tag: e.target.value as FeedbackComment["tag"],
+              })
+            }
+          >
+            {!value.tag && (
+              <option value="" disabled>
+                Choose tag
+              </option>
+            )}
+            {TAGS.map((tag) => (
+              <option key={tag}>{tag}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="grid gap-1">
+        Comment
+        <Textarea
+          value={value.body}
+          maxLength={4000}
+          onChange={(e) => onChange({ ...value, body: e.target.value })}
+        />
+      </label>
+      {value.kind === "fix" && (
+        <label className="grid gap-1">
+          Next mark
+          <Textarea
+            value={value.next_mark ?? ""}
+            maxLength={4000}
+            onChange={(e) =>
+              onChange({ ...value, next_mark: e.target.value || null })
+            }
+          />
+        </label>
+      )}
+    </div>
+  );
+}
+
 function CommentCard({
   c,
   active,
   className,
+  edit,
   ...props
 }: {
   c: NumberedComment;
   active?: boolean;
+  edit?: FeedbackEdit;
 } & React.ComponentProps<"div">) {
+  const { n, ...comment } = c;
   const strength = c.kind === "strength";
   const Icon = strength ? CheckCircle : ArrowUpRight;
   return (
@@ -84,7 +179,7 @@ function CommentCard({
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="bg-ink flex size-5 items-center justify-center rounded-full text-[11px] font-semibold text-white tabular-nums">
-          {c.n}
+          {n}
         </span>
         <span
           className={cn(
@@ -97,8 +192,47 @@ function CommentCard({
         </span>
         {c.tag && <Badge variant="outline">{c.tag}</Badge>}
       </div>
-      <p className="mt-1.5">{c.body}</p>
-      {c.next_mark && (
+      {edit ? (
+        <fieldset disabled={edit.disabled}>
+          <CommentFields
+            value={comment}
+            onChange={(value) =>
+              edit.onChange(
+                edit.comments.map((item) =>
+                  item.id === c.id ? { ...value, id: c.id } : item,
+                ),
+                edit.nextMark,
+              )
+            }
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            aria-label={`Delete comment ${n}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              edit.onChange(
+                edit.comments.filter((item) => item.id !== c.id),
+                edit.nextMark,
+              );
+              toast("Comment deleted", {
+                duration: 10000,
+                action: {
+                  label: "Undo",
+                  onClick: () => edit.onUndo(comment),
+                },
+              });
+            }}
+          >
+            Delete
+          </Button>
+        </fieldset>
+      ) : (
+        <p className="mt-1.5">{c.body}</p>
+      )}
+      {!edit && c.next_mark && (
         <p className="mt-1.5">
           <span className="font-semibold">Next mark:</span> {c.next_mark}
         </p>
@@ -189,17 +323,51 @@ export function AnnotatedFeedback({
   row,
   photos = [],
   actions,
+  edit,
 }: {
   row: ReviewRow;
   photos?: string[];
   actions?: React.ReactNode;
+  edit?: FeedbackEdit;
 }) {
+  const nextCommentId = useRef(
+    Math.min(0, ...(edit?.comments.map((c) => c.id) ?? [])) - 1,
+  );
   const state = markingState(row);
   const text = row.transcript ?? row.answer_text ?? "";
   const comments = useMemo(
-    () => readComments(row.feedback, text),
-    [row.feedback, text],
+    () =>
+      edit
+        ? [...edit.comments]
+            .sort((a, b) => (a.start ?? Infinity) - (b.start ?? Infinity))
+            .map((c, i) => ({ ...c, n: i + 1 }))
+        : readComments(row.feedback, text),
+    [row.feedback, text, edit],
   );
+  const [selection, setSelection] = useState<{
+    quote: string;
+    start: number;
+    rect: DOMRect;
+  } | null>(null);
+  const [draft, setDraft] = useState<FeedbackComment>({
+    quote: "",
+    start: null,
+    kind: "fix",
+    tag: "Knowledge",
+    body: "",
+    next_mark: null,
+  });
+  useEffect(() => {
+    if (!edit) return;
+    const clear = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelection(null);
+        window.getSelection()?.removeAllRanges();
+      }
+    };
+    window.addEventListener("keydown", clear, true);
+    return () => window.removeEventListener("keydown", clear, true);
+  }, [edit]);
   const [filter, setFilter] = useState<"all" | "strength" | "fix">("all");
   const [hover, setHover] = useState<number | null>(null);
   const [flash, setFlash] = useState<number | null>(null);
@@ -215,7 +383,9 @@ export function AnnotatedFeedback({
   const max = row.max_marks ?? row.marks;
   const showMark = ["marked", "in_review", "reviewed"].includes(state);
   const band = bandOf(row.criteria, row.band);
-  const next = nextMarkLine(comments, row.feedback, Number(row.mark) >= max);
+  const next =
+    edit?.nextMark ??
+    nextMarkLine(comments, row.feedback, Number(row.mark) >= max);
   const visible = comments.filter((c) => filter === "all" || c.kind === filter);
   const anchored = comments.filter((c) => c.start !== null);
   const pill = statePill(state, row.review);
@@ -278,19 +448,20 @@ export function AnnotatedFeedback({
       behavior: reduced() ? "auto" : "smooth",
     });
   }
-  function jumpTo(c: NumberedComment) {
-    setHover(c.id);
-    const el = highlight(c.id);
+  function jumpTo(id: number) {
+    setHover(id);
+    const el = highlight(id);
     if (!el) return;
     el.scrollIntoView({
       block: "center",
       behavior: reduced() ? "auto" : "smooth",
     });
-    setFlash(c.id);
-    setTimeout(() => setFlash((f) => (f === c.id ? null : f)), 1500);
+    setFlash(id);
+    setTimeout(() => setFlash((f) => (f === id ? null : f)), 1500);
   }
   function onKey(e: React.KeyboardEvent) {
     if ((e.target as HTMLElement).closest("input, textarea, select")) return;
+    if (edit && ["ArrowDown", "ArrowUp"].includes(e.key)) return;
     const order = visible;
     const at = order.findIndex((c) => c.id === hover);
     if (["j", "J", "ArrowDown", "k", "K", "ArrowUp"].includes(e.key)) {
@@ -308,12 +479,65 @@ export function AnnotatedFeedback({
     }
   }
 
+  function captureSelection() {
+    if (!edit || edit.disabled) return;
+    const selected = window.getSelection();
+    if (!selected?.rangeCount || selected.isCollapsed || !doc.current) return;
+    const range = selected.getRangeAt(0);
+    if (
+      !doc.current.contains(range.startContainer) ||
+      !doc.current.contains(range.endContainer)
+    )
+      return;
+    const plain = (range: Range) => {
+      const content = range.cloneContents();
+      content.querySelectorAll("sup").forEach((el) => el.remove());
+      return content.textContent ?? "";
+    };
+    const before = range.cloneRange();
+    before.selectNodeContents(doc.current);
+    before.setEnd(range.startContainer, range.startOffset);
+    const start = plain(before).length;
+    const quote = plain(range);
+    if (!quote.trim() || text.slice(start, start + quote.length) !== quote)
+      return;
+    setPopover(null);
+    setDraft({
+      quote,
+      start,
+      kind: "fix",
+      tag: "Knowledge",
+      body: "",
+      next_mark: null,
+    });
+    setSelection({
+      quote,
+      start,
+      rect: range.getBoundingClientRect(),
+    });
+  }
+  useEffect(() => {
+    if (!edit || edit.disabled) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const changed = () => {
+      clearTimeout(timer);
+      timer = setTimeout(captureSelection, 250);
+    };
+    document.addEventListener("selectionchange", changed);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("selectionchange", changed);
+    };
+  });
+
   const label = (c: NumberedComment) =>
     `${c.kind === "strength" ? "Strength" : "Fix"} ${c.n}${c.tag ? `, ${c.tag}` : ""}: ${c.body}`;
   const shown = (c: NumberedComment) => visible.includes(c);
   const answer = (
     <div
       ref={doc}
+      onPointerUp={edit && !edit.disabled ? captureSelection : undefined}
+      onKeyUp={edit && !edit.disabled ? captureSelection : undefined}
       className="relative max-w-[70ch] text-base leading-[26px] whitespace-pre-wrap"
     >
       {highlightSegments(text, anchored).map((seg) => {
@@ -336,7 +560,10 @@ export function AnnotatedFeedback({
               role={focusable ? "button" : undefined}
               tabIndex={focusable ? 0 : undefined}
               aria-label={focusable ? label(focusable) : undefined}
-              onClick={(e) => openComment(owner, e.currentTarget)}
+              onClick={(e) => {
+                if (edit && !window.getSelection()?.isCollapsed) return;
+                openComment(owner, e.currentTarget);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -377,8 +604,8 @@ export function AnnotatedFeedback({
     active: hover === c.id || flash === c.id,
     onMouseEnter: () => setHover(c.id),
     onMouseLeave: () => setHover(null),
-    onClick: () => jumpTo(c),
-    onKeyDown: (e: React.KeyboardEvent) => e.key === "Enter" && jumpTo(c),
+    onClick: () => jumpTo(c.id),
+    onKeyDown: (e: React.KeyboardEvent) => e.key === "Enter" && jumpTo(c.id),
     className: "cursor-pointer",
   });
   const filterBar = showMark && comments.length > 0 && (
@@ -410,6 +637,7 @@ export function AnnotatedFeedback({
                 <CommentCard
                   key={c.id}
                   data-anchored=""
+                  edit={edit}
                   {...cardProps(c)}
                   className="absolute inset-x-0 cursor-pointer"
                 />
@@ -421,7 +649,7 @@ export function AnnotatedFeedback({
                 Overall
               </h4>
               {overall.map((c) => (
-                <CommentCard key={c.id} {...cardProps(c)} />
+                <CommentCard key={c.id} edit={edit} {...cardProps(c)} />
               ))}
             </div>
           )}
@@ -440,7 +668,7 @@ export function AnnotatedFeedback({
                   Overall
                 </h4>
               )}
-              <CommentCard {...cardProps(c)} />
+              <CommentCard edit={edit} {...cardProps(c)} />
             </li>
           ))}
         </ol>
@@ -478,7 +706,8 @@ export function AnnotatedFeedback({
             )}
             {pill && <StatusPill pill={pill} />}
           </div>
-          {state === "in_review" &&
+          {!edit &&
+            state === "in_review" &&
             row.review?.reason !== "student_dispute" && (
               <p>Our team is double-checking this mark.</p>
             )}
@@ -508,12 +737,23 @@ export function AnnotatedFeedback({
               <div className="bg-muted h-4 w-1/2 animate-pulse rounded" />
             </div>
           )}
-          {showMark && next && (
+          {showMark && (edit || next) && (
             <div>
               <h3 className="text-sm font-semibold">
                 What gets you the next mark
               </h3>
-              <p className="mt-1">{next}</p>
+              {edit ? (
+                <Textarea
+                  aria-label="What gets you the next mark"
+                  className="mt-1"
+                  value={edit.nextMark}
+                  disabled={edit.disabled}
+                  maxLength={4000}
+                  onChange={(e) => edit.onChange(edit.comments, e.target.value)}
+                />
+              ) : (
+                <p className="mt-1">{next}</p>
+              )}
             </div>
           )}
           {showMark && comments.length > 0 && (
@@ -538,7 +778,7 @@ export function AnnotatedFeedback({
                             className="text-left underline-offset-4 hover:underline"
                             onClick={() => {
                               setFilter("all");
-                              jumpTo(c);
+                              jumpTo(c.id);
                               card(c.id)?.focus({ preventScroll: true });
                             }}
                           >
@@ -592,12 +832,66 @@ export function AnnotatedFeedback({
           {marginCards}
         </div>
       ) : null}
+      {edit && (
+        <>
+          <p className="text-muted-foreground text-xs">
+            Select answer text to add a comment · Esc clears selection.
+          </p>
+          <Popover
+            open={!!selection}
+            onOpenChange={(open) => !open && setSelection(null)}
+          >
+            <PopoverContent
+              anchor={
+                selection
+                  ? { getBoundingClientRect: () => selection.rect }
+                  : undefined
+              }
+              className="max-h-[75vh] w-80 max-w-[calc(100vw-2rem)] overflow-y-auto"
+              initialFocus={false}
+            >
+              <h3 className="font-semibold">Add comment</h3>
+              <p className="max-h-20 overflow-auto text-xs">
+                “{selection?.quote}”
+              </p>
+              <fieldset disabled={edit.disabled}>
+                <CommentFields value={draft} onChange={setDraft} />
+              </fieldset>
+              <Button
+                type="button"
+                disabled={edit.disabled || !draft.body.trim() || !draft.tag}
+                onClick={() => {
+                  edit.onChange(
+                    [
+                      ...edit.comments,
+                      {
+                        ...draft,
+                        id: nextCommentId.current--,
+                      },
+                    ],
+                    edit.nextMark,
+                  );
+                  setSelection(null);
+                  window.getSelection()?.removeAllRanges();
+                }}
+              >
+                Add comment
+              </Button>
+            </PopoverContent>
+          </Popover>
+        </>
+      )}
       <Popover
         open={!!popComment}
         onOpenChange={(open) => !open && setPopover(null)}
       >
         <PopoverContent anchor={popover?.el} className="w-80 p-0">
-          {popComment && <CommentCard c={popComment} className="border-0" />}
+          {popComment &&
+            (edit ? (
+              <CommentCard edit={edit} c={popComment} className="border-0" />
+            ) : (
+              <CommentCard c={popComment} className="border-0" />
+            ))}
         </PopoverContent>
       </Popover>
 
@@ -658,7 +952,7 @@ export function AnnotatedFeedback({
         </div>
       )}
       <div className="flex flex-wrap gap-2">
-        {row.topic_id && (
+        {!edit && row.topic_id && (
           <Link
             className={buttonVariants({ variant: "outline", size: "sm" })}
             href={`/student/sprint?type=${row.type}&sub=${encodeURIComponent(row.topic_id)}`}

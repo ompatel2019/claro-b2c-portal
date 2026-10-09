@@ -18,7 +18,9 @@ export type Filter =
 export function FilterBar({
   filters,
   values,
+  hidden,
 }: {
+  hidden?: Record<string, string>;
   filters: Filter[];
   values: Record<string, string | undefined>;
 }) {
@@ -30,6 +32,9 @@ export function FilterBar({
       action={path}
       className="flex flex-wrap items-end gap-3"
     >
+      {Object.entries(hidden ?? {}).map(([name, value]) => (
+        <input key={name} type="hidden" name={name} value={value} />
+      ))}
       {filters.map((f) => (
         <label
           key={f.name}
@@ -65,7 +70,10 @@ export function FilterBar({
         Apply
       </Button>
       {active > 0 && (
-        <Link href={path} className={buttonVariants({ variant: "ghost" })}>
+        <Link
+          href={hidden ? `${path}?${new URLSearchParams(hidden)}` : path}
+          className={buttonVariants({ variant: "ghost" })}
+        >
           Clear ({active})
         </Link>
       )}

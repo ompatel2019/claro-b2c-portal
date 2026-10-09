@@ -77,7 +77,7 @@ export const nav: Record<
     },
     {
       label: "Marking",
-      items: [{ label: "Submissions", href: "/admin/submissions", icon: Pen }],
+      items: [{ label: "Review", href: "/admin/marking/review", icon: Pen }],
     },
     {
       label: "Spend & settings",
