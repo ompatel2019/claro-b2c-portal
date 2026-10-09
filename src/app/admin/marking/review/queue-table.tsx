@@ -49,7 +49,7 @@ export function QueueTable({
       header: "Student",
       cell: (r) => (
         <Link
-          className="block max-w-20 truncate underline"
+          className="block whitespace-nowrap underline"
           title={r.name}
           href={`/admin/students/${r.userId}`}
         >
@@ -62,9 +62,14 @@ export function QueueTable({
       header: "Question",
       cell: (r) => {
         const content = (
-          <div className="w-28" title={`${r.source}: ${r.stem}`}>
-            <span className="block truncate font-medium">{r.source}</span>
-            <span className="text-muted-foreground block truncate">
+          <div
+            className="w-0 min-w-full whitespace-normal"
+            title={`${r.source}: ${r.stem}`}
+          >
+            <span className="block font-medium wrap-break-word">
+              {r.source}
+            </span>
+            <span className="text-muted-foreground line-clamp-2 wrap-break-word">
               {r.stem.slice(0, 60)}
               {r.stem.length > 60 ? "…" : ""}
             </span>
@@ -92,7 +97,10 @@ export function QueueTable({
       header: "Student note",
       cell: (r) =>
         r.note ? (
-          <span className="block w-20 truncate" title={r.note}>
+          <span
+            className="line-clamp-2 max-w-56 wrap-break-word whitespace-normal"
+            title={r.note}
+          >
             {r.note.slice(0, 80)}
             {r.note.length > 80 ? "…" : ""}
           </span>
@@ -140,7 +148,7 @@ export function QueueTable({
       aria-label="Review table, scroll horizontally"
       tabIndex={0}
     >
-      <div className="min-w-[740px] [&_td]:px-2 [&_th]:px-2 [&_th]:whitespace-normal">
+      <div className="min-w-[740px] [&_td]:px-2 [&_th]:w-px [&_th]:px-2 [&_th]:whitespace-normal [&_th:nth-child(4)]:w-auto [&_th:nth-child(8)]:w-1/5">
         <DataTable columns={columns} rows={rows} label="Marking review queue" />
       </div>
     </div>
