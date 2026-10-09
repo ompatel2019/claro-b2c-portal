@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Sprints moved to /student/sprint (§7); keep old links working.
+  // Home and sprints moved under /student (§3, §7); keep old links working.
   async redirects() {
     return [
+      { source: "/", destination: "/student", permanent: false },
       { source: "/practice", destination: "/student/sprint", permanent: false },
       {
         source: "/practice/:id/results",

@@ -49,7 +49,7 @@ export const nav: Record<
     {
       label: "Practise",
       items: [
-        { label: "Home", href: "/", icon: Dashboard },
+        { label: "Home", href: "/student", icon: Dashboard },
         { label: "Topic Sprint", href: "/student/sprint", icon: Sprint },
         { label: "Flashcards", href: "/flashcards", icon: Cards },
       ],

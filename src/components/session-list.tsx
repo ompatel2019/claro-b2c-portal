@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { History } from "@/components/icons";
+import { Cards, History, Sprint } from "@/components/icons";
 import {
   modeLabel,
   dateLabel,
@@ -35,16 +35,29 @@ export function SessionList({
               className="hover:bg-surface flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3"
               href={`/${s.kind === "flashcards" ? "flashcards" : "student/sprint"}/${s.id}${s.finished_at ? "/results" : ""}`}
             >
-              <div className="min-w-0">
-                <p className="font-semibold">
-                  {s.kind === "flashcards"
-                    ? `Flashcards: ${String(s.config.mode) === "test" ? "Test" : "Study"}`
-                    : modeLabel(s.config.mode)}
-                </p>
-                <p className="text-muted-foreground text-[13px]">
-                  {topicNames(s.config.topics, topics)} ·{" "}
-                  {dateLabel(s.started_at)}
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                {s.kind === "flashcards" ? (
+                  <Cards
+                    aria-hidden
+                    className="text-muted-foreground size-5 shrink-0"
+                  />
+                ) : (
+                  <Sprint
+                    aria-hidden
+                    className="text-muted-foreground size-5 shrink-0"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="font-semibold">
+                    {s.kind === "flashcards"
+                      ? `Flashcards: ${String(s.config.mode) === "test" ? "Test" : "Study"}`
+                      : modeLabel(s.config.mode)}
+                  </p>
+                  <p className="text-muted-foreground text-[13px]">
+                    {topicNames(s.config.topics, topics)} ·{" "}
+                    {dateLabel(s.started_at)}
+                  </p>
+                </div>
               </div>
               {s.finished_at ? (
                 <Badge

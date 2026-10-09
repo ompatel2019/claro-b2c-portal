@@ -793,26 +793,38 @@ function Chip({
   );
 }
 
-/** One-click starts with the §3.2 defaults (used on Home). */
+const QUICK = [
+  { label: "20 MC questions · 20 min", config: withMode(DEFAULTS, "mcq") },
+  {
+    label: "5 short answers · 45 min",
+    config: {
+      ...withSizeBy(withMode(DEFAULTS, "short"), "questions"),
+      pace: "custom" as const,
+      custom_minutes: 45,
+    },
+  },
+];
+
+/** §3.1 Quick start: one click straight into a sprint (used on Home). */
 export function QuickStarts() {
   const [state, action, pending] = useActionState(startSprint, {});
   return (
-    <form action={action}>
-      <div className="flex flex-wrap gap-3">
-        {(["mcq", "short", "mixed"] as const).map((mode) => (
-          <Button
-            key={mode}
-            name="config"
-            value={JSON.stringify(withMode(DEFAULTS, mode))}
-            type="submit"
-            disabled={pending}
-          >
-            {modes[mode].label}
-          </Button>
-        ))}
-      </div>
+    <form action={action} className="contents">
+      {QUICK.map((q) => (
+        <Button
+          key={q.label}
+          name="config"
+          value={JSON.stringify(q.config)}
+          type="submit"
+          variant="outline"
+          className="justify-start"
+          disabled={pending}
+        >
+          {q.label}
+        </Button>
+      ))}
       {state.error && (
-        <p role="alert" className="text-destructive mt-3">
+        <p role="alert" className="text-destructive text-sm">
           {state.error}
         </p>
       )}

@@ -73,7 +73,7 @@ test.describe("Admin tools denied to students", () => {
       "/admin/spend",
     ]) {
       await page.goto(path);
-      await expect(page).toHaveURL(/\/$/);
+      await expect(page).toHaveURL(/\/student$/);
     }
   });
 });

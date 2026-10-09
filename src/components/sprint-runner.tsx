@@ -370,7 +370,9 @@ export function SprintRunner({
     return (
       <main className="mx-auto max-w-3xl p-4 sm:p-6">
         <h1>No questions in this sprint</h1>
-        <Button onClick={() => router.push("/")}>Return to dashboard</Button>
+        <Button onClick={() => router.push("/student")}>
+          Return to dashboard
+        </Button>
       </main>
     );
   if (finishing)
@@ -490,7 +492,7 @@ export function SprintRunner({
         void act(async () => {
           await flush();
           await persistTime();
-          router.push("/");
+          router.push("/student");
         })
       }
       onFinish={() => setConfirm(true)}

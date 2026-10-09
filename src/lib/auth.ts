@@ -22,6 +22,6 @@ export async function requireProfile() {
 /** Admin-only pages; students are sent home. */
 export async function requireAdmin() {
   const profile = await requireProfile();
-  if (profile.role !== "admin") redirect("/");
+  if (profile.role !== "admin") redirect("/student");
   return profile;
 }

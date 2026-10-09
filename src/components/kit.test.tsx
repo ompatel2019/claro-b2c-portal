@@ -30,7 +30,7 @@ it("groups student and admin navigation without homework", () => {
 });
 
 it("marks the section root only on an exact match", () => {
-  expect(activeItem("student", "/")?.label).toBe("Home");
+  expect(activeItem("student", "/student")?.label).toBe("Home");
   expect(activeItem("student", "/student/sprint/abc/results")?.label).toBe(
     "Topic Sprint",
   );

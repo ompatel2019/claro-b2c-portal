@@ -56,12 +56,22 @@ test.describe("Sprint results", () => {
     expect(n).toBe(below === -1 ? 1 : below + 1);
     await expect(page.getByText("Your answer", { exact: true })).toBeVisible();
 
-    await page.keyboard.press(n < 5 ? "k" : "j");
+    // The key listener attaches on hydration: press until the selection moves (once).
     const next = n < 5 ? n + 1 : n - 1;
-    await expect(strip.locator('[aria-current="true"]')).toHaveAttribute(
-      "aria-label",
-      new RegExp(`^Question ${next},`),
-    );
+    const selected = strip.locator('[aria-current="true"]');
+    await expect(async () => {
+      if (
+        (await selected.getAttribute("aria-label"))!.startsWith(
+          `Question ${n},`,
+        )
+      )
+        await page.keyboard.press(n < 5 ? "k" : "j");
+      await expect(selected).toHaveAttribute(
+        "aria-label",
+        new RegExp(`^Question ${next},`),
+        { timeout: 1000 },
+      );
+    }).toPass({ timeout: 20000 });
     await expect(
       page.getByText(new RegExp(`^Question ${next}$`)),
     ).toBeVisible();

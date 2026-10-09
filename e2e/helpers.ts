@@ -5,7 +5,7 @@ export async function signIn(page: Page) {
   await page.getByLabel("Email").fill(process.env.STUDENT_EMAIL!);
   await page.getByLabel("Password").fill(process.env.STUDENT_PASSWORD!);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/student$/);
 }
 export function adminClient() {
   return process.env.SUPABASE_SECRET_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL

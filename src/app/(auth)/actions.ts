@@ -34,7 +34,7 @@ export async function signIn(_: AuthState, form: FormData): Promise<AuthState> {
       if (profile?.role === "admin") redirect("/admin");
     }
   }
-  redirect(safe);
+  redirect(safe === "/" ? "/student" : safe);
 }
 
 export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
@@ -56,7 +56,7 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
     },
   });
   if (error) return { error: error.message };
-  if (data.session) redirect("/");
+  if (data.session) redirect("/student");
   return { message: "Check your email to confirm your account, then sign in." };
 }
 

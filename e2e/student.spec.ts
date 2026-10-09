@@ -17,13 +17,8 @@ test.describe("Student practice", () => {
     await signIn(page);
   });
   test("sign in, dashboard and sign out", async ({ page }) => {
-    for (const label of ["Sessions this week", "Average score", "Streak days"])
-      await expect(page.getByText(label, { exact: true })).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Quick start" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Multiple choice", exact: true }),
+      page.getByRole("heading", { name: /^Good (morning|afternoon|evening)/ }),
     ).toBeVisible();
     await page.getByRole("button", { name: "Account menu" }).click();
     await page.getByRole("menuitem", { name: "Sign out" }).click();
@@ -63,7 +58,7 @@ test.describe("Student practice", () => {
     await page
       .getByRole("button", { name: "Save and exit", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/student$/);
     await page.locator(`a[href="/student/sprint/${id}"]`).click();
     await expect(page).toHaveURL(new RegExp(`/student/sprint/${id}$`));
     await expect(page.getByText(/^Q 2 of \d+$/)).toBeVisible();
@@ -141,6 +136,6 @@ test.describe("AI backed written practice", () => {
     await page
       .getByRole("button", { name: "Save and exit", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/student$/);
   });
 });

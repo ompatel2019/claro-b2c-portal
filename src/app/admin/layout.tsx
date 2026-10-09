@@ -8,7 +8,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const profile = await requireProfile();
-  if (profile.role !== "admin") redirect("/");
+  if (profile.role !== "admin") redirect("/student");
   const jar = await cookies();
   return (
     <AppShell
