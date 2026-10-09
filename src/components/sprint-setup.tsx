@@ -720,7 +720,7 @@ export function SprintSetup({
       <form
         ref={form}
         action={action}
-        className="bg-background/95 fixed inset-x-0 bottom-0 z-30 border-t backdrop-blur"
+        className="bg-background/95 fixed inset-x-0 bottom-[var(--feedback-clearance,0px)] z-30 border-t backdrop-blur lg:bottom-0"
       >
         <input type="hidden" name="config" value={JSON.stringify(c)} />
         <div className="mx-auto flex max-w-[720px] flex-wrap items-center gap-3 px-4 py-3 md:pl-[calc(var(--sidebar-width,0px)+1rem)]">

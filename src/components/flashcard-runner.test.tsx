@@ -553,6 +553,14 @@ it("preserves keyboard activation on focused controls and focuses ratings after 
   fireEvent.click(flip);
   const rating = screen.getByRole("button", { name: "Missed it (1)" });
   expect(rating).toHaveFocus();
+  for (const name of ["Missed it (1)", "Mostly (2)", "Knew it (3)"])
+    expect(screen.getByRole("button", { name })).toHaveClass(
+      "border-border",
+      "bg-white",
+    );
+  expect(
+    screen.getByRole("heading", { name: "Model answer" }).parentElement,
+  ).toHaveClass("bg-muted", "border");
   const space = new KeyboardEvent("keydown", {
     key: " ",
     bubbles: true,

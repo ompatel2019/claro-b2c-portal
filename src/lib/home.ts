@@ -1,5 +1,7 @@
 import { addDays, type ActivityDay } from "./activity";
 
+import { timer } from "./practice";
+
 const SYDNEY = "Australia/Sydney";
 
 /** "Good morning" before 12, afternoon before 17, else evening (Sydney time). */
@@ -100,4 +102,29 @@ export function trend(rows: Marked[], today: string, range: Range) {
       pct: pctOf(inRange.filter((r) => r.type === type)),
     })),
   };
+}
+
+/** Paused sessions retain saved elapsed time. Recency uses started_at because
+ * the runner only persists elapsed_s; only recent sessions show a timer. */
+export function continueTime(
+  session: {
+    started_at: string;
+    elapsed_s: number | null;
+  },
+  limit: number | null,
+  now: Date,
+) {
+  const started = Date.parse(session.started_at);
+  const remaining = (limit ?? 0) - (session.elapsed_s ?? 0);
+  if (remaining > 0 && now.getTime() - started <= 30 * 60_000)
+    return `${timer(remaining)} left`;
+  const minutes = Math.max(0, Math.floor((now.getTime() - started) / 60_000));
+  if (minutes === 0) return "Started just now";
+  const relative =
+    minutes < 60
+      ? `${minutes}m`
+      : minutes < 1440
+        ? `${Math.floor(minutes / 60)}h`
+        : `${Math.floor(minutes / 1440)}d`;
+  return `Started ${relative} ago`;
 }

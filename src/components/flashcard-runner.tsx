@@ -622,7 +622,7 @@ export function FlashcardRunner({
         <Button
           key={mark}
           autoFocus={mark === 0}
-          variant={mark === 1 ? "default" : "outline"}
+          variant="outline"
           disabled={busy}
           onClick={() => act(() => (disagree ? override(mark) : rate(mark)))}
         >
@@ -632,7 +632,7 @@ export function FlashcardRunner({
     </div>
   );
   const model = (
-    <div className="bg-muted rounded-xl p-4 whitespace-pre-wrap">
+    <div className="bg-muted rounded-xl border p-4 whitespace-pre-wrap">
       <h3 className="mb-2 font-semibold">Model answer</h3>
       <p>{card?.back}</p>
     </div>

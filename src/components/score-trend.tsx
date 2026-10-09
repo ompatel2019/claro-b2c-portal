@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { trend, type Marked, type Range } from "@/lib/home";
+import { dateLabel } from "@/lib/practice";
 import { TYPE_LABEL } from "@/lib/results";
 import {
   Select,
@@ -19,22 +20,24 @@ const RANGES = [
 const W = 600;
 const H = 180;
 const PAD = 8;
+const LEFT = 60;
+const BOTTOM = H - 28;
 
 /** §3.1 score trend: daily average % as an area, the previous period dashed, MC/Short/Extended % below. */
 export function ScoreTrend({ rows, today }: { rows: Marked[]; today: string }) {
   const [range, setRange] = useState<Range>("30");
   const t = trend(rows, today, range);
   const x = (day: string) =>
-    PAD +
+    LEFT +
     ((Date.parse(day) - Date.parse(t.from)) /
       86_400_000 /
       Math.max(1, t.span - 1)) *
-      (W - 2 * PAD);
-  const y = (pct: number) => PAD + (1 - pct / 100) * (H - 2 * PAD);
+      (W - LEFT - PAD);
+  const y = (pct: number) => PAD + (1 - pct / 100) * (BOTTOM - PAD);
   const line = (ps: { day: string; pct: number }[]) =>
     ps.map((p, i) => `${i ? "L" : "M"}${x(p.day)},${y(p.pct)}`).join("");
   const area = t.points.length
-    ? `${line(t.points)}L${x(t.points.at(-1)!.day)},${H - PAD}L${x(t.points[0].day)},${H - PAD}Z`
+    ? `${line(t.points)}L${x(t.points.at(-1)!.day)},${BOTTOM}L${x(t.points[0].day)},${BOTTOM}Z`
     : "";
   return (
     <div className="space-y-4">
@@ -59,27 +62,59 @@ export function ScoreTrend({ rows, today }: { rows: Marked[]; today: string }) {
           </SelectContent>
         </Select>
       </div>
-      {t.points.length ? (
+      {t.points.length >= 3 ? (
         <svg
           viewBox={`0 0 ${W} ${H}`}
           className="h-44 w-full overflow-visible"
           aria-labelledby="score-trend-title"
+          aria-describedby="score-trend-description"
           data-range={range}
         >
           <title id="score-trend-title">
             {`Score trend, ${RANGES.find((r) => r.value === range)!.label}`}
           </title>
+          <desc id="score-trend-description">
+            {`Percentage axis: 0%, 50%, 100%. Date axis: ${t.from} to ${today}.`}
+          </desc>
           {[0, 50, 100].map((g) => (
-            <line
-              key={g}
-              x1={PAD}
-              x2={W - PAD}
-              y1={y(g)}
-              y2={y(g)}
-              className="stroke-border"
-              strokeWidth={1}
-            />
+            <g key={g}>
+              <text
+                x={LEFT - 8}
+                y={y(g)}
+                textAnchor="end"
+                dominantBaseline="middle"
+                fontSize={20}
+                className="fill-muted-foreground"
+              >
+                {g}%
+              </text>
+              <line
+                x1={LEFT}
+                x2={W - PAD}
+                y1={y(g)}
+                y2={y(g)}
+                className="stroke-border"
+                strokeWidth={1}
+              />
+            </g>
           ))}
+          <text
+            x={LEFT}
+            y={H - 4}
+            fontSize={20}
+            className="fill-muted-foreground"
+          >
+            {dateLabel(t.from)}
+          </text>
+          <text
+            x={W - PAD}
+            y={H - 4}
+            textAnchor="end"
+            fontSize={20}
+            className="fill-muted-foreground"
+          >
+            {dateLabel(today)}
+          </text>
           {t.previous.length > 1 && (
             <path
               data-testid="previous-period"
@@ -116,9 +151,27 @@ export function ScoreTrend({ rows, today }: { rows: Marked[]; today: string }) {
           ))}
         </svg>
       ) : (
-        <p className="text-muted-foreground py-10 text-center text-sm">
-          No marked work in this range.
-        </p>
+        <div className="space-y-3 py-10 text-center text-sm">
+          <p className="text-muted-foreground">
+            {t.points.length
+              ? "Mark work on at least 3 days to see a trend."
+              : "No marked work in this range."}
+          </p>
+          {t.points.length > 0 && (
+            <ul className="space-y-2">
+              {t.points.map((p) => (
+                <li key={p.day}>
+                  <Link
+                    href={`/activity?date=${p.day}`}
+                    className="underline underline-offset-4"
+                  >
+                    {p.day}: {Math.round(p.pct)}%
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
       <dl className="grid grid-cols-3 gap-3 text-sm">
         {t.byType.map((b) => (

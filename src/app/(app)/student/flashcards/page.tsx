@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Cards } from "@/components/icons";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { sydneyToday } from "@/lib/flashcards";
@@ -91,10 +92,16 @@ export default async function Flashcards({
       {open && (
         <Card className="mx-auto max-w-[720px]">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
-            <p>
-              You have an unfinished flashcards session · {reviewed}/
-              {openIds.length} reviewed
-            </p>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <Cards
+                aria-hidden
+                className="text-muted-foreground size-5 shrink-0"
+              />
+              <p>
+                You have an unfinished flashcards session · {reviewed}/
+                {openIds.length} reviewed
+              </p>
+            </div>
             <Link
               className={buttonVariants({ size: "sm" })}
               href={`/student/flashcards/${open.id}`}

@@ -27,10 +27,9 @@ export function monthLabels(weeks: (string | null)[][]) {
       ? [
           {
             col,
-            label: utc(week[0]!).toLocaleString("en-AU", {
-              month: "short",
-              timeZone: "UTC",
-            }),
+            label: utc(week[0]!)
+              .toLocaleString("en-AU", { month: "short", timeZone: "UTC" })
+              .slice(0, 3),
           },
         ]
       : [];

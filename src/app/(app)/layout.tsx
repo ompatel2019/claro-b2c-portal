@@ -31,7 +31,9 @@ export default async function Layout({
       defaultOpen={jar.get("sidebar_state")?.value !== "false"}
     >
       <FlashcardPersistDrain />
-      <FeedbackWidget userId={profile.id}>{children}</FeedbackWidget>
+      <div className="pb-[var(--feedback-clearance)] [--feedback-clearance:6rem]">
+        <FeedbackWidget userId={profile.id}>{children}</FeedbackWidget>
+      </div>
       <Toaster position="bottom-center" />
     </AppShell>
   );

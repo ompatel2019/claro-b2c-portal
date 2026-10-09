@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { continueTime } from "@/lib/home";
+import { Sprint } from "@/components/icons";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import {
   answered,
   modeLabel,
   timeLimit,
-  timer,
   type Session,
   type Topic,
 } from "@/lib/practice";
@@ -51,14 +52,18 @@ export default async function SprintPage({
       {unfinished && (
         <Card className="mx-auto max-w-[720px]">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 text-sm">
-            <p>
-              You have an unfinished {modeLabel(unfinished.config.mode)} sprint
-              · {unfinished.attempts.filter(answered).length}/
-              {unfinished.attempts.length} answered
-              {limit
-                ? ` · ${timer(Math.max(0, limit - (unfinished.elapsed_s ?? 0)))} left`
-                : ""}
-            </p>
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <Sprint
+                aria-hidden
+                className="text-muted-foreground size-5 shrink-0"
+              />
+              <p>
+                You have an unfinished {modeLabel(unfinished.config.mode)}{" "}
+                sprint · {unfinished.attempts.filter(answered).length}/
+                {unfinished.attempts.length} answered
+                {` · ${continueTime(unfinished, limit, new Date())}`}
+              </p>
+            </div>
             <div className="flex gap-2">
               <Link
                 className={buttonVariants({ size: "sm" })}

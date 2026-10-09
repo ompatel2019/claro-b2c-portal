@@ -7,6 +7,7 @@ import { sydneyToday } from "@/lib/flashcards";
 import { addDays, type ActivityDay } from "@/lib/activity";
 import {
   averages,
+  continueTime,
   greeting,
   longDate,
   weekCounts,
@@ -18,7 +19,6 @@ import {
   plural,
   scoreTone,
   timeLimit,
-  timer,
   type Session,
   type Topic,
 } from "@/lib/practice";
@@ -326,7 +326,7 @@ async function Continue({ userId }: { userId: string }) {
             ? (config.card_ids?.length ?? 0)
             : s.attempts.length;
           const limit = cards ? null : timeLimit(config);
-          const left = limit && limit - (s.elapsed_s ?? 0);
+          const time = continueTime(s, limit, new Date());
           const Icon = KIND_ICON[s.kind as keyof typeof KIND_ICON] ?? Sprint;
           return (
             <li key={s.id} className="flex items-center gap-3 py-3">
@@ -344,10 +344,7 @@ async function Continue({ userId }: { userId: string }) {
                 </p>
                 <p className="text-muted-foreground text-[13px]">
                   {done}/{total} {cards ? "cards" : "answered"}
-                  {left != null &&
-                    (left > 0
-                      ? ` · ${s.kind === "paper" ? "Timer running · " : ""}${timer(left)} left`
-                      : " · Out of time")}
+                  {` · ${time}`}
                 </p>
               </div>
               <Link

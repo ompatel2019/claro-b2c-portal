@@ -90,7 +90,11 @@ export default async function FlashcardSession({
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           label="First-try score"
-          value={`${counts[0]} / ${session.config.card_ids.length}`}
+          value={
+            first.size
+              ? `${counts[0]} / ${session.config.card_ids.length}`
+              : "No score yet"
+          }
         />
         <StatCard label="Knew / Mostly / Missed" value={counts.join(" / ")} />
         <StatCard label="Time" value={timer(session.elapsed_s ?? 0)} />

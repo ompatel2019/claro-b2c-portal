@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { cleanupSessions, finish, pick, signIn } from "./helpers";
 
 const noOverflow = (page: Page) =>
@@ -17,8 +17,29 @@ test.describe("Sprint results", () => {
     page,
   }) => {
     await signIn(page);
+    const clearsFeedback = async (control: Locator) => {
+      await expect(control).toBeInViewport({ ratio: 1 });
+      const button = await page
+        .getByRole("button", { name: "Feedback", exact: true })
+        .boundingBox();
+      const target = await control.boundingBox();
+      expect(button).not.toBeNull();
+      expect(target).not.toBeNull();
+      const intersects =
+        button!.x < target!.x + target!.width &&
+        button!.x + button!.width > target!.x &&
+        button!.y < target!.y + target!.height &&
+        button!.y + button!.height > target!.y;
+      expect(intersects).toBe(false);
+    };
     await page.goto("/student/sprint?type=mcq&sub=t3-inflation&size=5");
     await expect(page.getByText(/^\d+ questions match/)).toBeVisible();
+    for (const width of [360, 400, 640, 768]) {
+      await page.setViewportSize({ width, height: 800 });
+      await clearsFeedback(
+        page.getByRole("button", { name: /^Start (sprint|with)/ }),
+      );
+    }
     await page.getByRole("button", { name: /^Start (sprint|with)/ }).click();
     await expect(page).toHaveURL(/\/student\/sprint\/[^/]+$/);
     ids.push(page.url().split("/").at(-1)!);
@@ -28,6 +49,19 @@ test.describe("Sprint results", () => {
         await page.getByRole("button", { name: "Next question" }).click();
     }
     await finish(page);
+    const resultsUrl = page.url();
+    await page.goto("/student");
+    const practise = page.getByRole("link", { name: "Practise", exact: true });
+    await expect(practise.last()).toBeVisible();
+    for (const width of [360, 400, 640, 768]) {
+      await page.setViewportSize({ width, height: 800 });
+      await page.evaluate(() =>
+        window.scrollTo(0, document.documentElement.scrollHeight),
+      );
+      await clearsFeedback(practise.last());
+    }
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(resultsUrl);
 
     await expect(
       page.getByRole("heading", {

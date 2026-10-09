@@ -61,16 +61,19 @@ test.describe("Student home", () => {
 
   test("score trend switches range", async ({ page }) => {
     const chart = page.locator("svg[data-range]");
-    if (!(await page.getByRole("heading", { name: "Score trend" }).isVisible()))
-      return expect(
-        page.getByText("Finish a sprint to see your trend."),
-      ).toBeVisible();
-    await expect(
-      chart.or(page.getByText("No marked work in this range.")),
-    ).toBeVisible();
+    const heading = page.getByRole("heading", { name: "Score trend" });
+    const empty = page.getByText("Finish a sprint to see your trend.");
+    await expect(heading.or(empty)).toBeVisible();
+    if (await empty.isVisible()) return;
+    const sparse = page.getByText(
+      /^(No marked work in this range\.|Mark work on at least 3 days to see a trend\.)$/,
+    );
+    await expect(chart.or(sparse)).toBeVisible();
     await page.getByRole("combobox", { name: "Range" }).click();
     await page.getByRole("option", { name: "All time" }).click();
-    await expect(page.locator('svg[data-range="all"]')).toBeVisible();
+    await expect(
+      page.locator('svg[data-range="all"]').or(sparse),
+    ).toBeVisible();
     await expect(page.getByTestId("previous-period")).toHaveCount(0);
   });
 

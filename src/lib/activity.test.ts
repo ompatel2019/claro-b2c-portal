@@ -29,6 +29,8 @@ describe("activity heatmap", () => {
     const labels = monthLabels(heatmapWeeks("2026-10-08"));
     expect(labels[0]).toEqual({ col: 0, label: "Oct" });
     expect(labels.map((l) => l.label)).toContain("Jan");
+    expect(labels.map((l) => l.label)).toContain("Sep");
+    expect(labels.every((l) => l.label.length === 3)).toBe(true);
     expect(new Set(labels.map((l) => l.col)).size).toBe(labels.length);
   });
   it("uses fixed shade buckets", () => {
