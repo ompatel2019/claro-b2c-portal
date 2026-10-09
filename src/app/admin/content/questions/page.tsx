@@ -43,7 +43,8 @@ export default async function QuestionsPage({
     0.99,
     Math.max(0.6, Number(f.threshold) || REVIEW_THRESHOLD),
   );
-  const [counts, topics, review] = await Promise.all([
+  // The list does not depend on the badge counts, so it loads alongside them.
+  const [counts, topics, review, list] = await Promise.all([
     loadQuestionCounts(),
     loadTopics(),
     loadImportReview(
@@ -52,8 +53,8 @@ export default async function QuestionsPage({
       status === "review",
       status === "review" ? f : {},
     ),
+    status === "review" ? null : loadQuestionList(f),
   ]);
-  const list = status === "review" ? null : await loadQuestionList(f);
   const filtered = QUESTION_FILTER_KEYS.some((k) => f[k]);
   const parents = topics.filter((t) => !t.parent_id);
   const filterBar = (

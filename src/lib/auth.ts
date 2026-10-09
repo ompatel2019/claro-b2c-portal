@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
@@ -20,8 +21,9 @@ export async function requireProfile() {
 }
 
 /** Admin-only pages; students are sent home. */
-export async function requireAdmin() {
+// Admin pages call several loaders that each guard themselves; one request checks the role once.
+export const requireAdmin = cache(async () => {
   const profile = await requireProfile();
   if (profile.role !== "admin") redirect("/student");
   return profile;
-}
+});

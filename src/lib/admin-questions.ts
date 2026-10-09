@@ -122,12 +122,13 @@ export async function loadImportReview(
       )
       .throwOnError();
   // A badge is secondary; the active review's count is needed for pagination.
-  const count = includeRows
-    ? await countQuery(filters)
-    : await countQuery(filters).catch(() => null);
-  const all = QUESTION_FILTER_KEYS.some((key) => filters[key])
-    ? await countQuery({}).catch(() => null)
-    : count;
+  // The unfiltered badge count is independent of the filtered one, so they run together.
+  const filtering = QUESTION_FILTER_KEYS.some((key) => filters[key]);
+  const [count, all] = await Promise.all([
+    includeRows ? countQuery(filters) : countQuery(filters).catch(() => null),
+    filtering ? countQuery({}).catch(() => null) : null,
+  ]);
+  const tabCount = filtering ? all : count;
   const total = count?.count ?? 0;
   const pages = Math.max(1, Math.ceil(total / 50));
   const page = Math.min(
@@ -146,7 +147,7 @@ export async function loadImportReview(
           .throwOnError()
       : null;
   return {
-    tabCount: all?.count ?? null,
+    tabCount: tabCount?.count ?? null,
     rows: (rows?.data ?? []) as ReviewPair[],
     pager: {
       page,

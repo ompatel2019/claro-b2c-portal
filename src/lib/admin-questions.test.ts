@@ -164,6 +164,53 @@ it("keeps filtered review results when only the unfiltered badge fails", async (
   expect(review.pager.total).toBe(1);
 });
 
+it("starts filtered and unfiltered review counts together and uses the unfiltered tab count", async () => {
+  let resolveFiltered!: (value: { count: number }) => void;
+  let resolveUnfiltered!: (value: { count: number }) => void;
+  const filtered = new Promise<{ count: number }>((resolve) => {
+    resolveFiltered = resolve;
+  });
+  const unfiltered = new Promise<{ count: number }>((resolve) => {
+    resolveUnfiltered = resolve;
+  });
+  const filteredCount = vi.fn(() => filtered);
+  const unfilteredCount = vi.fn(() => unfiltered);
+  mocks.rpc.mockImplementation(
+    (_name: string, args: { p_filters: { type?: string } }) => ({
+      throwOnError: args.p_filters.type ? filteredCount : unfilteredCount,
+    }),
+  );
+
+  const pendingReview = loadImportReview(0.82, 1, false, { type: "mcq" });
+  try {
+    await vi.waitFor(() => {
+      expect(mocks.rpc).toHaveBeenCalledTimes(2);
+      expect(mocks.rpc).toHaveBeenNthCalledWith(
+        1,
+        "admin_import_review",
+        { p_threshold: 0.82, p_filters: { type: "mcq", q: undefined } },
+        { head: true, count: "exact" },
+      );
+      expect(mocks.rpc).toHaveBeenNthCalledWith(
+        2,
+        "admin_import_review",
+        { p_threshold: 0.82, p_filters: { q: undefined } },
+        { head: true, count: "exact" },
+      );
+      expect(filteredCount).toHaveBeenCalledExactlyOnceWith();
+      expect(unfilteredCount).toHaveBeenCalledExactlyOnceWith();
+    });
+  } finally {
+    resolveFiltered({ count: 3 });
+    resolveUnfiltered({ count: 17 });
+    await pendingReview;
+  }
+
+  const review = await pendingReview;
+  expect(review.tabCount).toBe(17);
+  expect(review.pager.total).toBe(3);
+});
+
 it("marks only the failed status badge unavailable and preserves zero counts", async () => {
   mocks.statusCount.mockImplementation(async (status: string) => {
     if (status === "draft") throw new Error("statement timeout");

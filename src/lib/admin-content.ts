@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { serverEnv } from "@/env/server";
 import { requireAdmin } from "@/lib/auth";
@@ -7,7 +8,8 @@ import { pages } from "@/lib/flashcard-data";
 import type { Topic } from "@/lib/practice";
 
 /** Shared content forms use the canonical topic hierarchy. */
-export async function loadTopics(): Promise<Topic[]> {
+// Cached per request: the page and its list loader both need the topic tree.
+export const loadTopics = cache(async (): Promise<Topic[]> => {
   await requireAdmin();
   return pages<Topic>((from, to) =>
     admin()
@@ -17,7 +19,7 @@ export async function loadTopics(): Promise<Topic[]> {
       .order("id")
       .range(from, to),
   );
-}
+});
 
 /** Short-lived, signed snapshots prevent Undo from becoming an arbitrary publish path. */
 export function contentUndoToken(scope: string, user: string, data: unknown) {
