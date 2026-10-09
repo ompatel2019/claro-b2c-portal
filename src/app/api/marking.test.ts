@@ -23,6 +23,7 @@ vi.mock("@/lib/marking/engine", () => ({
   AlreadyMarking: class extends Error {
     message = "This answer is already being marked.";
   },
+  STALE_CLAIM_MS: 3 * 60_000,
   markAttempt: vi.fn(),
   rescoreSession: vi.fn(),
   transcribeImage: vi.fn(),
@@ -268,6 +269,8 @@ it("downloads handwriting and saves the transcript for confirmation", async () =
       image_paths: [`${userId}/image.png`],
       status: "pending",
       question_id: "q",
+      question: { type: "short" },
+      session: { kind: "sprint" },
     },
     { stem: "Explain" },
   ]);
@@ -439,6 +442,8 @@ function adminQuery(data: unknown) {
     select: vi.fn(),
     eq: vi.fn(),
     not: vi.fn(),
+    neq: vi.fn(),
+    in: vi.fn(),
     then: (resolve: (value: unknown) => unknown) =>
       Promise.resolve({ data, error: null }).then(resolve),
     order: vi.fn(),
@@ -455,6 +460,8 @@ function adminQuery(data: unknown) {
     "select",
     "eq",
     "not",
+    "neq",
+    "in",
     "order",
     "limit",
     "maybeSingle",
@@ -653,4 +660,230 @@ it("rejects an override whose review is not owned or belongs to another session"
     ).status,
   ).toBe(404);
   expect(admin().from).toHaveBeenCalledTimes(1);
+});
+
+const paperConfig = {
+  time_limit_min: 180,
+  reading_min: 5,
+  strict: true,
+  sections: [
+    { position: 24, section: "III", choice_group: 1 },
+    { position: 25, section: "III", choice_group: 1 },
+  ],
+};
+const paperAttempts = [24, 25].map((position) => ({
+  id: String(position),
+  position,
+  choice_index: null,
+  answer_text: "Draft answer",
+  transcript: null,
+  question: { marks: 20 },
+}));
+it("requires a paper choice and does not trust an early automatic flag", async () => {
+  client([
+    {
+      id: "id",
+      kind: "paper",
+      config: paperConfig,
+      started_at: new Date().toISOString(),
+      finished_at: null,
+    },
+  ]);
+  vi.mocked(admin().from).mockReturnValueOnce(
+    adminQuery(paperAttempts) as never,
+  );
+  expect((await finish(request({ automatic: true }), ctx)).status).toBe(400);
+  expect(markAttempt).not.toHaveBeenCalled();
+  expect(finishSession).not.toHaveBeenCalled();
+});
+it("accepts an expired paper, skips the other choice, and scores only chosen rows", async () => {
+  client([
+    {
+      id: "id",
+      kind: "paper",
+      config: paperConfig,
+      started_at: "2020-01-01T00:00:00Z",
+      finished_at: null,
+    },
+  ]);
+  const skip = adminQuery(null);
+  const save = adminQuery(null);
+  for (const chain of [
+    adminQuery(paperAttempts),
+    skip,
+    adminQuery([{ id: "24", status: "pending", question: { marks: 20 } }]),
+    adminQuery([
+      {
+        id: "24",
+        status: "marked",
+        mark: 12,
+        max_marks: 20,
+        question: { marks: 20 },
+      },
+    ]),
+    save,
+  ])
+    vi.mocked(admin().from).mockReturnValueOnce(chain as never);
+  vi.mocked(markAttempt).mockResolvedValue({
+    status: "marked",
+    mark: 12,
+    max_marks: 20,
+  } as never);
+  const response = await finish(request(), ctx);
+  expect(await response.json()).toEqual({
+    finished: true,
+    score: 12,
+    max_score: 20,
+  });
+  expect(skip.in).toHaveBeenCalledWith("id", ["25"]);
+  expect(skip.update).toHaveBeenCalledWith(
+    expect.objectContaining({ status: "skipped", max_marks: 0 }),
+  );
+  expect(markAttempt).toHaveBeenCalledExactlyOnceWith("24");
+  expect(save.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      score: 12,
+      max_score: 20,
+      finished_at: expect.any(String),
+    }),
+  );
+  expect(finishSession).not.toHaveBeenCalled();
+});
+it("honours the selected paper draft without marking its alternative", async () => {
+  client([
+    {
+      id: "id",
+      kind: "paper",
+      config: paperConfig,
+      started_at: new Date().toISOString(),
+      finished_at: null,
+    },
+  ]);
+  const skip = adminQuery(null);
+  for (const chain of [
+    adminQuery(paperAttempts),
+    skip,
+    adminQuery([{ id: "25", status: "pending", question: { marks: 20 } }]),
+    adminQuery([
+      {
+        id: "25",
+        status: "marked",
+        mark: 0,
+        max_marks: 20,
+        question: { marks: 20 },
+      },
+    ]),
+    adminQuery(null),
+  ])
+    vi.mocked(admin().from).mockReturnValueOnce(chain as never);
+  expect((await finish(request({ choices: { 1: 25 } }), ctx)).status).toBe(200);
+  expect(markAttempt).toHaveBeenCalledExactlyOnceWith("25");
+  expect(skip.in).toHaveBeenCalledWith("id", ["24"]);
+});
+it("transcribes every photo page in its saved order", async () => {
+  client([
+    {
+      image_paths: [`${userId}/2.png`, `${userId}/1.png`],
+      status: "pending",
+      question_id: "q",
+      question: { type: "short" },
+      session: { kind: "sprint" },
+    },
+    { stem: "Explain" },
+  ]);
+  const download = vi.fn().mockResolvedValue({
+    data: new Blob(["image"], { type: "image/png" }),
+    error: null,
+  });
+  vi.mocked(admin().storage.from).mockReturnValue({ download } as never);
+  const save = adminQuery(null);
+  vi.mocked(admin().from).mockReturnValue(save as never);
+  vi.mocked(transcribeImage)
+    .mockResolvedValueOnce({
+      transcript: "Second page",
+      lines: ["Second page"],
+      notes: "",
+    })
+    .mockResolvedValueOnce({
+      transcript: "First page",
+      lines: ["First page"],
+      notes: "Check",
+    });
+  expect(await (await transcribe(request(), ctx)).json()).toEqual({
+    transcript: "Second page\n\nFirst page",
+    lines: ["Second page", "First page"],
+    notes: "Check",
+  });
+  expect(download.mock.calls).toEqual([
+    [`${userId}/2.png`],
+    [`${userId}/1.png`],
+  ]);
+});
+
+it.each([
+  ["short", "sprint", 4, 3],
+  ["extended", "sprint", 9, 8],
+  ["short", "paper", 9, 8],
+])(
+  "enforces the %s %s photo limit before AI calls",
+  async (type, kind, count, limit) => {
+    client([
+      {
+        status: "pending",
+        image_paths: Array.from(
+          { length: count as number },
+          (_, i) => `${userId}/${i}.png`,
+        ),
+        question: { type },
+        session: { kind },
+      },
+    ]);
+    const response = await transcribe(request(), ctx);
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: `Upload up to ${limit} pages per question.`,
+    });
+    expect(transcribeImage).not.toHaveBeenCalled();
+    expect(assertStudentAiRateLimit).not.toHaveBeenCalled();
+  },
+);
+it("retries failed paper marking once, logs rejection, and scores the retry", async () => {
+  client([
+    {
+      kind: "paper",
+      config: paperConfig,
+      started_at: new Date().toISOString(),
+      finished_at: null,
+    },
+  ]);
+  const save = adminQuery(null);
+  for (const chain of [
+    adminQuery(paperAttempts),
+    adminQuery(null),
+    adminQuery([{ id: "24", status: "pending", question: { marks: 20 } }]),
+    adminQuery([{ id: "24", status: "failed", question: { marks: 20 } }]),
+    adminQuery([
+      {
+        id: "24",
+        status: "marked",
+        mark: 15,
+        max_marks: 20,
+        question: { marks: 20 },
+      },
+    ]),
+    save,
+  ])
+    vi.mocked(admin().from).mockReturnValueOnce(chain as never);
+  const error = new Error("Temporary marking failure");
+  vi.mocked(markAttempt)
+    .mockRejectedValueOnce(error)
+    .mockResolvedValueOnce({ status: "marked" } as never);
+  const response = await finish(request({ choices: { 1: 24 } }), ctx);
+  expect(await response.json()).toEqual({
+    score: 15,
+    max_score: 20,
+    finished: true,
+  });
+  expect(vi.mocked(markAttempt).mock.calls).toEqual([["24"], ["24"]]);
+  expect(console.error).toHaveBeenCalledWith(error);
 });

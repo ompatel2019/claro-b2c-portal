@@ -108,13 +108,15 @@ test.describe("Flashcard session and results", () => {
     await expect(
       page.getByText("Welcome back, 1 card left", { exact: true }),
     ).toBeVisible();
-    await page.keyboard.press("s");
-    await expect(
-      page.getByRole("heading", {
-        name: "Your flashcard results",
-        exact: true,
-      }),
-    ).toBeVisible({ timeout: 60000 });
+    // The shortcut can land before the resumed runner hydrates; press again until it counts.
+    const results = page.getByRole("heading", {
+      name: "Your flashcard results",
+      exact: true,
+    });
+    await expect(async () => {
+      if (!(await results.isVisible())) await page.keyboard.press("s");
+      await expect(results).toBeVisible({ timeout: 10000 });
+    }).toPass({ timeout: 60000 });
     await expect(page.getByRole("table")).toContainText(cards[0].back);
     await expect(page.getByRole("table")).toContainText(cards[1].back);
     await expect(

@@ -20,7 +20,9 @@ export async function POST(
   const { id } = await params;
   const { data: attempt } = await supabase
     .from("attempts")
-    .select("image_paths, question_id, status")
+    .select(
+      "image_paths, question_id, status, question:questions(type), session:sessions(kind)",
+    )
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -34,6 +36,14 @@ export async function POST(
   const pages: string[] = attempt.image_paths ?? [];
   if (!pages.length || !pages.every((p) => p.startsWith(`${user.id}/`)))
     return Response.json({ error: "No answer image" }, { status: 400 });
+  const questionType = (attempt.question as unknown as { type: string }).type;
+  const kind = (attempt.session as unknown as { kind: string } | null)?.kind;
+  const pageLimit = kind === "paper" || questionType === "extended" ? 8 : 3;
+  if (pages.length > pageLimit)
+    return Response.json(
+      { error: `Upload up to ${pageLimit} pages per question.` },
+      { status: 400 },
+    );
   const limited = await assertStudentAiRateLimit({ userId: user.id });
   if (!limited.ok) return rateLimitedResponse(limited);
   try {
@@ -43,16 +53,29 @@ export async function POST(
       .eq("id", attempt.question_id)
       .single()
       .throwOnError();
-    const { data: image, error } = await admin()
-      .storage.from("answers")
-      .download(pages[0]);
-    if (error || !image) throw new Error("Image not found");
-    const result = await transcribeImage(
-      await image.arrayBuffer(),
-      image.type,
-      question.stem,
-      user.id,
-    );
+    const results = [];
+    for (const page of pages) {
+      const { data: image, error } = await admin()
+        .storage.from("answers")
+        .download(page);
+      if (error || !image) throw new Error("Image not found");
+      results.push(
+        await transcribeImage(
+          await image.arrayBuffer(),
+          image.type,
+          question.stem,
+          user.id,
+        ),
+      );
+    }
+    const result = {
+      transcript: results.map((r) => r.transcript).join("\n\n"),
+      lines: results.flatMap((r) => r.lines),
+      notes: results
+        .map((r) => r.notes)
+        .filter(Boolean)
+        .join("\n"),
+    };
     await admin()
       .from("attempts")
       .update({ transcript: result.transcript, status: "transcribed" })

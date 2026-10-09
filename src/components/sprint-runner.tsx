@@ -22,12 +22,32 @@ import {
   DialogDescription,
   DialogTitle,
 } from "./ui/dialog";
-import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { Logo } from "./logo";
 import { RichText } from "./rich-text";
 import { isTyping, SessionShell, type SaveState } from "./session-shell";
 import { WrittenAnswer } from "./written-answer";
 import { markTone, TYPE_LABEL } from "@/lib/results";
+
+import {
+  paperClock,
+  paperSections,
+  resolvePaperChoices,
+  type PaperConfig,
+} from "@/lib/paper-session";
+import {
+  PaperBooklet,
+  PaperChoiceDraft,
+  PaperChoiceFinish,
+  BookletFilter,
+  BookletLegend,
+} from "./paper-booklet";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from "./ui/alert-dialog";
+import { startWriting } from "@/app/(focus)/student/papers/[id]/actions";
 
 const LETTERS = "ABCD";
 const draftKey = (id: string) => `claro-draft-${id}`;
@@ -39,6 +59,7 @@ export function SprintRunner({
   title,
   topicNames = {},
   seen = [],
+  paper,
 }: {
   session: Session;
   initial: Attempt[];
@@ -46,6 +67,7 @@ export function SprintRunner({
   title: string;
   topicNames?: Record<string, string>;
   seen?: string[];
+  paper?: { id: string; config: PaperConfig; serverNow: number };
 }) {
   const router = useRouter();
   const [db] = useState(createClient);
@@ -59,14 +81,30 @@ export function SprintRunner({
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [exitConfirm, setExitConfirm] = useState(false);
   const [readAll, setReadAll] = useState(false);
   const [filter, setFilter] = useState<"all" | "unanswered" | "flagged">("all");
   const [finishing, setFinishing] = useState(false);
   const queue = useRef<Promise<void>>(Promise.resolve());
   const dirty = useRef(new Map<string, Partial<Attempt>>());
+  const [paperConfig, setPaperConfig] = useState(paper?.config);
+  const [now, setNow] = useState(paper?.serverNow ?? 0);
+  const serverOrigin = useRef({ time: paper?.serverNow ?? 0, monotonic: 0 });
+  const [choices, setChoices] = useState<Record<string, number>>({});
+  const deadlineClock = paperConfig
+    ? paperClock(session.started_at, paperConfig, now)
+    : null;
+  const reading = deadlineClock?.reading ?? false;
+  const expired = deadlineClock?.remaining === 0;
+  const choiceResolution = paperConfig
+    ? resolvePaperChoices(paperConfig.sections, attempts, choices)
+    : null;
+  const expiryAnnounced = useRef(false);
+  const wasReading = useRef(reading);
+  const finishRef = useRef<() => Promise<void>>(async () => {});
   const limit = timeLimit(session.config);
   // §3.2 feedback "each": check as you go.
-  const checkMode = session.config.feedback === "each";
+  const checkMode = !paper && session.config.feedback === "each";
   const [checking, setChecking] = useState<string | null>(null);
   const [explanations, setExplanations] = useState<Record<string, string>>({});
 
@@ -119,6 +157,7 @@ export function SprintRunner({
     await queue.current;
   }
   async function persistTime() {
+    if (paper) return;
     await withAuthRetry(db, async () => {
       const { error } = await db
         .from("sessions")
@@ -149,7 +188,7 @@ export function SprintRunner({
     if (initial.some(answered))
       toast(
         limit
-          ? `Welcome back. ${timer(Math.max(0, limit - (session.elapsed_s ?? 0)))} left`
+          ? `Welcome back. ${timer(deadlineClock?.remaining ?? Math.max(0, limit - (session.elapsed_s ?? 0)))} left`
           : "Welcome back.",
       );
     // Mount only.
@@ -157,14 +196,23 @@ export function SprintRunner({
   }, []);
   useEffect(() => {
     // This clock is initialised inside the effect, after render.
+    // This monotonic clock is read only in the mount effect.
     let last = performance.now();
+    serverOrigin.current.monotonic = last;
     const tick = setInterval(() => {
       const now = performance.now();
       seconds.current += Math.floor((now - last) / 1000);
       last += Math.floor((now - last) / 1000) * 1000;
       setElapsed(seconds.current);
+      if (paper)
+        setNow(
+          serverOrigin.current.time +
+            performance.now() -
+            serverOrigin.current.monotonic,
+        );
     }, 1000);
     const save = () =>
+      !paper &&
       void withAuthRetry(db, async () => {
         const { error } = await db
           .from("sessions")
@@ -194,7 +242,7 @@ export function SprintRunner({
       clearInterval(refresh);
       document.removeEventListener("visibilitychange", hide);
     };
-  }, [db, session.id, userId]);
+  }, [db, session.id, userId, paper]);
   useEffect(() => {
     // Debounced autosave; after a failure, retry every 5 s.
     const timeout = setTimeout(
@@ -239,6 +287,8 @@ export function SprintRunner({
       const response = await fetch(`/api/sessions/${session.id}/finish`, {
         method: "POST",
         credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ choices }),
       });
       const result = await response.json().catch(() => ({}));
       return { response, result };
@@ -253,10 +303,57 @@ export function SprintRunner({
         result.error ?? "Could not finish your session. Please try again.",
       );
     // Hard navigation so no cached "unfinished" redirect can bounce us back.
-    window.location.assign(`/student/sprint/${session.id}/results`);
+    window.location.assign(
+      paper
+        ? `/student/papers/${paper.id}/results?sit=${session.id}`
+        : `/student/sprint/${session.id}/results`,
+    );
   }
+  useEffect(() => {
+    finishRef.current = finish;
+  });
+  useEffect(() => {
+    if (wasReading.current && !reading && !expired)
+      toast("Reading time is over. You can start writing now.");
+    wasReading.current = reading;
+  }, [reading, expired]);
+  useEffect(() => {
+    if (!paper || !expired) return;
+    if (!expiryAnnounced.current) {
+      expiryAnnounced.current = true;
+      toast("Time’s up. Submitting your paper now.");
+    }
+    let cancelled = false;
+    let retry: ReturnType<typeof setTimeout>;
+    const submit = async () => {
+      setBusy(true);
+      try {
+        await finishRef.current();
+      } catch (e) {
+        if (cancelled) return;
+        setFinishing(false);
+        setError(
+          e instanceof Error
+            ? e.message
+            : "Could not submit your paper. Retrying in 5 seconds.",
+        );
+        retry = setTimeout(() => void submit(), 5000);
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    };
+    void submit();
+    return () => {
+      cancelled = true;
+      clearTimeout(retry);
+    };
+  }, [expired, paper]);
   const a = attempts[index];
-  const editable = !!a && ["pending", "transcribed"].includes(a.status);
+  const editable =
+    !reading &&
+    !expired &&
+    !!a &&
+    ["pending", "transcribed"].includes(a.status);
   const answerKey =
     checkMode && a?.status === "marked" ? a.feedback?.correct_index : null;
   async function check() {
@@ -315,6 +412,7 @@ export function SprintRunner({
   const timedOut = useRef(false);
   useEffect(() => {
     if (
+      paper ||
       !limit ||
       session.config.on_timeout !== "finish" ||
       elapsed < limit ||
@@ -364,12 +462,37 @@ export function SprintRunner({
     return () => window.removeEventListener("keydown", onKey, true);
   }, []);
 
-  const unanswered = attempts.flatMap((r, i) => (answered(r) ? [] : [i]));
-  const flagged = attempts.flatMap((r, i) => (r.flagged ? [i] : []));
+  const paperProgress = paperConfig
+    ? paperSections(
+        paperConfig.sections,
+        attempts.map((r) => ({
+          position: r.position,
+          marks: r.question.marks,
+          type: r.question.type,
+          answered: answered(r),
+        })),
+      )
+    : null;
+  const paperUnits = paperProgress?.flatMap((s) => s.units);
+  const choiceUnits = paperUnits?.filter((u) => u.positions.length > 1) ?? [];
+  const unitIndices = (units: NonNullable<typeof paperUnits>) =>
+    units.map((u) =>
+      attempts.findIndex((r) => u.positions.includes(r.position)),
+    );
+  const unanswered = paperUnits
+    ? unitIndices(paperUnits.filter((u) => !u.answered))
+    : attempts.flatMap((r, i) => (answered(r) ? [] : [i]));
+  const flagged = paperUnits
+    ? unitIndices(
+        paperUnits.filter((u) =>
+          attempts.some((r) => u.positions.includes(r.position) && r.flagged),
+        ),
+      )
+    : attempts.flatMap((r, i) => (r.flagged ? [i] : []));
   if (!a)
     return (
       <main className="mx-auto max-w-3xl p-4 sm:p-6">
-        <h1>No questions in this sprint</h1>
+        <h1>No questions in this {paper ? "paper" : "sprint"}</h1>
         <Button onClick={() => router.push("/student")}>
           Return to dashboard
         </Button>
@@ -389,20 +512,12 @@ export function SprintRunner({
       </main>
     );
   const go = (i: number) => void act(() => change(i));
-  const qLabel = (i: number) => `Q${i + 1}`;
-  const booklet = (
+  const qLabel = (i: number) => `Q${paper ? attempts[i].position : i + 1}`;
+  const paperTotal = paperProgress?.reduce((n, s) => n + s.total, 0);
+  const paperAnswered = paperProgress?.reduce((n, s) => n + s.answered, 0);
+  const sprintBooklet = (
     <div className="space-y-3">
-      <ToggleGroup
-        aria-label="Show questions"
-        size="sm"
-        variant="outline"
-        value={[filter]}
-        onValueChange={(v) => v[0] && setFilter(v[0] as typeof filter)}
-      >
-        <ToggleGroupItem value="all">All</ToggleGroupItem>
-        <ToggleGroupItem value="unanswered">Unanswered</ToggleGroupItem>
-        <ToggleGroupItem value="flagged">Flagged</ToggleGroupItem>
-      </ToggleGroup>
+      <BookletFilter filter={filter} onFilter={setFilter} />
       <nav aria-label="Question booklet" className="space-y-3">
         {(["mcq", "short", "extended"] as const).map((type) => {
           const items = attempts
@@ -453,52 +568,80 @@ export function SprintRunner({
           ) : null;
         })}
       </nav>
-      <ul className="text-muted-foreground space-y-1 text-xs">
-        <li className="flex items-center gap-2">
-          <span className="size-3 rounded-full border bg-white" /> Not answered
-        </li>
-        <li className="flex items-center gap-2">
-          <span className="bg-ink size-3 rounded-full" /> Answered
-        </li>
-        <li className="flex items-center gap-2">
-          <Flag aria-hidden className="text-primary fill-primary size-3" />{" "}
-          Flagged
-        </li>
-        <li className="flex items-center gap-2">
-          <span className="ring-primary size-3 rounded-full ring-2" /> Current
-        </li>
-      </ul>
+      <BookletLegend />
       <Button variant="outline" size="sm" onClick={() => setReadAll(true)}>
         Read all questions
       </Button>
     </div>
   );
 
+  const currentChoice = choiceUnits.find((u) =>
+    u.positions.includes(a.position),
+  );
+  const paperBooklet = paperProgress ? (
+    <PaperBooklet
+      progress={paperProgress}
+      attempts={attempts}
+      position={a.position}
+      busy={busy}
+      filter={filter}
+      onFilter={setFilter}
+      go={go}
+      onReadAll={() => setReadAll(true)}
+    />
+  ) : null;
+  const exit = () =>
+    void act(async () => {
+      await flush();
+      await persistTime();
+      router.push(paper ? "/student/papers" : "/student");
+    });
+
   return (
     <SessionShell
       title={title}
-      position={index + 1}
-      total={attempts.length}
-      answered={attempts.length - unanswered.length}
+      position={
+        paperProgress
+          ? paperProgress
+              .flatMap((s) => s.units)
+              .findIndex((u) => u.positions.includes(a.position)) + 1
+          : index + 1
+      }
+      total={paperTotal ?? attempts.length}
+      answered={paperAnswered ?? attempts.length - unanswered.length}
       saveState={saveState}
       onRetry={() => void flush().catch((e) => setError(e.message))}
       clock={
-        limit
-          ? { mode: "down", seconds: limit - elapsed }
-          : { mode: "up", seconds: elapsed }
+        deadlineClock
+          ? { mode: "down", seconds: deadlineClock.remaining, paper: true }
+          : limit
+            ? { mode: "down", seconds: limit - elapsed }
+            : { mode: "up", seconds: elapsed }
       }
       busy={busy}
-      onExit={() =>
-        void act(async () => {
-          await flush();
-          await persistTime();
-          router.push("/student");
-        })
-      }
+      onExit={() => (paper ? setExitConfirm(true) : exit())}
       onFinish={() => setConfirm(true)}
       onMove={(d) => !busy && go(index + d)}
-      booklet={booklet}
+      booklet={paperBooklet ?? sprintBooklet}
     >
+      {reading && (
+        <div className="bg-card flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-5">
+          <p>Reading time · {timer(deadlineClock!.readingRemaining)}</p>
+          <Button
+            disabled={busy}
+            onClick={() =>
+              void act(async () => {
+                const result = await startWriting(session.id);
+                if (result.error) throw new Error(result.error);
+                const writing_started_at = result.writing_started_at;
+                setPaperConfig((c) => (c ? { ...c, writing_started_at } : c));
+              })
+            }
+          >
+            Start writing now
+          </Button>
+        </div>
+      )}
       {error && (
         <div
           role="alert"
@@ -508,18 +651,27 @@ export function SprintRunner({
           {error.includes("sign-in expired") && (
             <a
               className="button-link"
-              href={`/sign-in?next=/student/sprint/${session.id}`}
+              href={`/sign-in?next=${paper ? `/student/papers/${paper.id}` : `/student/sprint/${session.id}`}`}
             >
               Sign in again
             </a>
           )}
         </div>
       )}
+      {currentChoice && (
+        <PaperChoiceDraft
+          unit={currentChoice}
+          position={a.position}
+          busy={busy}
+          attempts={attempts}
+          go={go}
+        />
+      )}
       <article className="bg-card space-y-4 rounded-xl border p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-muted-foreground text-[13px] font-medium">
             {[
-              `Question ${index + 1}`,
+              `Question ${paper ? a.position : index + 1}`,
               TYPE_LABEL[a.question.type],
               plural(a.question.marks, "mark"),
               a.question.source,
@@ -598,7 +750,8 @@ export function SprintRunner({
           </fieldset>
         ) : (
           <WrittenAnswer
-            disabled={busy}
+            disabled={busy || !editable}
+            paper={!!paper}
             onBusy={setBusy}
             key={a.question_id ?? a.id}
             attempt={a}
@@ -642,11 +795,12 @@ export function SprintRunner({
         )}
       </div>
       <Dialog open={confirm} onOpenChange={setConfirm}>
-        <DialogContent>
+        <DialogContent className="max-h-[85dvh] overflow-y-auto">
           <DialogTitle>Finish and mark?</DialogTitle>
           <DialogDescription>
-            {attempts.length - unanswered.length} of {attempts.length} answered.
-            Unanswered questions score 0.
+            {paperAnswered ?? attempts.length - unanswered.length} of{" "}
+            {paperTotal ?? attempts.length} answered. Unanswered questions score
+            0.
           </DialogDescription>
           {[
             ["Unanswered", unanswered],
@@ -673,16 +827,48 @@ export function SprintRunner({
               </p>
             ) : null,
           )}
+          <PaperChoiceFinish
+            units={choiceUnits}
+            sections={paperConfig?.sections ?? []}
+            attempts={attempts}
+            choices={choices}
+            onChoice={(group, position) =>
+              setChoices((c) => ({ ...c, [group]: position }))
+            }
+          />
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={() => setConfirm(false)}>
               Keep working
             </Button>
-            <Button disabled={busy} onClick={() => void act(finish)}>
+            <Button
+              disabled={busy || !!choiceResolution?.unresolved.length}
+              onClick={() => void act(() => finish())}
+            >
               Finish and mark
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={exitConfirm} onOpenChange={setExitConfirm}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Save and exit?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Your timer keeps running.
+          </AlertDialogDescription>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setExitConfirm(false)}
+            >
+              Keep working
+            </Button>
+            <Button disabled={busy} onClick={exit}>
+              Save and exit
+            </Button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
       <Dialog open={readAll} onOpenChange={setReadAll}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
           <DialogTitle>All questions</DialogTitle>
@@ -700,7 +886,7 @@ export function SprintRunner({
                     go(i);
                   }}
                 >
-                  Question {i + 1} · {row.question.marks}{" "}
+                  Question {paper ? row.position : i + 1} · {row.question.marks}{" "}
                   {row.question.marks === 1 ? "mark" : "marks"}
                 </button>
                 <RichText className="text-sm" text={row.question.stem} />

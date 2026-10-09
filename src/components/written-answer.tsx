@@ -1,11 +1,18 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { ArrowUp, ArrowDown } from "@/components/icons";
 import { createClient } from "@/utils/supabase/client";
 import { ensureSession, withAuthRetry } from "@/lib/auth-client";
 import { plural, type Attempt } from "@/lib/practice";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from "./ui/alert-dialog";
 import { Textarea } from "./ui/textarea";
 
 const MAX_WORDS = 3000;
@@ -19,8 +26,10 @@ export function WrittenAnswer({
   local,
   disabled,
   onBusy,
+  paper = false,
 }: {
   disabled: boolean;
+  paper?: boolean;
   onBusy: (busy: boolean) => void;
   attempt: Attempt;
   userId: string;
@@ -34,6 +43,7 @@ export function WrittenAnswer({
   const [confirm, setConfirm] = useState(a.transcript !== null);
   const [confirmed, setConfirmed] = useState(false);
   const [lines, setLines] = useState<string[]>(a.transcript?.split("\n") ?? []);
+  const [replacement, setReplacement] = useState<File[] | null>(null);
   const [notes, setNotes] = useState("");
   const locked = !["pending", "transcribed"].includes(a.status);
   const text = a.transcript ?? a.answer_text ?? "";
@@ -83,38 +93,63 @@ export function WrittenAnswer({
       onBusy(false);
     }
   }
-  async function upload(file: File) {
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
-      throw new Error("Choose a JPEG, PNG or WebP photo.");
-    if (file.size > 10 * 1024 * 1024)
-      throw new Error("Choose a photo smaller than 10 MB.");
+  async function upload(files: File[]) {
+    const pageLimit = paper || a.question.type === "extended" ? 8 : 3;
+    if ((a.image_paths?.length ?? 0) + files.length > pageLimit)
+      throw new Error(`Upload up to ${pageLimit} pages per question.`);
+    for (const file of files) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
+        throw new Error("Choose a JPEG, PNG or WebP photo.");
+      if (file.size > 10 * 1024 * 1024)
+        throw new Error("Choose a photo smaller than 10 MB.");
+    }
     await flush();
-    const ext = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
-    const path = `${userId}/${a.id}-${Date.now()}.${ext}`;
-    const db = createClient();
-    await withAuthRetry(db, async () => {
-      const { error } = await db.storage
-        .from("answers")
-        .upload(path, file, { contentType: file.type });
-      if (error) throw new Error(error.message);
-    });
-    await save({ image_paths: [path] });
-    local({ image_paths: [path] });
+    const paths = [...(a.image_paths ?? [])];
+    const batch = Date.now();
+    for (const [index, file] of files.entries()) {
+      const ext = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
+      const path = `${userId}/${a.id}-${batch}-${index}.${ext}`;
+      const db = createClient();
+      await withAuthRetry(db, async () => {
+        const { error } = await db.storage
+          .from("answers")
+          .upload(path, file, { contentType: file.type });
+        if (error) throw new Error(error.message);
+      });
+      paths.push(path);
+    }
+    const patch = {
+      image_paths: paths,
+      answer_text: null,
+      transcript: null,
+      status: "pending" as const,
+    };
+    await save(patch);
+    local(patch);
+    setConfirm(false);
+    setConfirmed(false);
+    setLines([]);
+    setNotes("");
+  }
+  async function readHandwriting() {
+    await flush();
     const response = await fetch(`/api/attempts/${a.id}/transcribe`, {
       method: "POST",
     });
     const result = await response.json();
     if (!response.ok)
       throw new Error(
-        response.status === 429
-          ? (result.error ?? "You're going a bit fast, try again in a minute")
-          : (result.error ?? "Could not read your photo. Please try again."),
+        result.error ?? "Could not read your photo. Please try again.",
       );
     local({ transcript: result.transcript, status: "transcribed" });
     setLines(result.lines ?? []);
     setNotes(result.notes ?? "");
     setConfirm(true);
     setConfirmed(false);
+    if (!result.transcript?.trim())
+      setError(
+        "We couldn’t read this photo. Retake it or type your answer instead.",
+      );
   }
   async function submit() {
     await flush();
@@ -237,59 +272,141 @@ export function WrittenAnswer({
           )}
           {confirmed && <p role="status">Transcript confirmed.</p>}
           <label className="grid gap-2 text-sm">
-            Upload a photo
+            Take photo / Upload
             <Input
               type="file"
+              multiple
               accept="image/jpeg,image/png,image/webp"
               capture="environment"
               disabled={busy || disabled}
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void act(() => upload(file));
+                const files = Array.from(e.target.files ?? []);
+                if (files.length) {
+                  if (a.answer_text?.trim() && !a.image_paths?.length)
+                    setReplacement(files);
+                  else void act(() => upload(files));
+                }
                 e.target.value = "";
               }}
             />
           </label>
-          {!!a.image_paths?.length && !photo && (
+          {!!a.image_paths?.length && (
+            <ol className="space-y-2" aria-label="Photo pages">
+              {a.image_paths.map((path, index) => (
+                <li key={path} className="flex flex-wrap items-center gap-2">
+                  <span className="mr-auto">Page {index + 1}</span>
+                  {([-1, 1] as const).map((delta) => (
+                    <Button
+                      key={delta}
+                      variant="outline"
+                      size="sm"
+                      disabled={
+                        busy ||
+                        disabled ||
+                        index + delta < 0 ||
+                        index + delta >= a.image_paths!.length
+                      }
+                      aria-label={`Move page ${index + 1} ${delta === -1 ? "up" : "down"}`}
+                      onClick={() =>
+                        void act(async () => {
+                          const paths = [...a.image_paths!];
+                          [paths[index], paths[index + delta]] = [
+                            paths[index + delta],
+                            paths[index],
+                          ];
+                          await save({ image_paths: paths, transcript: null });
+                          local({ image_paths: paths, transcript: null });
+                          setConfirm(false);
+                          setConfirmed(false);
+                        })
+                      }
+                    >
+                      {delta === -1 ? <ArrowUp /> : <ArrowDown />}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={busy || disabled}
+                    aria-label={`Remove page ${index + 1}`}
+                    onClick={() =>
+                      void act(async () => {
+                        const paths = a.image_paths!.filter((p) => p !== path);
+                        const patch = {
+                          image_paths: paths.length ? paths : null,
+                          transcript: null,
+                        };
+                        await save(patch);
+                        local(patch);
+                        setConfirm(false);
+                        setConfirmed(false);
+                      })
+                    }
+                  >
+                    Remove
+                  </Button>
+                </li>
+              ))}
+            </ol>
+          )}
+          {!!a.image_paths?.length && (
             <Button
               variant="outline"
               disabled={busy || disabled}
-              onClick={() =>
-                void act(async () => {
-                  const r = await fetch(`/api/attempts/${a.id}/transcribe`, {
-                    method: "POST",
-                  });
-                  const v = await r.json();
-                  if (!r.ok)
-                    throw new Error(
-                      r.status === 429
-                        ? (v.error ??
-                            "You're going a bit fast, try again in a minute")
-                        : (v.error ??
-                            "Could not read your photo. Please try again."),
-                    );
-                  local({ transcript: v.transcript, status: "transcribed" });
-                  setLines(v.lines);
-                  setConfirm(true);
-                })
-              }
+              onClick={() => void act(readHandwriting)}
             >
-              Retry transcription
+              Read my handwriting
             </Button>
           )}
-          <Button
-            disabled={
-              busy ||
-              disabled ||
-              confirm ||
-              !(a.transcript ?? a.answer_text)?.trim()
-            }
-            onClick={() => void act(submit)}
-          >
-            Submit answer
-          </Button>
+          {!paper && (
+            <Button
+              disabled={
+                busy ||
+                disabled ||
+                confirm ||
+                !(a.transcript ?? a.answer_text)?.trim()
+              }
+              onClick={() => void act(submit)}
+            >
+              Submit answer
+            </Button>
+          )}
         </>
       )}
+      <AlertDialog
+        open={replacement !== null}
+        onOpenChange={(open) => {
+          if (!open) setReplacement(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogTitle>
+            Replace your typed answer with the photo?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Your photo will become the answer for this question.
+          </AlertDialogDescription>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setReplacement(null)}
+            >
+              Keep typed answer
+            </Button>
+            <Button
+              disabled={busy || disabled}
+              onClick={() => {
+                const files = replacement;
+                setReplacement(null);
+                if (files) void act(() => upload(files));
+              }}
+            >
+              Use photo
+            </Button>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
       {busy && <p role="status">Saving or reading your answer…</p>}
       {error && (
         <p role="alert" className="text-destructive">

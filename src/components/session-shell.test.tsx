@@ -137,3 +137,17 @@ it("ignores J/K in flashcards while preserving arrow navigation", () => {
   fireEvent.keyDown(window, { key: "ArrowRight" });
   expect(props.onMove).toHaveBeenCalledWith(1);
 });
+
+it("warns papers at thirty minutes and keeps Finish visible", () => {
+  const { rerender, props } = shell({
+    clock: { mode: "down", seconds: 1801, paper: true },
+  });
+  rerender(
+    <SessionShell
+      {...props}
+      clock={{ mode: "down", seconds: 1800, paper: true }}
+    />,
+  );
+  expect(toast).toHaveBeenCalledWith("30 minutes left");
+  expect(screen.getByRole("button", { name: "Finish" })).toBeVisible();
+});

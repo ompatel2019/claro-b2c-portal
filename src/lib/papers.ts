@@ -1,3 +1,4 @@
+import { paperClock } from "./paper-session";
 import { timer } from "./practice";
 
 export type Paper = {
@@ -48,12 +49,16 @@ export function paperRows(
       const href = `/student/papers/${paper.id}`;
       let statusLabel = "Not started";
       if (open) {
-        const deadline =
-          Date.parse(open.started_at) +
-          ((open.config.time_limit_min ?? paper.time_limit_min) +
-            (open.config.reading_min ?? 0)) *
-            60_000;
-        const seconds = Math.max(0, Math.ceil((deadline - now) / 1000));
+        const { remaining: seconds } = paperClock(
+          open.started_at,
+          {
+            time_limit_min: open.config.time_limit_min ?? paper.time_limit_min,
+            reading_min: open.config.reading_min ?? 0,
+            strict: true,
+            sections: [],
+          },
+          now,
+        );
         statusLabel = `${timer(seconds)} left`;
       } else if (latest) {
         statusLabel =
