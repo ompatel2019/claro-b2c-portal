@@ -18,6 +18,7 @@ import { Textarea } from "./ui/textarea";
 import {
   WRITTEN_WORD_LIMIT as MAX_WORDS,
   WRITTEN_WORD_WARNING,
+  wordGuide,
   ANSWER_PHOTO_BYTE_LIMIT,
   LONG_PHOTO_PAGE_LIMIT,
   SHORT_PHOTO_PAGE_LIMIT,
@@ -321,8 +322,8 @@ export function WrittenAnswer({
                   words >= WRITTEN_WORD_WARNING && "text-warning",
                 )}
               >
-                {plural(words, "word")} · aim for about {a.question.marks * 35}–
-                {a.question.marks * 50}
+                {plural(words, "word")} · aim for about{" "}
+                {wordGuide(a.question.marks).join("–")}
                 {words >= WRITTEN_WORD_WARNING &&
                   ` · limit ${MAX_WORDS.toLocaleString()}`}
               </p>
