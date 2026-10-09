@@ -15,7 +15,7 @@ it("labels the percentage and date axes accessibly", () => {
     expect(screen.getByText(label, { selector: "text" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "2026-10-01: 50%" })).toHaveAttribute(
     "href",
-    "/activity?date=2026-10-01",
+    "/student/activity?date=2026-10-01",
   );
 });
 

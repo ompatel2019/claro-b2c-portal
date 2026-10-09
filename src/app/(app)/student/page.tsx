@@ -1,3 +1,4 @@
+import { sessionTitle, sessionHref } from "@/lib/session-summary";
 import { cache, Suspense } from "react";
 import Link from "next/link";
 import { Cards, Sprint, Target } from "@/components/icons";
@@ -15,7 +16,6 @@ import {
 } from "@/lib/home";
 import {
   answered,
-  modeLabel,
   plural,
   scoreTone,
   timeLimit,
@@ -241,7 +241,7 @@ async function Recent({ userId }: { userId: string }) {
   const [sessions, topics] = await Promise.all([
     db
       .from("sessions")
-      .select("*")
+      .select("*,attempts(status,check_status),papers(title)")
       .eq("user_id", userId)
       .not("finished_at", "is", null)
       .order("finished_at", { ascending: false })
@@ -252,7 +252,10 @@ async function Recent({ userId }: { userId: string }) {
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <h2>Recent activity</h2>
-        <Link href="/activity" className="text-primary text-sm font-semibold">
+        <Link
+          href="/student/activity"
+          className="text-ink text-sm font-semibold"
+        >
           See all
         </Link>
       </div>
@@ -274,7 +277,7 @@ async function Continue({ userId }: { userId: string }) {
   const { data, error } = await db
     .from("sessions")
     .select(
-      "id,kind,config,elapsed_s,started_at,attempts(choice_index,answer_text,transcript,image_paths),flashcard_reviews(flashcard_id)",
+      "id,kind,config,elapsed_s,started_at,attempts(choice_index,answer_text,transcript,image_paths),flashcard_reviews(flashcard_id),papers(title)",
     )
     .eq("user_id", userId)
     .is("finished_at", null)
@@ -304,6 +307,7 @@ async function Continue({ userId }: { userId: string }) {
       </Section>
     );
   }
+  const topics = await load.topics().catch(() => []);
   return (
     <Section title="Continue where you left off">
       <ul className="divide-y divide-dashed">
@@ -311,6 +315,7 @@ async function Continue({ userId }: { userId: string }) {
           const config = s.config as Session["config"] & {
             card_ids?: string[];
           };
+          const paper = s.papers as unknown as { title: string } | null;
           const cards = s.kind === "flashcards";
           const done = cards
             ? new Set(s.flashcard_reviews.map((r) => r.flashcard_id)).size
@@ -329,29 +334,21 @@ async function Continue({ userId }: { userId: string }) {
               />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">
-                  {cards
-                    ? `Flashcards · ${String(config.mode) === "test" ? "Test" : "Study"}`
-                    : s.kind === "single"
-                      ? "Mark my answer"
-                      : s.kind === "paper"
-                        ? "Paper"
-                        : `${modeLabel(config.mode)} sprint`}
+                  {sessionTitle(s, topics, paper?.title)}
                 </p>
                 <p className="text-muted-foreground text-[13px]">
                   {done}/{total} {cards ? "cards" : "answered"}
                   {` · ${time}`}
                 </p>
               </div>
-              <Link
-                href={
-                  s.kind === "single"
-                    ? `/student/activity/${s.id}`
-                    : `/${cards ? "student/flashcards" : "student/sprint"}/${s.id}`
-                }
-                className={buttonVariants({ size: "sm" })}
-              >
-                Continue
-              </Link>
+              {sessionHref(s) && (
+                <Link
+                  href={sessionHref(s)!}
+                  className={buttonVariants({ size: "sm" })}
+                >
+                  Continue
+                </Link>
+              )}
             </li>
           );
         })}

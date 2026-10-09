@@ -22,7 +22,7 @@ export function ActivityHeatmap({
   today,
   current,
   longest,
-  link = "/activity?date=",
+  link = "/student/activity?date=",
   error,
   errorContent,
 }: {

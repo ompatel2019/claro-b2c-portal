@@ -2,8 +2,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { Target } from "@/components/icons";
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/activity",
-  useRouter: () => ({ replace: vi.fn() }),
+  usePathname: () => "/student/activity",
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("next/form", () => ({
@@ -58,7 +58,7 @@ it("marks the section root only on an exact match", () => {
     "/student/flashcards",
     "/student/papers",
     "/student/mark",
-    "/activity",
+    "/student/activity",
     "/student/progress",
   ]);
   expect(
@@ -182,7 +182,7 @@ it("counts active filters on Clear and hides it when none are set", () => {
   );
   expect(screen.getByRole("link", { name: "Clear (2)" })).toHaveAttribute(
     "href",
-    "/activity?status=new",
+    "/student/activity?status=new",
   );
   expect(screen.getByLabelText("Mode")).toHaveValue("mcq");
   expect(screen.getByLabelText("Search")).toHaveValue("gdp");
@@ -229,4 +229,39 @@ it("leaves the sidebar shortcut alone while typing", () => {
   const state = sidebar?.getAttribute("data-state");
   fireEvent.keyDown(screen.getByRole("textbox"), { key: "b", ctrlKey: true });
   expect(sidebar).toHaveAttribute("data-state", state);
+});
+
+it("retains Progress and the admin marking navigation", () => {
+  expect(activeItem("student", "/student/activity")?.label).toBe("Activity");
+  expect(activeItem("student", "/student/progress")?.label).toBe("Progress");
+  expect(activeItem("admin", "/admin/marking/accuracy")?.label).toBe(
+    "Accuracy",
+  );
+  expect(activeItem("admin", "/admin/marking/engine")?.label).toBe("Engine");
+});
+it("retains checkbox filters and drops stale day inputs before changing range", () => {
+  render(
+    <FilterBar
+      filters={[
+        { name: "flagged", label: "Flagged only", checkbox: true },
+        {
+          name: "range",
+          label: "Date",
+          all: "All time",
+          options: [{ value: "7", label: "7 days" }],
+          clearOnChange: ["date"],
+        },
+      ]}
+      values={{ flagged: "1" }}
+      hidden={{ date: "2026-10-08" }}
+    />,
+  );
+  expect(screen.getByRole("checkbox", { name: "Flagged only" })).toBeChecked();
+  const select = screen.getByLabelText("Date") as HTMLSelectElement;
+  const submitted = vi.fn();
+  select.form!.requestSubmit = submitted;
+  fireEvent.change(select, { target: { value: "7" } });
+  expect(submitted).toHaveBeenCalledOnce();
+  expect(new FormData(select.form!).has("date")).toBe(false);
+  expect(new FormData(select.form!).get("flagged")).toBe("1");
 });

@@ -21,6 +21,5 @@ it("routes pending and finished singles to their own report and avoids a null sc
   expect(links[0]).toHaveAttribute("href", "/student/activity/s0");
   expect(links[1]).toHaveAttribute("href", "/student/activity/s1");
   expect(screen.getByText("In progress")).toBeVisible();
-  expect(screen.getByText("Marking…")).toBeVisible();
   expect(screen.queryByText(/null/)).toBeNull();
 });

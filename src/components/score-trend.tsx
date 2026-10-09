@@ -260,7 +260,7 @@ export function ScoreTrend({ rows, today }: { rows: Marked[]; today: string }) {
           points={t.points.map((p) => ({
             ...p,
             id: p.day,
-            href: `/activity?date=${p.day}`,
+            href: `/student/activity?date=${p.day}`,
             label: `${p.day}: ${Math.round(p.pct)}%`,
           }))}
           previous={t.previous}
@@ -282,7 +282,7 @@ export function ScoreTrend({ rows, today }: { rows: Marked[]; today: string }) {
               {t.points.map((p) => (
                 <li key={p.day}>
                   <Link
-                    href={`/activity?date=${p.day}`}
+                    href={`/student/activity?date=${p.day}`}
                     className="underline underline-offset-4"
                   >
                     {p.day}: {Math.round(p.pct)}%

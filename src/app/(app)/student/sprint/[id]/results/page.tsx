@@ -147,7 +147,7 @@ export default async function Results({
             )}
             <SameSetup config={s.config} />
             <Link
-              href="/activity"
+              href="/student/activity"
               className={buttonVariants({ variant: "ghost" })}
             >
               Back to activity

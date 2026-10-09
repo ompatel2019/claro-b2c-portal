@@ -35,7 +35,7 @@ test.describe("Student home", () => {
     ).toBeVisible();
     await expect(page.getByRole("link", { name: "See all" })).toHaveAttribute(
       "href",
-      "/activity",
+      "/student/activity",
     );
     await expect(
       page.getByRole("heading", { name: "Weak topics" }),

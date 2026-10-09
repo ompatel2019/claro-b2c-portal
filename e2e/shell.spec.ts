@@ -44,7 +44,7 @@ test.describe("App shell", () => {
       await expect.poll(() => sidebarWidth(page), { timeout: 1500 }).toBe(260);
     }).toPass({ timeout: 15000 });
     await nav.getByRole("link", { name: "Activity" }).click();
-    await expect(page).toHaveURL(/\/activity$/);
+    await expect(page).toHaveURL(/\/student\/activity$/);
     await expect(nav.getByRole("link", { name: "Activity" })).toHaveAttribute(
       "aria-current",
       "page",

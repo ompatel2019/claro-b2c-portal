@@ -30,7 +30,7 @@ test("sign up validates input before calling Supabase", async ({ page }) => {
 test("student routes stay protected when signed out", async ({ page }) => {
   for (const route of [
     "/student/sprint",
-    "/activity",
+    "/student/activity",
     "/profile",
     "/student/sprint/00000000-0000-0000-0000-000000000000/results",
   ]) {

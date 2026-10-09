@@ -208,7 +208,7 @@ export default async function Page({
           Mark another answer
         </Link>
         <Link
-          href="/activity"
+          href="/student/activity"
           className={buttonVariants({ variant: "outline" })}
         >
           All activity

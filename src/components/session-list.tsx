@@ -1,14 +1,13 @@
-import Link from "next/link";
-import { Cards, History, Sprint, Pen } from "@/components/icons";
 import {
-  modeLabel,
-  dateLabel,
-  percentage,
-  scoreTone,
-  topicNames,
-  type Session,
-  type Topic,
-} from "@/lib/practice";
+  sessionTitle,
+  sessionStatus,
+  sessionScore,
+  sessionHref,
+} from "@/lib/session-summary";
+import Link from "next/link";
+import { Cards, History, Pen, Sprint } from "@/components/icons";
+import { dateLabel, scoreTone, type Session, type Topic } from "@/lib/practice";
+import { StatusPill } from "./status-pill";
 import { EmptyState } from "./empty-state";
 import { Badge } from "./ui/badge";
 import { Card } from "./ui/card";
@@ -17,7 +16,11 @@ export function SessionList({
   topics,
   empty = "No sessions yet. Start a sprint to make your first next step.",
 }: {
-  sessions: Session[];
+  sessions: (Session & {
+    attempts?: { status: string; check_status?: string }[];
+    papers?: { title: string } | null;
+    paper_id?: string | null;
+  })[];
   topics: Topic[];
   empty?: string;
 }) {
@@ -29,67 +32,68 @@ export function SessionList({
     <Card className="gap-0 py-0">
       <ul className="divide-y divide-dashed">
         {sessions.map((s) => {
-          const href =
-            s.kind === "single"
-              ? `/student/activity/${s.id}`
-              : s.kind === "flashcards"
-                ? `/student/flashcards/${s.id}`
-                : `/student/sprint/${s.id}${s.finished_at ? "/results" : ""}`;
+          const href = sessionHref(s);
+          const content = (
+            <>
+              <div className="flex min-w-0 items-center gap-3">
+                {s.kind === "flashcards" ? (
+                  <Cards
+                    aria-hidden
+                    className="text-muted-foreground size-5 shrink-0"
+                  />
+                ) : s.kind === "single" ? (
+                  <Pen
+                    aria-hidden
+                    className="text-muted-foreground size-5 shrink-0"
+                  />
+                ) : (
+                  <Sprint
+                    aria-hidden
+                    className="text-muted-foreground size-5 shrink-0"
+                  />
+                )}
+                <div className="min-w-0">
+                  <p className="font-semibold">
+                    {sessionTitle(s, topics, s.papers?.title)}
+                  </p>
+                  <p className="text-muted-foreground text-[13px]">
+                    {dateLabel(s.started_at)}
+                  </p>
+                </div>
+              </div>
+              {s.finished_at ? (
+                <Badge
+                  variant={
+                    s.max_score && sessionStatus(s, s.attempts) !== "Marking"
+                      ? scoreTone((Number(s.score ?? 0) / s.max_score) * 100)
+                      : "secondary"
+                  }
+                >
+                  {sessionScore(
+                    s.score != null && s.max_score
+                      ? (100 * s.score) / s.max_score
+                      : null,
+                    sessionStatus(s, s.attempts),
+                    s.kind === "flashcards" &&
+                      String(s.config.mode) === "study",
+                  )}
+                </Badge>
+              ) : (
+                <StatusPill pill="In progress" />
+              )}
+            </>
+          );
+          const className =
+            "hover:bg-surface flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3";
           return (
             <li key={s.id}>
-              <Link
-                prefetch={false}
-                className="hover:bg-surface flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3"
-                href={href}
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  {s.kind === "flashcards" ? (
-                    <Cards
-                      aria-hidden
-                      className="text-muted-foreground size-5 shrink-0"
-                    />
-                  ) : s.kind === "single" ? (
-                    <Pen
-                      aria-hidden
-                      className="text-muted-foreground size-5 shrink-0"
-                    />
-                  ) : (
-                    <Sprint
-                      aria-hidden
-                      className="text-muted-foreground size-5 shrink-0"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <p className="font-semibold">
-                      {s.kind === "single"
-                        ? "Mark my answer"
-                        : s.kind === "flashcards"
-                          ? `Flashcards: ${String(s.config.mode) === "test" ? "Test" : "Study"}`
-                          : modeLabel(s.config.mode)}
-                    </p>
-                    <p className="text-muted-foreground text-[13px]">
-                      {topicNames(s.config.topics, topics)} ·{" "}
-                      {dateLabel(s.started_at)}
-                    </p>
-                  </div>
-                </div>
-                {s.finished_at ? (
-                  <Badge
-                    variant={
-                      s.max_score
-                        ? scoreTone((Number(s.score ?? 0) / s.max_score) * 100)
-                        : "secondary"
-                    }
-                  >
-                    {s.kind === "single" &&
-                    (s.score === null || s.max_score === null)
-                      ? "Marking…"
-                      : `${s.score}/${s.max_score} · ${percentage(s.score, s.max_score)}`}
-                  </Badge>
-                ) : (
-                  <Badge variant="outline">In progress</Badge>
-                )}
-              </Link>
+              {href ? (
+                <Link href={href} prefetch={false} className={className}>
+                  {content}
+                </Link>
+              ) : (
+                <div className={className}>{content}</div>
+              )}
             </li>
           );
         })}

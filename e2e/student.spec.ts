@@ -72,14 +72,15 @@ test.describe("Student practice", () => {
     await page.getByRole("button", { name: "Previous question" }).click();
     await expect(page.getByRole("radio", { name: /^Option A:/ })).toBeChecked();
   });
-  test("activity mode filter links to the finished sprint", async ({
+  test("activity kind filter links to the finished sprint", async ({
     page,
   }) => {
-    await page.goto("/activity");
-    await page.getByRole("combobox", { name: /^Mode/ }).selectOption("mcq");
-    await expect(page).toHaveURL(/mode=mcq/);
+    await page.goto("/student/activity");
+    await page.getByRole("button", { name: /^Sprints ·/ }).click();
+    await expect(page).toHaveURL(/kind=sprint/);
     await page
       .locator(`a[href="/student/sprint/${finishedId}/results"]`)
+      .first()
       .click();
     await expect(
       page.getByRole("heading", { name: /sprint · / }),

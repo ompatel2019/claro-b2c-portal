@@ -131,7 +131,7 @@ test.describe("Sprint results", () => {
     else await expect(mistakes).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Back to activity" }),
-    ).toHaveAttribute("href", "/activity");
+    ).toHaveAttribute("href", "/student/activity");
 
     // 400px: no sideways scroll and the score stays on one line.
     await page.setViewportSize({ width: 400, height: 800 });

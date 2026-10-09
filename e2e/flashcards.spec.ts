@@ -149,10 +149,10 @@ test.describe("Student flashcards", () => {
     ).toBeVisible();
     expect(aiRequests).toBe(0);
     const id = sessionIds.at(-1)!;
-    await page.goto("/activity?mode=study");
+    await page.goto("/student/activity?kind=flashcards");
     await expect(
-      page.locator(`a[href="/student/flashcards/${id}"]`),
-    ).toContainText("Flashcards: Study");
+      page.locator(`a[href="/student/flashcards/${id}"]`).first(),
+    ).toContainText("Flashcards · Study");
   });
   test("test mode checks one answer and finishes with a model answer", async ({
     page,
