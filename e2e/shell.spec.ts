@@ -74,7 +74,7 @@ test.describe("App shell", () => {
     await page.getByRole("button", { name: "Toggle Sidebar" }).click();
     const nav = page.getByRole("navigation", { name: "Main navigation" });
     await nav.getByRole("link", { name: "Topic Sprint" }).click();
-    await expect(page).toHaveURL(/\/practice$/);
+    await expect(page).toHaveURL(/\/student\/sprint$/);
   });
 });
 

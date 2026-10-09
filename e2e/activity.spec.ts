@@ -33,7 +33,7 @@ test.describe("Activity heatmap", () => {
   }) => {
     await page.setViewportSize({ width: 400, height: 800 });
     await signIn(page);
-    const more = page.getByText("More", { exact: true });
+    const more = page.getByText(/^Less\s*More$/);
     // Worst case: the legend sits on the bottom edge, next to the button.
     await more.evaluate((el) => el.scrollIntoView({ block: "end" }));
     const a = (await more.boundingBox())!;
