@@ -18,7 +18,7 @@ const ranges = [
   { value: "all", label: "All time" },
   { value: "custom", label: "Custom" },
 ];
-export function RangeSelect({ range }: { range: Range }) {
+export function RangeSelect({ range, today }: { range: Range; today: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -64,7 +64,7 @@ export function RangeSelect({ range }: { range: Range }) {
           className="flex min-w-0 flex-wrap items-end gap-2"
           onSubmit={(event) => {
             event.preventDefault();
-            navigate("custom");
+            if (event.currentTarget.checkValidity()) navigate("custom");
           }}
         >
           <label className="text-muted-foreground text-xs">
@@ -73,7 +73,8 @@ export function RangeSelect({ range }: { range: Range }) {
               type="date"
               required
               value={from}
-              max={to || undefined}
+              min="2020-01-01"
+              max={to && to < today ? to : today}
               onChange={(e) => setFrom(e.target.value)}
               className="mt-1 w-36"
             />
@@ -84,7 +85,8 @@ export function RangeSelect({ range }: { range: Range }) {
               type="date"
               required
               value={to}
-              min={from || undefined}
+              min={from && from > "2020-01-01" ? from : "2020-01-01"}
+              max={today}
               onChange={(e) => setTo(e.target.value)}
               className="mt-1 w-36"
             />

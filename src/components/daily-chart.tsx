@@ -172,13 +172,16 @@ export function DailyChart({
             className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm"
           >
             {models.map((model, index) => (
-              <li key={model} className="flex min-w-0 items-center gap-2">
+              <li
+                key={model}
+                className="flex max-w-full min-w-0 shrink-0 items-center gap-2"
+              >
                 <span
                   aria-hidden="true"
                   className="size-3 shrink-0 rounded-sm"
                   style={{ backgroundColor: colours[index % colours.length] }}
                 />
-                <span className="wrap-anywhere">{model}</span>
+                <span className="min-w-0 wrap-anywhere">{model}</span>
               </li>
             ))}
           </ul>

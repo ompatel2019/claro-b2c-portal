@@ -37,43 +37,45 @@ export function ModelTable({ rows }: { rows: Spend["byModel"] }) {
           <h2>By model</h2>
         </CardTitle>
       </CardHeader>
-      <DataTable
-        label="By model"
-        rows={rows.map((r) => ({ ...r, id: r.model }))}
-        columns={[
-          {
-            id: "model",
-            header: "Model",
-            cell: (r) => r.model,
-            sort: (r) => r.model,
-            className: labelClass,
-          },
-          {
-            id: "calls",
-            header: "Calls",
-            cell: (r) => r.calls.toLocaleString("en-AU"),
-            sort: (r) => r.calls,
-            className: numberClass,
-          },
-          ...(["input_tokens", "cached_tokens", "output_tokens"] as const).map(
-            (id, i) => ({
+      <CardContent>
+        <DataTable
+          label="By model"
+          rows={rows.map((r) => ({ ...r, id: r.model }))}
+          columns={[
+            {
+              id: "model",
+              header: "Model",
+              cell: (r) => r.model,
+              sort: (r) => r.model,
+              className: labelClass,
+            },
+            {
+              id: "calls",
+              header: "Calls",
+              cell: (r) => r.calls.toLocaleString("en-AU"),
+              sort: (r) => r.calls,
+              className: numberClass,
+            },
+            ...(
+              ["input_tokens", "cached_tokens", "output_tokens"] as const
+            ).map((id, i) => ({
               id,
               header: ["Input", "Cached", "Output tokens"][i],
               cell: (r: Spend["byModel"][number]) =>
                 r[id].toLocaleString("en-AU"),
               sort: (r: Spend["byModel"][number]) => r[id],
               className: `hidden @min-[640px]:table-cell ${numberClass}`,
-            }),
-          ),
-          {
-            id: "usd",
-            header: "USD",
-            cell: (r) => usd(r.usd),
-            sort: (r) => r.usd,
-            className: numberClass,
-          },
-        ]}
-      />
+            })),
+            {
+              id: "usd",
+              header: "USD",
+              cell: (r) => usd(r.usd),
+              sort: (r) => r.usd,
+              className: `${numberClass} pr-5`,
+            },
+          ]}
+        />
+      </CardContent>
     </Card>
   );
 }
@@ -202,47 +204,49 @@ export function StudentTable({ rows }: { rows: Spend["topStudents"] }) {
           <h2>Top students, 30 days</h2>
         </CardTitle>
       </CardHeader>
-      <DataTable
-        label="Top students, 30 days"
-        rows={rows}
-        columns={[
-          {
-            id: "name",
-            header: "Name",
-            cell: (r) => (
-              <Link
-                href={`/admin/students/${encodeURIComponent(r.id)}`}
-                className="underline underline-offset-4"
-              >
-                {r.name}
-              </Link>
-            ),
-            sort: (r) => r.name,
-            className: labelClass,
-          },
-          {
-            id: "calls",
-            header: "Calls",
-            cell: (r) => r.calls,
-            sort: (r) => r.calls,
-            className: numberClass,
-          },
-          {
-            id: "usd",
-            header: "USD",
-            cell: (r) => usd(r.usd),
-            sort: (r) => r.usd,
-            className: numberClass,
-          },
-          {
-            id: "percent",
-            header: "% of spend",
-            cell: (r) => `${r.percent.toFixed(1)}%`,
-            sort: (r) => r.percent,
-            className: `hidden sm:table-cell ${numberClass}`,
-          },
-        ]}
-      />
+      <CardContent>
+        <DataTable
+          label="Top students, 30 days"
+          rows={rows}
+          columns={[
+            {
+              id: "name",
+              header: "Name",
+              cell: (r) => (
+                <Link
+                  href={`/admin/students/${encodeURIComponent(r.id)}`}
+                  className="underline underline-offset-4"
+                >
+                  {r.name}
+                </Link>
+              ),
+              sort: (r) => r.name,
+              className: labelClass,
+            },
+            {
+              id: "calls",
+              header: "Calls",
+              cell: (r) => r.calls,
+              sort: (r) => r.calls,
+              className: numberClass,
+            },
+            {
+              id: "usd",
+              header: "USD",
+              cell: (r) => usd(r.usd),
+              sort: (r) => r.usd,
+              className: `${numberClass} pr-5`,
+            },
+            {
+              id: "percent",
+              header: "% of spend",
+              cell: (r) => `${r.percent.toFixed(1)}%`,
+              sort: (r) => r.percent,
+              className: `hidden sm:table-cell ${numberClass}`,
+            },
+          ]}
+        />
+      </CardContent>
     </Card>
   );
 }

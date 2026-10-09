@@ -152,3 +152,34 @@ it("lets loader failures reach the retry boundary and supplies loading skeletons
     container.querySelectorAll('[data-slot="skeleton"]').length,
   ).toBeGreaterThan(10);
 });
+
+it("resets locally selected Custom when rejected dates resolve back to month", async () => {
+  vi.mocked(loadSpend).mockResolvedValue(spend());
+  const { rerender } = render(
+    await SpendPage({ searchParams: Promise.resolve({}) }),
+  );
+  fireEvent.click(screen.getByRole("combobox"));
+  const option = await screen.findByRole("option", { name: "Custom" });
+  fireEvent.pointerDown(option);
+  fireEvent.click(option);
+  expect(screen.getByLabelText("From")).toBeInTheDocument();
+  rerender(
+    await SpendPage({
+      searchParams: Promise.resolve({
+        range: "custom",
+        from: "2019-12-31",
+        to: "2026-10-09",
+      }),
+    }),
+  );
+  expect(loadSpend).toHaveBeenLastCalledWith("month");
+  expect(screen.getByRole("combobox")).toHaveTextContent("This month");
+  expect(screen.queryByLabelText("From")).toBeNull();
+  expect(
+    screen.getByText(/Those dates aren't valid, showing this month/),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/Sydney, through now/)).toHaveAttribute(
+    "data-range",
+    "month",
+  );
+});

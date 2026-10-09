@@ -14,6 +14,10 @@ it("money has two decimal places, with four for small call averages", () => {
   expect(usd(0)).toBe("$0.00");
   expect(usd(1.234)).toBe("$1.23");
   expect(avgUsd(0.00123)).toBe("$0.0012");
+  expect(avgUsd(0)).toBe("$0.0000");
+  expect(avgUsd(0.000001)).toBe("<$0.0001");
+  expect(avgUsd(0.00009999)).toBe("<$0.0001");
+  expect(avgUsd(0.0001)).toBe("$0.0001");
   expect(avgUsd(0.01)).toBe("$0.01");
 });
 it("model columns sort in both directions and token columns stay hidden in narrow model cards", () => {

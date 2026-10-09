@@ -32,7 +32,7 @@ async function expectWindow(page: Page, range: Range = "month") {
       )
       .filter({
         hasText: new RegExp(
-          `^${dates} \\(Sydney, ${to === today ? "through now" : "inclusive"}\\) · \\d+ calls$`,
+          `^${dates} \\(Sydney, ${to === today ? "through now" : "inclusive"}\\) · \\d+ calls(?: · Those dates aren't valid, showing this month)?$`,
         ),
       }),
   ).toBeVisible({ timeout: 30000 });
@@ -89,7 +89,7 @@ test.describe("admin spend", () => {
     expect(values[1]).toMatch(/^\$\d+\.\d{2}$/);
     expect(values[2]).toMatch(/^\$\d+\.\d{2} of \$100$/);
     expect(values[3]).toMatch(
-      /^(\$0\.00\d{2}|\$\d+\.\d{2}|No marked written answers)$/,
+      /^(<\$0\.0001|\$0\.00\d{2}|\$\d+\.\d{2}|No marked written answers)$/,
     );
     for (const text of [
       "80% · Evals blocked",
@@ -174,7 +174,31 @@ test.describe("admin spend", () => {
       await expect(select).toHaveText(label);
     }
     await chooseRange(page, "Custom");
-    await page.getByLabel("From", { exact: true }).fill("2026-10-01");
+    const fromInput = page.getByLabel("From", { exact: true });
+    const toInput = page.getByLabel("To", { exact: true });
+    const today = sydneyDay(new Date());
+    await expect(fromInput).toHaveAttribute("min", "2020-01-01");
+    await expect(fromInput).toHaveAttribute("max", today);
+    await expect(toInput).toHaveAttribute("max", today);
+    const tomorrow = new Date(Date.parse(today) + 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    for (const [from, to] of [
+      ["2019-12-31", today],
+      [today, tomorrow],
+      [today, "2020-01-01"],
+    ]) {
+      await fromInput.fill(from);
+      await toInput.fill(to);
+      await page.getByRole("button", { name: "Apply", exact: true }).click();
+      await expect(page).toHaveURL(/range=all$/);
+      expect(
+        await fromInput.evaluate((input: HTMLInputElement) =>
+          input.closest("form")!.checkValidity(),
+        ),
+      ).toBe(false);
+    }
+    await fromInput.fill("2026-10-01");
     await page.getByLabel("To", { exact: true }).fill("2026-10-02");
     await page.getByRole("button", { name: "Apply", exact: true }).click();
     await expect(page).toHaveURL(/range=custom&from=2026-10-01&to=2026-10-02$/);
@@ -188,6 +212,19 @@ test.describe("admin spend", () => {
     );
     await chooseRange(page, "This month", "month");
     await expect(page).toHaveURL(/\/admin\/spend$/);
+    // Simulate a stale client accepting dates the server rejects. The month key
+    // must change even though the previous resolved range was also month.
+    await chooseRange(page, "Custom");
+    await fromInput.fill("2019-12-31");
+    await toInput.fill(today);
+    await fromInput.evaluate((input) => input.removeAttribute("min"));
+    await page.getByRole("button", { name: "Apply", exact: true }).click();
+    await ready(page);
+    await expect(select).toHaveText("This month");
+    await expect(fromInput).toHaveCount(0);
+    await expect(page.locator("p[data-range]")).toContainText(
+      "Those dates aren't valid, showing this month",
+    );
     for (const query of [
       "from=0001-01-01&to=2026-10-09",
       "from=9999-01-01&to=9999-01-02",
@@ -200,6 +237,10 @@ test.describe("admin spend", () => {
       await page.goto(`/admin/spend?${query}`);
       await ready(page);
       await expect(select).toHaveText("This month");
+      if (query !== "range=invalid")
+        await expect(page.locator("p[data-range]")).toContainText(
+          "Those dates aren't valid, showing this month",
+        );
     }
   });
 
@@ -242,6 +283,17 @@ test.describe("admin spend", () => {
           await card.scrollIntoViewIfNeeded();
           await expect(card).toBeVisible();
         }
+        if (width === 1280) {
+          const models = page.getByRole("table", {
+            name: "By model",
+            exact: true,
+          });
+          if (await models.count())
+            for (const name of ["Input", "Cached", "Output tokens"])
+              await expect(
+                models.getByRole("columnheader", { name, exact: true }),
+              ).toBeVisible();
+        }
         // Hidden columns and wrapped labels should keep every table inside its card.
         for (const table of await page
           .locator('#main [data-slot="table-container"]')
@@ -250,6 +302,38 @@ test.describe("admin spend", () => {
             await table.evaluate(
               (node) => node.scrollWidth <= node.clientWidth + 1,
             ),
+          ).toBe(true);
+          expect(
+            await table.evaluate((node) => {
+              const card = node
+                .closest('[data-slot="card"]')!
+                .getBoundingClientRect();
+              const bounds = node.getBoundingClientRect();
+              const content = node
+                .querySelector("table")!
+                .getBoundingClientRect();
+              return (
+                bounds.left > card.left &&
+                bounds.right < card.right &&
+                content.right <= bounds.right + 1
+              );
+            }),
+          ).toBe(true);
+        }
+        for (const item of await page
+          .getByRole("list", { name: "Models" })
+          .getByRole("listitem")
+          .all()) {
+          expect(
+            await item.evaluate((node) => {
+              const bounds = node.getBoundingClientRect();
+              const list = node.parentElement!.getBoundingClientRect();
+              return (
+                bounds.left >= list.left &&
+                bounds.right <= list.right + 1 &&
+                node.scrollWidth <= node.clientWidth + 1
+              );
+            }),
           ).toBe(true);
         }
       }
@@ -263,7 +347,7 @@ test.describe("admin spend", () => {
       await page.goto("/admin/spend");
       await ready(page);
       await page.screenshot({
-        path: `/workspace/claro/sweeps/claro-ml-spend-${width}.png`,
+        path: `/workspace/claro/sweeps/claro-ml-spend-page-${width}.png`,
         fullPage: true,
         mask: [
           page

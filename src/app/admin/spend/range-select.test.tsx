@@ -21,7 +21,7 @@ async function choose(label: string) {
   fireEvent.click(option);
 }
 it("presets clear stale dates, preserve other params and omit the month default", async () => {
-  render(<RangeSelect range="all" />);
+  render(<RangeSelect today="2026-10-09" range="all" />);
   expect(screen.getByRole("combobox")).toHaveTextContent("All time");
   for (const [label, url] of [
     ["Last 30 days", "/admin/spend?tab=x&range=30"],
@@ -33,7 +33,7 @@ it("presets clear stale dates, preserve other params and omit the month default"
   }
 });
 it("custom dates use labelled native inputs and navigate only when applied", async () => {
-  render(<RangeSelect range="month" />);
+  render(<RangeSelect today="2026-10-09" range="month" />);
   await choose("Custom");
   expect(push).not.toHaveBeenCalled();
   const from = screen.getByLabelText("From"),
@@ -50,8 +50,34 @@ it("custom dates use labelled native inputs and navigate only when applied", asy
   );
 });
 it("reflects custom URL dates on arrival", () => {
-  render(<RangeSelect range={{ from: "2026-09-01", to: "2026-09-30" }} />);
+  render(
+    <RangeSelect
+      today="2026-10-09"
+      range={{ from: "2026-09-01", to: "2026-09-30" }}
+    />,
+  );
   expect(screen.getByRole("combobox")).toHaveTextContent("Custom");
   expect(screen.getByLabelText("From")).toHaveValue("2026-09-01");
   expect(screen.getByLabelText("To")).toHaveValue("2026-09-30");
+});
+
+it("bounds custom dates to the server's Sydney day and prevents invalid submission", async () => {
+  render(<RangeSelect today="2026-10-09" range="month" />);
+  await choose("Custom");
+  const from = screen.getByLabelText("From"),
+    to = screen.getByLabelText("To");
+  expect(from).toHaveAttribute("min", "2020-01-01");
+  expect(from).toHaveAttribute("max", "2026-10-09");
+  expect(to).toHaveAttribute("min", "2020-01-01");
+  expect(to).toHaveAttribute("max", "2026-10-09");
+  for (const [start, end] of [
+    ["2019-12-31", "2026-10-09"],
+    ["2026-10-09", "2026-10-10"],
+    ["2026-10-09", "2026-10-01"],
+  ]) {
+    fireEvent.change(from, { target: { value: start } });
+    fireEvent.change(to, { target: { value: end } });
+    fireEvent.submit(from.closest("form")!);
+    expect(push).not.toHaveBeenCalled();
+  }
 });
