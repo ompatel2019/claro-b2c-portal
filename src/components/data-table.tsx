@@ -16,6 +16,7 @@ export type Column<T> = {
   cell: (row: T) => React.ReactNode;
   /** Sort key; missing values always sort last. Omit for unsortable columns. */
   sort?: (row: T) => string | number | null;
+  className?: string;
 };
 
 /** Sorts rows by a column; null keys go last in both directions. */
@@ -39,10 +40,12 @@ export function DataTable<T extends { id: string }>({
   columns,
   rows,
   label,
+  onRow,
 }: {
   columns: Column<T>[];
   rows: T[];
   label: string;
+  onRow?: (row: T) => void;
 }) {
   const [sorting, setSorting] = useState<{
     id: string;
@@ -68,6 +71,7 @@ export function DataTable<T extends { id: string }>({
               return (
                 <TableHead
                   key={c.id}
+                  className={c.className}
                   aria-sort={
                     dir === "asc"
                       ? "ascending"
@@ -96,9 +100,22 @@ export function DataTable<T extends { id: string }>({
         </TableHeader>
         <TableBody>
           {shown.map((row) => (
-            <TableRow key={row.id}>
+            <TableRow
+              key={row.id}
+              className={onRow ? "cursor-pointer" : undefined}
+              onClick={(e) => {
+                if (
+                  !(e.target as HTMLElement).closest(
+                    "a, button, input, select, textarea, [role=button], [role=menuitem]",
+                  )
+                )
+                  onRow?.(row);
+              }}
+            >
               {columns.map((c) => (
-                <TableCell key={c.id}>{c.cell(row)}</TableCell>
+                <TableCell key={c.id} className={c.className}>
+                  {c.cell(row)}
+                </TableCell>
               ))}
             </TableRow>
           ))}

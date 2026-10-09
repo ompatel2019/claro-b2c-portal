@@ -20,11 +20,14 @@ export function FilterBar({
   values,
   hidden,
 }: {
-  hidden?: Record<string, string>;
+  hidden?: Record<string, string | undefined>;
   filters: Filter[];
   values: Record<string, string | undefined>;
 }) {
   const path = usePathname();
+  const kept = Object.entries(hidden ?? {}).filter(
+    (e): e is [string, string] => !!e[1],
+  );
   const active = filters.filter((f) => values[f.name]).length;
   return (
     <Form
@@ -32,7 +35,7 @@ export function FilterBar({
       action={path}
       className="flex flex-wrap items-end gap-3"
     >
-      {Object.entries(hidden ?? {}).map(([name, value]) => (
+      {kept.map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
       ))}
       {filters.map((f) => (
@@ -71,7 +74,7 @@ export function FilterBar({
       </Button>
       {active > 0 && (
         <Link
-          href={hidden ? `${path}?${new URLSearchParams(hidden)}` : path}
+          href={kept.length ? `${path}?${new URLSearchParams(kept)}` : path}
           className={buttonVariants({ variant: "ghost" })}
         >
           Clear ({active})

@@ -1,18 +1,12 @@
 import "server-only";
+import { cache } from "react";
 import { admin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { sydneyDay } from "@/lib/admin";
+import { z } from "zod";
 
 export const SPEND_CAP_USD = 100;
-
-function sydneyDay(date = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Australia/Sydney",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
 
 export async function loadStudents() {
   await requireAdmin();
@@ -88,6 +82,7 @@ export async function loadStudent(id: string) {
     .from("sessions")
     .select("id,kind,config,started_at,finished_at,score,max_score")
     .eq("user_id", id)
+    .order("finished_at", { ascending: false, nullsFirst: false })
     .order("started_at", { ascending: false })
     .limit(30)
     .throwOnError();
@@ -98,42 +93,56 @@ export async function loadStudent(id: string) {
   };
 }
 
-export const QUESTION_PAGE = 100;
-export async function loadQuestions(filters: {
-  topic?: string;
-  type?: string;
-  year?: string;
-  q?: string;
-  page?: number;
-}) {
+const point = z.object({ day: z.string(), value: z.number() });
+const dashboardSchema = z.object({
+  students: z.number(),
+  active: z.object({ now: z.number(), prev: z.number() }),
+  sessionsWeek: z.number(),
+  openReviews: z.object({
+    count: z.number(),
+    oldestDays: z.number().nullable(),
+  }),
+  spend: z.object({ month: z.number(), all: z.number() }),
+  sessionsTotal: z.number(),
+  spendTotal: z.number(),
+  sessionsPerDay: z.array(point),
+  spendPerDay: z.array(point),
+  attention: z.object({
+    failed: z.number(),
+    newFeedback: z.number(),
+    contentReports: z.number(),
+    importReview: z.number(),
+    agreement: z.number().nullable(),
+  }),
+  latest: z.array(
+    z.object({
+      id: z.string(),
+      user_id: z.string(),
+      name: z.string(),
+      kind: z.string(),
+      mode: z.string().nullable(),
+      score: z.number().nullable(),
+      max: z.number().nullable(),
+      finished_at: z.string(),
+    }),
+  ),
+});
+
+/** SQL owns dashboard numbers; React cache shares this admin-only read with the sidebar. */
+export const loadDashboard = cache(async () => {
   await requireAdmin();
-  let query = admin()
-    .from("questions")
-    .select(
-      "id,type,topic_id,marks,stem,stimulus,options,correct_index,criteria,guideline_notes,sample_answer,source,year",
-      { count: "exact" },
-    )
-    .order("year", { ascending: false })
-    .order("id");
-  if (filters.topic)
-    query = filters.topic.includes("-")
-      ? query.eq("topic_id", filters.topic)
-      : query.like("topic_id", `${filters.topic}-%`);
-  if (filters.type && ["mcq", "short", "extended"].includes(filters.type))
-    query = query.eq("type", filters.type);
-  if (filters.year && /^\d{4}$/.test(filters.year))
-    query = query.eq("year", Number(filters.year));
-  if (filters.q)
-    query = query.or(
-      `stem.ilike.%${filters.q.slice(0, 100)}%,source.ilike.%${filters.q.slice(0, 100)}%`,
-    );
-  const from = ((filters.page ?? 1) - 1) * QUESTION_PAGE;
-  const { data, count, error } = await query.range(
-    from,
-    from + QUESTION_PAGE - 1,
-  );
-  if (error) throw new Error("Could not load questions.");
-  return { questions: data ?? [], total: count ?? 0 };
+  const db = await createClient();
+  const { data } = await db.rpc("admin_dashboard").throwOnError();
+  const dashboard = dashboardSchema.parse(data);
+  return { ...dashboard, spend: { ...dashboard.spend, cap: SPEND_CAP_USD } };
+});
+
+export async function loadAdminBadges() {
+  const dashboard = await loadDashboard();
+  return {
+    "/admin/content/questions": dashboard.attention.importReview,
+    "/admin/feedback": dashboard.attention.newFeedback,
+  };
 }
 
 export async function loadSpend() {
@@ -144,7 +153,7 @@ export async function loadSpend() {
     .select("usd,model,task,created_at")
     .throwOnError();
   const rows = data ?? [];
-  const todayKey = sydneyDay();
+  const todayKey = sydneyDay(new Date());
   let today = 0;
   let all = 0;
   const byModel = new Map<string, number>();
@@ -152,7 +161,7 @@ export async function loadSpend() {
   for (const r of rows) {
     const usd = Number(r.usd);
     all += usd;
-    if (sydneyDay(new Date(r.created_at)) === todayKey) today += usd;
+    if (sydneyDay(r.created_at) === todayKey) today += usd;
     byModel.set(r.model, (byModel.get(r.model) ?? 0) + usd);
     byTask.set(r.task, (byTask.get(r.task) ?? 0) + usd);
   }

@@ -23,7 +23,6 @@ type Result = { ids?: string[]; error?: string; warning?: string };
 const DUPLICATE = "You already have this card";
 async function context() {
   const profile = await requireProfile();
-  if (profile.role !== "student") throw new Error("Student access required.");
   return { db: await createClient(), userId: profile.id };
 }
 function refresh() {

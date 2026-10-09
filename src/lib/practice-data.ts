@@ -1,11 +1,10 @@
 import "server-only";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import { questionColumns, type Session, type Attempt } from "./practice";
 export async function loadSprint(id: string) {
   const profile = await requireProfile();
-  if (profile.role === "admin") redirect("/admin");
   const db = await createClient();
   const { data: session, error } = await db
     .from("sessions")

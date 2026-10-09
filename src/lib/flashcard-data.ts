@@ -1,5 +1,5 @@
 import "server-only";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/utils/supabase/server";
 import type { Session, Topic } from "./practice";
@@ -16,7 +16,6 @@ export type FlashcardSession = Omit<Session, "config"> & {
 };
 export async function loadFlashcards(id: string) {
   const profile = await requireProfile();
-  if (profile.role !== "student") redirect("/admin");
   const db = await createClient();
   const { data: session } = await db
     .from("sessions")

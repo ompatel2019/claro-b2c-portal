@@ -4,11 +4,13 @@ import { usePathname } from "next/navigation";
 import { useRef } from "react";
 import {
   History,
-  Target,
   Cards,
   Dashboard,
+  Message,
+  Paper,
   SignOut,
   Pen,
+  Target,
   User,
   Users,
   Wallet,
@@ -74,7 +76,13 @@ export const nav: Record<
     {
       label: "Content",
       items: [
-        { label: "Questions", href: "/admin/questions", icon: QuestionFile },
+        {
+          label: "Questions",
+          href: "/admin/content/questions",
+          icon: QuestionFile,
+        },
+        { label: "Flashcards", href: "/admin/content/flashcards", icon: Cards },
+        { label: "Papers", href: "/admin/content/papers", icon: Paper },
       ],
     },
     {
@@ -85,7 +93,11 @@ export const nav: Record<
       ],
     },
     {
-      label: "Spend & settings",
+      label: "Feedback",
+      items: [{ label: "Inbox", href: "/admin/feedback", icon: Message }],
+    },
+    {
+      label: "Spend",
       items: [{ label: "AI spend", href: "/admin/spend", icon: Wallet }],
     },
   ],
@@ -198,18 +210,27 @@ export function AppShell({
           </nav>
         </SidebarContent>
         <SidebarFooter className="border-sidebar-border border-t px-3 py-3">
+          {kind === "admin" && (
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Open student app"
+                  render={
+                    <Link href="/student" aria-label="Open student app" />
+                  }
+                >
+                  <Sprint />
+                  <span>Open student app</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          )}
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 size="lg"
                 tooltip={name ?? "Profile"}
-                render={
-                  kind === "student" ? (
-                    <Link href="/profile" aria-label="Profile" />
-                  ) : (
-                    <div />
-                  )
-                }
+                render={<Link href="/profile" aria-label="Profile" />}
               >
                 <Avatar>
                   <AvatarFallback className="bg-accent text-ink font-semibold">
@@ -247,12 +268,10 @@ export function AppShell({
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              {kind === "student" && (
-                <DropdownMenuItem render={<Link href="/profile" />}>
-                  <User />
-                  Profile
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem render={<Link href="/profile" />}>
+                <User />
+                Profile
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => signOutForm.current?.requestSubmit()}
               >

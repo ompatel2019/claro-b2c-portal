@@ -339,3 +339,24 @@ it.each([
   ).toBe("missing");
   expect(db.from).not.toHaveBeenCalled();
 });
+
+it("lets admins test a study deck using their own student data", async () => {
+  vi.mocked(requireProfile).mockResolvedValue({
+    id: "admin-user",
+    role: "admin",
+  } as never);
+  const cards = query(liveCards());
+  const session = query({ id: sessionId });
+  client(cards, query([]), session);
+  await expect(startFlashcards({}, new FormData())).rejects.toThrow(
+    `redirect:/student/flashcards/${sessionId}`,
+  );
+  expect(cards.or).toHaveBeenCalledWith(
+    "owner_id.is.null,owner_id.eq.admin-user",
+  );
+  expect(session.insert.mock.calls[0][0]).toMatchObject({
+    kind: "flashcards",
+  });
+  // The signed-in client's auth.uid() supplies the owner, rather than a caller-provided ID.
+  expect(session.insert.mock.calls[0][0]).not.toHaveProperty("user_id");
+});

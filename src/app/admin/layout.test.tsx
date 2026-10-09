@@ -1,14 +1,15 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  requireProfile: vi.fn(),
+  requireAdmin: vi.fn(),
   admin: vi.fn(),
   from: vi.fn(),
   select: vi.fn(),
   eq: vi.fn(),
 }));
-vi.mock("@/lib/auth", () => ({ requireProfile: mocks.requireProfile }));
+vi.mock("@/lib/auth", () => ({ requireAdmin: mocks.requireAdmin }));
 vi.mock("@/utils/supabase/admin", () => ({ admin: mocks.admin }));
+vi.mock("@/lib/admin-data", () => ({ loadAdminBadges: async () => ({}) }));
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: vi.fn() }) }));
 vi.mock("next/navigation", () => ({
   redirect: (path: string) => {
@@ -21,7 +22,7 @@ import AdminLayout from "./layout";
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.requireProfile.mockResolvedValue({ role: "admin", full_name: "Admin" });
+  mocks.requireAdmin.mockResolvedValue({ role: "admin", full_name: "Admin" });
   mocks.admin.mockReturnValue({ from: mocks.from });
   mocks.from.mockReturnValue({ select: mocks.select });
   mocks.select.mockReturnValue({ eq: mocks.eq });
@@ -47,7 +48,7 @@ it.each([
 );
 
 it("redirects non-admins before accessing the service-role client", async () => {
-  mocks.requireProfile.mockResolvedValue({ role: "student" });
+  mocks.requireAdmin.mockRejectedValue(new Error("redirect:/student"));
   await expect(AdminLayout({ children: "Content" })).rejects.toThrow(
     "redirect:/student",
   );

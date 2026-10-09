@@ -64,7 +64,7 @@ export default async function StudentDetail({
                 ? `Flashcards: ${String(cfg.mode ?? "study")}`
                 : modeLabel(cfg.mode);
             return (
-              <li key={s.id}>
+              <li key={s.id} id={`session-${s.id}`} className="scroll-mt-20">
                 <Link
                   className="hover:bg-surface -mx-5 block px-5 py-3"
                   href={href}

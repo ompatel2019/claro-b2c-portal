@@ -1,5 +1,6 @@
 import {
   Alert,
+  Check,
   CheckCircle,
   Pending,
   Dot,
@@ -24,6 +25,7 @@ const pills = {
   "Couldn't read photo": [Help, "bg-warning-soft text-warning"],
   "Not answered": [EyeOff, "bg-muted text-muted-foreground"],
   "In progress": [Dot, "border-ink text-ink"],
+  Finished: [Check, "bg-muted text-muted-foreground"],
 } satisfies Record<string, [Icon, string]>;
 export type Pill = keyof typeof pills;
 

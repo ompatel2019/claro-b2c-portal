@@ -98,6 +98,10 @@ export const PanelLeft = icon(
     <path d="M9 4v16" />
   </>,
 );
+export const Paper = icon(
+  "paper",
+  <path d="M14 3H6v18h13V8l-5-5Zm0 0v5h5M9 12h7M9 16h7" />,
+);
 
 // Actions and controls
 export const Close = icon("close", <path d="m6 6 12 12M18 6 6 18" />);

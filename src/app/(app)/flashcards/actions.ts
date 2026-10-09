@@ -19,7 +19,6 @@ export async function startFlashcards(
   form: FormData,
 ): Promise<FormState> {
   const profile = await requireProfile();
-  if (profile.role !== "student") redirect("/admin");
   let configInput: unknown;
   const raw = form.get("config");
   const legacyIds = raw === null ? form.getAll("card_ids") : [];
@@ -102,7 +101,6 @@ export async function rateFlashcard(
     .safeParse({ sessionId, cardId, mark, answer, answerMode });
   if (!parsed.success) throw new Error("Choose a valid card rating.");
   const profile = await requireProfile();
-  if (profile.role !== "student") throw new Error("Student access required.");
   const db = await createClient();
   const { data: session } = await db
     .from("sessions")
@@ -182,7 +180,6 @@ export async function drainPersistRating(item: {
     .safeParse(item);
   if (!parsed.success) return "missing";
   const profile = await requireProfile();
-  if (profile.role !== "student") return "error";
   const db = await createClient();
   const { data: session } = await db
     .from("sessions")

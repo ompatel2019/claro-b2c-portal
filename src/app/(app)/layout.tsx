@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { sydneyToday } from "@/lib/flashcards";
 import { createClient } from "@/utils/supabase/server";
@@ -13,7 +12,6 @@ export default async function Layout({
   children: React.ReactNode;
 }) {
   const profile = await requireProfile();
-  if (profile.role === "admin") redirect("/admin");
   const db = await createClient();
   const [{ count }, jar] = await Promise.all([
     db

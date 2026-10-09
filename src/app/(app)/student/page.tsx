@@ -30,7 +30,7 @@ import { ScoreTrend } from "@/components/score-trend";
 import { SessionList } from "@/components/session-list";
 import { Shortcut } from "@/components/shortcut";
 import { QuickStarts } from "@/components/sprint-setup";
-import { StatCard } from "@/components/stat-card";
+import { Delta, StatCard } from "@/components/stat-card";
 import { TryAgain } from "@/components/try-again";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -135,17 +135,6 @@ const Section = ({
   </Card>
 );
 const pct = (n: number | null) => (n == null ? null : Math.round(n));
-function Delta({ d, children }: { d: number; children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <Badge variant={d > 0 ? "success" : d < 0 ? "destructive" : "secondary"}>
-        {d > 0 ? "+" : d < 0 ? "−" : "±"}
-        {Math.abs(d)}
-      </Badge>
-      <span>{children}</span>
-    </span>
-  );
-}
 
 async function Kpis({ userId }: { userId: string }) {
   const data = await Promise.all([

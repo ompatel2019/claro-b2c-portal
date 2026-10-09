@@ -1,7 +1,11 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { Target } from "@/components/icons";
-vi.mock("next/navigation", () => ({ usePathname: () => "/activity" }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/activity",
+  useRouter: () => ({ replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock("next/form", () => ({
   default: (props: React.ComponentProps<"form">) => <form {...props} />,
 }));
@@ -10,7 +14,7 @@ vi.mock("@/utils/supabase/client", () => ({ createClient: vi.fn() }));
 import { activeItem, AppShell, nav } from "./app-shell";
 import { DataTable, sortRows, type Column } from "./data-table";
 import { EmptyState } from "./empty-state";
-import { FilterBar } from "./filter-bar";
+import { FilterBar, type Filter } from "./filter-bar";
 import { PageHeader } from "./page-header";
 import { StatCard } from "./stat-card";
 afterEach(cleanup);
@@ -22,7 +26,8 @@ it("groups student and admin navigation without homework", () => {
     "Students",
     "Content",
     "Marking",
-    "Spend & settings",
+    "Feedback",
+    "Spend",
   ]);
   const hrefs = Object.values(nav).flatMap((groups) =>
     groups.flatMap((g) => g.items.map((i) => i.href)),
@@ -48,6 +53,9 @@ it("marks the section root only on an exact match", () => {
   expect(activeItem("admin", "/admin/students/x")?.label).toBe("All students");
   expect(activeItem("admin", "/admin/marking/review/x")?.label).toBe(
     "Review queue",
+  );
+  expect(activeItem("admin", "/admin/content/questions/new")?.label).toBe(
+    "Questions",
   );
 });
 
@@ -139,7 +147,7 @@ it("cycles a sortable header through ascending, descending and off", () => {
 });
 
 it("counts active filters on Clear and hides it when none are set", () => {
-  const filters = [
+  const filters: Filter[] = [
     {
       name: "mode",
       label: "Mode",
@@ -150,11 +158,60 @@ it("counts active filters on Clear and hides it when none are set", () => {
   ];
   const { rerender } = render(<FilterBar filters={filters} values={{}} />);
   expect(screen.queryByRole("link", { name: /Clear/ })).toBeNull();
-  rerender(<FilterBar filters={filters} values={{ mode: "mcq", q: "gdp" }} />);
+  rerender(
+    <FilterBar
+      filters={filters}
+      values={{ mode: "mcq", q: "gdp" }}
+      hidden={{ status: "new", page: undefined }}
+    />,
+  );
   expect(screen.getByRole("link", { name: "Clear (2)" })).toHaveAttribute(
     "href",
-    "/activity",
+    "/activity?status=new",
   );
   expect(screen.getByLabelText("Mode")).toHaveValue("mcq");
   expect(screen.getByLabelText("Search")).toHaveValue("gdp");
+});
+
+it("opens a row without intercepting its link", () => {
+  const onRow = vi.fn();
+  const row = { id: "a", name: "Al" };
+  render(
+    <DataTable
+      label="People"
+      columns={[
+        {
+          id: "name",
+          header: "Name",
+          cell: (r) => <a href="/people/a">{r.name}</a>,
+        },
+        { id: "id", header: "ID", cell: (r) => r.id },
+      ]}
+      rows={[row]}
+      onRow={onRow}
+    />,
+  );
+  fireEvent.click(screen.getByText("a"));
+  expect(onRow).toHaveBeenCalledWith(row);
+  onRow.mockClear();
+  fireEvent.click(screen.getByRole("link"));
+  expect(onRow).not.toHaveBeenCalled();
+});
+
+it("leaves the sidebar shortcut alone while typing", () => {
+  window.matchMedia = () =>
+    ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }) as unknown as MediaQueryList;
+  render(
+    <AppShell kind="admin" name="Admin" defaultOpen>
+      <input aria-label="Search" />
+    </AppShell>,
+  );
+  const sidebar = document.querySelector('[data-slot="sidebar"]');
+  const state = sidebar?.getAttribute("data-state");
+  fireEvent.keyDown(screen.getByRole("textbox"), { key: "b", ctrlKey: true });
+  expect(sidebar).toHaveAttribute("data-state", state);
 });

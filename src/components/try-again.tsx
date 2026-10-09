@@ -12,7 +12,8 @@ export function TryAgain({ what }: { what: string }) {
       className="text-destructive flex flex-wrap items-center gap-3 text-sm"
     >
       <Alert className="size-4" aria-hidden />
-      Couldn’t load {what}.
+      {"Couldn't load "}
+      {what}.
       <Button variant="outline" size="sm" onClick={() => router.refresh()}>
         Try again
       </Button>

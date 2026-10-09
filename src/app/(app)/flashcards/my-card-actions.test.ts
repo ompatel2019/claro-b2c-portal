@@ -203,11 +203,16 @@ it("retires, relives and moves only the owner's student cards; never hard-delete
     "t3-inflation",
   );
 });
-it("rejects writes from non-students without touching the database", async () => {
+it("lets admins write only their own student cards", async () => {
   state.role = "admin";
-  expect((await saveMyCard(card)).error).toBeTruthy();
-  expect((await deleteMyCards(["mine"])).error).toBeTruthy();
-  expect(state.queries).toHaveLength(0);
+  expect((await saveMyCard(card)).error).toBeUndefined();
+  expect((await deleteMyCards(["mine"])).error).toBeUndefined();
+  const inserted = state.queries.find((q) => q.op === "insert");
+  expect(inserted?.payload).toEqual(
+    expect.arrayContaining([expect.objectContaining({ owner_id: "me" })]),
+  );
+  const retired = state.queries.find((q) => q.op === "update");
+  expect(retired?.calls).toContainEqual(["eq", ["owner_id", "me"]]);
 });
 it("exports on demand with owner, live, topic, kind and literal-search filters", async () => {
   const result = await exportMyCards({
@@ -227,10 +232,11 @@ it("exports on demand with owner, live, topic, kind and literal-search filters",
     [`front.ilike.${value},back.ilike.${value}`],
   ]);
 });
-it("gates export to students", async () => {
+it("scopes an admin's student export to their own cards", async () => {
   state.role = "admin";
-  expect((await exportMyCards({})).error).toBeTruthy();
-  expect(state.queries).toHaveLength(0);
+  expect((await exportMyCards({})).error).toBeUndefined();
+  const query = state.queries.find((q) => q.table === "flashcards");
+  expect(query?.calls).toContainEqual(["eq", ["owner_id", "me"]]);
 });
 it.each(["new", "due", "known", "learning"])(
   "exports with a student-scoped %s progress join",

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { signIn } from "./helpers";
+import { signIn, signInAdmin } from "./helpers";
 
 const sidebarWidth = (page: Page) =>
   page
@@ -27,16 +27,22 @@ test.describe("App shell", () => {
       "page",
     );
     await expect.poll(() => sidebarWidth(page)).toBe(260);
-    await page.getByRole("button", { name: "Toggle Sidebar" }).click();
-    await expect.poll(() => sidebarWidth(page)).toBe(64);
+    await expect(async () => {
+      if ((await sidebarWidth(page)) !== 64)
+        await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+      await expect.poll(() => sidebarWidth(page), { timeout: 1500 }).toBe(64);
+    }).toPass({ timeout: 15000 });
     await nav.getByRole("link", { name: "Flashcards" }).hover();
     await expect(
       page.locator('[data-slot="tooltip-content"]', { hasText: "Flashcards" }),
     ).toBeVisible();
     await page.reload();
     await expect.poll(() => sidebarWidth(page)).toBe(64);
-    await page.locator("body").press("ControlOrMeta+b");
-    await expect.poll(() => sidebarWidth(page)).toBe(260);
+    await expect(async () => {
+      if ((await sidebarWidth(page)) !== 260)
+        await page.locator("body").press("ControlOrMeta+b");
+      await expect.poll(() => sidebarWidth(page), { timeout: 1500 }).toBe(260);
+    }).toPass({ timeout: 15000 });
     await nav.getByRole("link", { name: "Activity" }).click();
     await expect(page).toHaveURL(/\/activity$/);
     await expect(nav.getByRole("link", { name: "Activity" })).toHaveAttribute(
@@ -71,7 +77,17 @@ test.describe("App shell", () => {
     await expect(page.locator('[data-slot="sidebar-container"]')).toHaveCount(
       0,
     );
-    await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    await expect(async () => {
+      if (
+        !(await page
+          .getByRole("navigation", { name: "Main navigation" })
+          .isVisible())
+      )
+        await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+      await expect(
+        page.getByRole("navigation", { name: "Main navigation" }),
+      ).toBeVisible({ timeout: 1500 });
+    }).toPass({ timeout: 15000 });
     const nav = page.getByRole("navigation", { name: "Main navigation" });
     await nav.getByRole("link", { name: "Topic Sprint" }).click();
     await expect(page).toHaveURL(/\/student\/sprint$/);
@@ -86,30 +102,41 @@ test.describe("Admin shell", () => {
   test("admin sidebar is grouped and separate from the student nav", async ({
     page,
   }) => {
-    await page.goto("/sign-in");
-    await page.getByLabel("Email").fill(process.env.ADMIN_EMAIL!);
-    await page.getByLabel("Password").fill(process.env.ADMIN_PASSWORD!);
-    await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await page.waitForURL(/\/admin$/);
+    await page.context().clearCookies({ name: "sidebar_state" });
+    await signInAdmin(page);
     const nav = page.getByRole("navigation", { name: "Admin navigation" });
     for (const group of [
       "Overview",
       "Students",
       "Content",
       "Marking",
-      "Spend & settings",
+      "Feedback",
+      "Spend",
     ])
       await expect(nav.getByText(group, { exact: true })).toBeVisible();
     await expect(nav.getByRole("link")).toHaveText([
       "Dashboard",
       "All students",
       "Questions",
+      "Flashcards",
+      "Papers",
       "Review queue",
+      "Accuracy",
+      "Inbox",
       "AI spend",
     ]);
     await expect(
       page.getByRole("navigation", { name: "Main navigation" }),
     ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "Open student app" }),
+    ).toHaveAttribute("href", "/student");
+    await page.getByRole("link", { name: "Open student app" }).click();
+    await expect(page).toHaveURL(/\/student$/);
+    await expect(
+      page.getByRole("navigation", { name: "Main navigation" }),
+    ).toBeVisible();
+    await page.goto("/admin");
     await nav.getByRole("link", { name: "AI spend" }).click();
     await expect(page.getByRole("heading", { name: "AI spend" })).toBeVisible();
   });

@@ -36,12 +36,37 @@ export async function expectNoOverlap(a: Locator, b: Locator) {
     .toBe(false);
 }
 
-export async function signIn(page: Page) {
+async function signInAs(
+  page: Page,
+  email: string,
+  password: string,
+  destination: RegExp,
+) {
   await page.goto("/sign-in");
-  await page.getByLabel("Email").fill(process.env.STUDENT_EMAIL!);
-  await page.getByLabel("Password").fill(process.env.STUDENT_PASSWORD!);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL(/\/student$/);
+  await expect(async () => {
+    if (destination.test(new URL(page.url()).pathname)) return;
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page).toHaveURL(destination, { timeout: 5000 });
+  }).toPass({ timeout: 60000 });
+}
+export async function signIn(page: Page) {
+  await signInAs(
+    page,
+    process.env.STUDENT_EMAIL!,
+    process.env.STUDENT_PASSWORD!,
+    /\/student$/,
+  );
+}
+/** Signs in with the admin account and waits for hydration when submitting. */
+export async function signInAdmin(page: Page) {
+  await signInAs(
+    page,
+    process.env.ADMIN_EMAIL!,
+    process.env.ADMIN_PASSWORD!,
+    /\/admin$/,
+  );
 }
 export function adminClient() {
   return process.env.SUPABASE_SECRET_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL
