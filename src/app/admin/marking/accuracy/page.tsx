@@ -150,7 +150,7 @@ export default async function AccuracyPage({
                 <dd className="tabular-nums">
                   {(evaluation.agreement! * 100).toFixed(1)}%
                   <span className="text-muted-foreground mt-1 block text-[13px]">
-                    Exact mark under 6 marks; within ±1 mark on 6+
+                    Same band; within ±1 mark on 6+
                   </span>
                   <span className="text-muted-foreground mt-1 block text-[13px]">
                     Exact mark: {(evaluation.exact! * 100).toFixed(1)}% ·{" "}

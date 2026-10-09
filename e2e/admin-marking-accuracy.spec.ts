@@ -209,6 +209,7 @@ test.describe("admin marking accuracy", () => {
       const card = page
         .locator('[data-slot="card"] > dl')
         .getByText(label, { exact: true });
+      await expect(card).toHaveCount(1);
       await card.scrollIntoViewIfNeeded();
       await expect(card).toBeVisible();
     }

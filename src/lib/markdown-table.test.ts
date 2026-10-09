@@ -22,3 +22,13 @@ it("parses a pipe table with surrounding text", () => {
     { type: "text", text: "Use the table." },
   ]);
 });
+
+it("keeps escaped pipes inside table cells", () => {
+  expect(
+    blocks(String.raw`| Mean \|Δ\| | Cost |
+| --- | --- |
+| 0.5 | $1 |`),
+  ).toEqual([
+    { type: "table", headers: ["Mean |Δ|", "Cost"], rows: [["0.5", "$1"]] },
+  ]);
+});

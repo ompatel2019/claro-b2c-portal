@@ -6,8 +6,8 @@ export type Block =
 function cells(line: string) {
   return line
     .replace(/^\||\|$/g, "")
-    .split("|")
-    .map((c) => c.trim());
+    .split(/(?<!\\)\|/)
+    .map((c) => c.trim().replace(/\\\|/g, "|"));
 }
 
 function isDivider(line: string) {

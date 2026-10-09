@@ -5,6 +5,7 @@ import { useRef } from "react";
 import {
   History,
   Cards,
+  Book,
   Dashboard,
   Message,
   Paper,
@@ -90,6 +91,7 @@ export const nav: Record<
       items: [
         { label: "Review queue", href: "/admin/marking/review", icon: Pen },
         { label: "Accuracy", href: "/admin/marking/accuracy", icon: Target },
+        { label: "Engine", href: "/admin/marking/engine", icon: Book },
       ],
     },
     {

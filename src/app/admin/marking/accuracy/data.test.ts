@@ -559,7 +559,7 @@ it("has no comparable reviews when resolved reviews have no AI mark", () => {
   expect(result.meanDelta).toBeNull();
 });
 
-it("computes held-out exact and agreement using the six-mark threshold and range distance", () => {
+it("computes held-out exact and agreement with exact fallback when band is absent", () => {
   const item = (
     marks: number,
     expected: number | number[],
@@ -585,7 +585,7 @@ it("computes held-out exact and agreement using the six-mark threshold and range
   expect(evalAgreement(items)).toEqual({
     n: 9,
     exact: 2 / 9,
-    agreement: 5 / 9,
+    agreement: 2 / 9,
   });
   expect(evalAgreement([])).toEqual({ n: 0, exact: null, agreement: null });
 });
@@ -595,7 +595,13 @@ it("picks the newest full eval with successful held-out items, returning only su
     stamp: string,
     extra: Partial<EvalRun["meta"]> = {},
     items: EvalRun["items"] = [
-      { section: "Held-out", marks: 6, expected: 3, mark: 4 },
+      {
+        section: "Held-out",
+        marks: 6,
+        expected: 3,
+        mark: 4,
+        score: { band: true },
+      },
     ],
   ): EvalRun => ({
     meta: { stamp, label: `run ${stamp}`, marker: { model: "m" }, ...extra },

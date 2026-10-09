@@ -39,6 +39,7 @@ it("reads only the JSON results in the bundled folder", async () => {
                 marks: 6,
                 expected: 3,
                 mark: 4,
+                score: { band: true },
                 answer: "never shown",
               },
             ],
