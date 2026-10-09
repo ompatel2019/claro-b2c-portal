@@ -9,6 +9,7 @@ import {
 } from "@/lib/paper-session";
 import { SprintRunner } from "@/components/sprint-runner";
 import { PaperStart } from "@/components/paper-start";
+import { studentPaperFilter } from "@/lib/papers";
 export default async function PaperPage({
   params,
 }: {
@@ -21,7 +22,7 @@ export default async function PaperPage({
     .from("papers")
     .select("id,title,source,year,time_limit_min,total_marks")
     .eq("id", id)
-    .eq("status", "live")
+    .or(studentPaperFilter(profile.id))
     .maybeSingle();
   if (error) throw new Error("Could not load this paper.");
   if (!paper) notFound();

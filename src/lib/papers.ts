@@ -1,6 +1,11 @@
 import { paperClock } from "./paper-session";
 import { timer } from "./practice";
 
+/** Match start_paper even for admins, whose RLS also permits unlisted drafts. */
+export function studentPaperFilter(userId: string) {
+  return `status.eq.live,and(status.eq.draft,preview_user_ids.cs.{${userId}})`;
+}
+
 export type Paper = {
   id: string;
   title: string;

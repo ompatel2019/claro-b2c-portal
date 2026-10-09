@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   from: vi.fn(),
   storage: vi.fn(),
+  paperFilter: vi.fn(),
   data: {} as Record<string, unknown>,
 }));
 vi.mock("@/lib/auth", () => ({
@@ -78,6 +79,10 @@ beforeEach(() => {
     const query: Record<string, unknown> = {};
     for (const method of ["select", "eq", "order", "range", "maybeSingle"])
       query[method] = () => query;
+    query.or = (filter: string) => {
+      if (table === "papers") mocks.paperFilter(filter);
+      return query;
+    };
     query.then = (resolve: (data: unknown) => unknown) =>
       Promise.resolve(resolve({ data: mocks.data[table], error: null }));
     return query;
@@ -119,6 +124,26 @@ beforeEach(() => {
   );
 });
 afterEach(cleanup);
+it("loads a listed draft's results using the student visibility filter", async () => {
+  mocks.data.papers = {
+    id: "paper",
+    title: "QA preview · 2018 HSC short paper (test student only)",
+    ranks_enabled: false,
+  };
+  render(await PaperResults(props()));
+  expect(mocks.paperFilter).toHaveBeenCalledWith(
+    "status.eq.live,and(status.eq.draft,preview_user_ids.cs.{student})",
+  );
+  expect(screen.getByRole("heading", { name: /QA preview/ })).toBeVisible();
+  expect(mocks.rpc).toHaveBeenCalledWith("session_review", {
+    p_session: "two",
+  });
+});
+it("rejects a paper excluded by the visibility query before loading its review", async () => {
+  mocks.data.papers = null;
+  await expect(PaperResults(props())).rejects.toThrow("404");
+  expect(mocks.rpc).not.toHaveBeenCalled();
+});
 it("defaults to the latest finished sit, hides unchosen questions and shows settled null summaries as unavailable", async () => {
   render(await PaperResults(props()));
   expect(mocks.rpc).toHaveBeenCalledWith("session_review", {

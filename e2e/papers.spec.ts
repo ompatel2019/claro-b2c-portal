@@ -4,7 +4,7 @@ import { signIn } from "./helpers";
 test.describe("Mock papers", () => {
   test.skip(!process.env.STUDENT_EMAIL, "Needs a student account");
 
-  test("shows the empty state or the live papers table without creating papers", async ({
+  test("shows the empty state or the live and listed draft papers table without creating papers", async ({
     page,
   }) => {
     await signIn(page);

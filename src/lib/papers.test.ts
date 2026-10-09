@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { paperRows, type Paper, type PaperSit } from "./papers";
+import {
+  paperRows,
+  studentPaperFilter,
+  type Paper,
+  type PaperSit,
+} from "./papers";
+
+it("limits student queries (including admins) to live papers or their listed drafts", () => {
+  const userId = "12345678-1234-1234-1234-123456789abc";
+  expect(studentPaperFilter(userId)).toBe(
+    `status.eq.live,and(status.eq.draft,preview_user_ids.cs.{${userId}})`,
+  );
+});
 
 const now = Date.parse("2026-10-09T02:00:00Z");
 const paper: Paper = {

@@ -7,6 +7,7 @@ import {
   paperRows,
   paperSourceOptions,
   paperStatusOptions,
+  studentPaperFilter,
   type Paper,
   type PaperSit,
 } from "@/lib/papers";
@@ -35,7 +36,8 @@ async function loadPapers(userId: string) {
       db
         .from("papers")
         .select("id,title,year,origin,time_limit_min,total_marks")
-        .eq("status", "live")
+        // Live papers, plus drafts an admin listed this account on (QA previews).
+        .or(studentPaperFilter(userId))
         .order("year", { ascending: false, nullsFirst: false })
         .order("title")
         .order("id")

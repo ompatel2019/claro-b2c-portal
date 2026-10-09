@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
+import { studentPaperFilter } from "@/lib/papers";
 import { pages } from "@/lib/flashcard-data";
 import { createClient } from "@/utils/supabase/server";
 import type { PaperConfig } from "@/lib/paper-session";
@@ -74,6 +75,7 @@ export default async function PaperResults({
       .from("papers")
       .select("id,title,ranks_enabled")
       .eq("id", id)
+      .or(studentPaperFilter(profile.id))
       .maybeSingle(),
     pages<Sit>((from, to) =>
       db
