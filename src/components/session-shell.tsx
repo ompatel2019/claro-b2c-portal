@@ -4,6 +4,7 @@ import {
   Book,
   Calculator as CalculatorIcon,
   Message,
+  More,
   PanelLeft,
 } from "@/components/icons";
 import { toast } from "sonner";
@@ -13,6 +14,12 @@ import { Calculator } from "./calculator";
 import { useFeedback } from "./feedback-widget";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "./ui/sheet";
 
 export type SaveState = "saved" | "saving" | "error";
@@ -147,14 +154,21 @@ export function SessionShell({
 
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="bg-background/95 sticky top-0 z-30 flex h-14 items-center gap-2 border-b px-3 backdrop-blur sm:gap-3 sm:px-4">
-        <Button variant="ghost" size="sm" disabled={busy} onClick={onExit}>
-          Save and exit
+      <header className="bg-background/95 sticky top-0 z-30 flex h-14 items-center gap-1.5 border-b px-2 backdrop-blur sm:gap-3 sm:px-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label="Save and exit"
+          disabled={busy}
+          onClick={onExit}
+        >
+          <span className="sm:hidden">Exit</span>
+          <span className="hidden sm:inline">Save and exit</span>
         </Button>
         <p className="hidden min-w-0 truncate text-sm font-semibold md:block">
           {title}
         </p>
-        <div className="flex min-w-24 flex-col gap-1">
+        <div className="flex min-w-14 flex-col gap-1 sm:min-w-24">
           <p className="text-xs font-medium tabular-nums">
             Q {position} of {total}
           </p>
@@ -192,10 +206,34 @@ export function SessionShell({
             </button>
           )}
         </p>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {/* Below sm the tools collapse into one menu so Finish always fits. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="hover:bg-muted inline-flex size-8 items-center justify-center rounded-full sm:hidden"
+              aria-label="More tools"
+            >
+              <More className="size-5" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={toggleBooklet}>
+                <Book />
+                Booklet
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCalc(!calc)}>
+                <CalculatorIcon />
+                Calculator
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => feedback()}>
+                <Message />
+                Send feedback
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="icon-sm"
+            className="hidden sm:inline-flex"
             aria-label="Booklet (B)"
             onClick={toggleBooklet}
           >
@@ -204,6 +242,7 @@ export function SessionShell({
           <Button
             variant="ghost"
             size="icon-sm"
+            className="hidden sm:inline-flex"
             aria-label="Calculator (C)"
             aria-pressed={calc}
             onClick={() => setCalc(!calc)}
@@ -214,6 +253,7 @@ export function SessionShell({
           <Button
             variant="ghost"
             size="icon-sm"
+            className="hidden sm:inline-flex"
             aria-label="Send feedback"
             onClick={() => feedback()}
           >

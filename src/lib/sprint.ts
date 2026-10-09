@@ -23,6 +23,8 @@ export type SetupConfig = {
   custom_minutes: number;
   on_timeout: "overtime" | "finish";
   feedback: "end" | "each";
+  /** Last size picked per "type:size_by", so switching type and back keeps it (setup only). */
+  sizes?: Record<string, number>;
 };
 export type Pool = {
   questions: number;
@@ -80,22 +82,39 @@ export const DEFAULTS: SetupConfig = {
   feedback: "end",
 };
 
-/** Switching type resets size to that type's default; MC and extended drop written-only filters. */
+const remember = (c: SetupConfig) => ({
+  ...c.sizes,
+  [`${c.mode}:${c.size_by}`]: c.target,
+});
+const sizeFor = (sizes: Record<string, number>, key: string) =>
+  SIZES[key] && typeof sizes[key] === "number"
+    ? Math.min(SIZES[key].max, Math.max(SIZES[key].min, sizes[key]))
+    : DEFAULT_SIZE[key];
+
+/** Switching type restores that type's last size (else its default); MC and extended drop written-only filters. */
 export function withMode(c: SetupConfig, mode: Mode): SetupConfig {
   const size_by = mode === "short" || mode === "mixed" ? "marks" : "questions";
   const written = mode === "short" || mode === "mixed";
+  const sizes = remember(c);
   return {
     ...c,
     mode,
     size_by,
-    target: DEFAULT_SIZE[`${mode}:${size_by}`],
+    sizes,
+    target: sizeFor(sizes, `${mode}:${size_by}`),
     include_extended: mode === "mixed" && c.include_extended,
     difficulty: written ? c.difficulty : [],
     verbs: written ? c.verbs : [],
   };
 }
 export function withSizeBy(c: SetupConfig, size_by: SetupConfig["size_by"]) {
-  return { ...c, size_by, target: DEFAULT_SIZE[`${c.mode}:${size_by}`] };
+  const sizes = remember(c);
+  return {
+    ...c,
+    size_by,
+    sizes,
+    target: sizeFor(sizes, `${c.mode}:${size_by}`),
+  };
 }
 export function clampTarget(c: SetupConfig, n: number) {
   const s = size(c);
@@ -175,7 +194,11 @@ export function restore(saved: unknown): SetupConfig {
   if (!saved || typeof saved !== "object") return DEFAULTS;
   const s = saved as Partial<SetupConfig>;
   const mode = s.mode && s.mode in modes ? s.mode : DEFAULTS.mode;
-  let c = withMode({ ...DEFAULTS, ...s, mode }, mode);
+  const sizes =
+    s.sizes && typeof s.sizes === "object" && !Array.isArray(s.sizes)
+      ? s.sizes
+      : undefined;
+  let c = withMode({ ...DEFAULTS, ...s, mode, sizes }, mode);
   if (s.size_by && SIZES[`${mode}:${s.size_by}`]) c = withSizeBy(c, s.size_by);
   if (typeof s.target === "number") c.target = clampTarget(c, s.target);
   return c;

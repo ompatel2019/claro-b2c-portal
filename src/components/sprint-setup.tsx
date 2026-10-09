@@ -725,7 +725,9 @@ export function SprintSetup({
         <input type="hidden" name="config" value={JSON.stringify(c)} />
         <div className="mx-auto flex max-w-[720px] flex-wrap items-center gap-3 px-4 py-3 md:pl-[calc(var(--sidebar-width,0px)+1rem)]">
           <div className="min-w-0 flex-1 text-sm">
-            <p className="truncate font-medium">{summary(c, names, years)}</p>
+            <p className="font-medium text-pretty">
+              {summary(c, names, years)}
+            </p>
             <p
               className="text-muted-foreground tabular-nums"
               aria-live="polite"

@@ -1,5 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { cleanupSessions, finish, pick, signIn } from "./helpers";
+
+const noOverflow = (page: Page) =>
+  page.evaluate(
+    () => document.documentElement.scrollWidth <= window.innerWidth,
+  );
 
 test.describe("Sprint results", () => {
   test.skip(!process.env.STUDENT_EMAIL, "Needs a student account");
@@ -92,9 +97,29 @@ test.describe("Sprint results", () => {
       page.getByRole("link", { name: "Back to activity" }),
     ).toHaveAttribute("href", "/activity");
 
+    // 400px: no sideways scroll and the score stays on one line.
+    await page.setViewportSize({ width: 400, height: 800 });
+    await page.getByRole("button", { name: "Table view" }).click();
+    await expect(noOverflow(page)).resolves.toBe(true);
+    const score = page.getByText(/^\d+ \/ 5 · \d+%$/);
+    expect((await score.boundingBox())!.height).toBeLessThan(45);
+
     await page.getByRole("button", { name: "Same setup again" }).click();
     await expect(page).toHaveURL(/\/student\/sprint\/[^/]+$/);
     ids.push(page.url().split("/").at(-1)!);
     await expect(page.getByText(/^Q 1 of 5$/)).toBeVisible();
+    // The session header collapses its tools; Finish always fits.
+    for (const width of [400, 360]) {
+      await page.setViewportSize({ width, height: 800 });
+      await expect(
+        page.getByRole("button", { name: "Finish", exact: true }),
+      ).toBeInViewport({ ratio: 1 });
+      await expect(noOverflow(page)).resolves.toBe(true);
+    }
+    await page.getByRole("button", { name: "More tools" }).click();
+    await expect(page.getByRole("menuitem", { name: "Booklet" })).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: "Calculator" }),
+    ).toBeVisible();
   });
 });

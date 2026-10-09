@@ -113,3 +113,28 @@ it("summarises the setup in one line and counts extra filters", () => {
     summary({ ...DEFAULTS, timed: false, history: "mistakes" }, names, null),
   ).toBe("20 questions · 20 marks · Untimed · Whole course · Mistakes only");
 });
+
+it("remembers the last size per type when switching back", () => {
+  const mc5 = { ...DEFAULTS, target: 5 };
+  const short = withMode(mc5, "short");
+  expect(short.target).toBe(30);
+  const back = withMode({ ...short, target: 45 }, "mcq");
+  expect(back.target).toBe(5);
+  expect(withMode(back, "short").target).toBe(45);
+  const byQ = withSizeBy(
+    { ...withMode(back, "short"), target: 50 },
+    "questions",
+  );
+  expect(byQ.target).toBe(5);
+  expect(withSizeBy({ ...byQ, target: 8 }, "marks").target).toBe(50);
+  // Survives the saved setup, clamped to the type's range.
+  expect(restore(JSON.parse(JSON.stringify(back))).sizes).toMatchObject({
+    "mcq:questions": 5,
+    "short:marks": 45,
+  });
+  expect(
+    withMode(restore({ mode: "short", sizes: { "mcq:questions": 999 } }), "mcq")
+      .target,
+  ).toBe(40);
+  expect(restore({ sizes: [1] }).sizes).toEqual({ "mcq:questions": 20 });
+});

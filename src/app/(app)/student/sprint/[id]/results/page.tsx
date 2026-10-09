@@ -147,7 +147,12 @@ export default async function Results({
         <Link
           key={a.href}
           href={a.href}
-          className={buttonVariants({ variant: "outline", size: "sm" })}
+          className={buttonVariants({
+            variant: "outline",
+            size: "sm",
+            className:
+              "h-auto min-h-8 max-w-full shrink py-1.5 text-left whitespace-normal",
+          })}
         >
           {a.label}
         </Link>
@@ -237,6 +242,7 @@ export default async function Results({
       <MarkingProgress done={done} total={rows.length} />
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <StatCard
+          className="col-span-2 sm:col-span-1"
           label={
             <span className="flex items-center gap-2">
               Score {provisional && <StatusPill pill="Provisional" />}

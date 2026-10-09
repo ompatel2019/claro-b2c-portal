@@ -123,6 +123,7 @@ export const Message = icon(
   "message",
   <path d="M20 4H4a1 1 0 0 0-1 1v15l4-3h13a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1ZM8 9h8M8 12.5h5" />,
 );
+export const More = icon("more", <path d="M5 12h.01M12 12h.01M19 12h.01" />);
 export const Book = icon(
   "book",
   <path d="M12 5v16M12 5C8 2 4 3 2 4v15c3-1 6-1 10 2 4-3 7-3 10-2V4c-2-1-6-2-10 1ZM5 7h3M16 7h3" />,
