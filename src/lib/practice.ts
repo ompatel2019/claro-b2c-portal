@@ -103,7 +103,9 @@ export function answered(
 }
 export function timer(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const minutes = Math.floor(s / 60);
+  const clock = `${s >= 3600 ? String(minutes % 60).padStart(2, "0") : minutes}:${String(s % 60).padStart(2, "0")}`;
+  return s >= 3600 ? `${Math.floor(s / 3600)}:${clock}` : clock;
 }
 export function percentage(score: number | null, max: number | null) {
   return max

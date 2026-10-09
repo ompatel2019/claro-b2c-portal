@@ -45,7 +45,11 @@ describe("highlightSegments", () => {
 it.each([
   [0, "0:00"],
   [65, "1:05"],
-  [3600, "60:00"],
+  [3599, "59:59"],
+  [3600, "1:00:00"],
+  [3730, "1:02:10"],
+  [10800, "3:00:00"],
+  [65.9, "1:05"],
   [-3, "0:00"],
 ])("formats timer %s", (seconds, expected) =>
   expect(timer(Number(seconds))).toBe(expected),
