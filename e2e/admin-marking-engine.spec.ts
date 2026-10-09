@@ -19,7 +19,7 @@ const headers = [
   "Mean |Δ|",
   "Total |Δ|",
   "Cost",
-  "Marking time",
+  "Duration",
   "By",
 ];
 const noOverflow = (page: Page) =>
@@ -34,7 +34,11 @@ test.describe("admin marking engine", () => {
   );
   test.setTimeout(120000);
   test("docs navigation and read-only runs table", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
     await signInAdmin(page);
+    await page
+      .context()
+      .addCookies([{ name: "sidebar_state", value: "true", url: page.url() }]);
     await page.goto("/admin/marking/engine");
     await expect(
       page.getByRole("heading", {
@@ -62,6 +66,15 @@ test.describe("admin marking engine", () => {
     await expect(page).toHaveURL(/[?&]doc=ENGINE(&|$)/);
     await page.getByRole("button", { name: "Eval runs", exact: true }).click();
     await expect(page).toHaveURL(/[?&]tab=runs(&|$)/);
+    const wrapper = page.getByTestId("runs-region");
+    expect(
+      await wrapper.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    ).toBe(true);
+    expect(
+      await wrapper
+        .locator('[data-slot="table-container"]')
+        .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    ).toBe(true);
     const table = page.getByRole("table", { name: "Eval runs" });
     await expect(table).toBeVisible();
     expect(await table.getByRole("row").count()).toBeGreaterThan(1);
@@ -74,7 +87,22 @@ test.describe("admin marking engine", () => {
     await expect(sort.locator("..")).toHaveAttribute("aria-sort", "ascending");
     await sort.click();
     await expect(sort.locator("..")).toHaveAttribute("aria-sort", "descending");
-    await expect(page.locator("#main")).not.toContainText("New run");
+    await page.getByRole("button", { name: "New run", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "New run" });
+    await expect(dialog.getByLabel("Test set")).toContainText(
+      "A1 20-answer set",
+    );
+    await expect(dialog.getByLabel("Model")).toContainText("Claude Sonnet 5.5");
+    await expect(
+      dialog.getByRole("radio", { name: "Low", exact: true }),
+    ).toBeChecked();
+    await expect(
+      dialog.getByRole("radio", { name: "With blind check (as production)" }),
+    ).toBeChecked();
+    await expect(dialog).toContainText("Estimated cost:");
+    await expect(dialog).toContainText("Remaining budget:");
+    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+    await expect(dialog).not.toBeVisible();
     await expect(page.locator("#main")).not.toContainText("Compare");
   });
   test("docs and runs fit a 400px phone", async ({ page }) => {
@@ -95,13 +123,19 @@ test.describe("admin marking engine", () => {
       ).toBeVisible({ timeout: 30000 });
       if (query === "tab=runs")
         await expect(
-          page.getByRole("table", { name: "Eval runs" }),
+          page.getByRole("list", { name: "Eval runs" }),
         ).toBeVisible();
       else
         await expect(
           page.getByRole("navigation", { name: "Engine documents" }),
         ).toBeVisible();
       expect(await noOverflow(page)).toBe(true);
+      if (query === "tab=runs") {
+        const wrapper = page.getByTestId("runs-region");
+        expect(
+          await wrapper.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+        ).toBe(true);
+      }
     }
   });
 });

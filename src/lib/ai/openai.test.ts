@@ -11,6 +11,11 @@ const mocks = vi.hoisted(() => ({
   serverEnv: vi.fn(),
   rpc: vi.fn(),
   insert: vi.fn(),
+  unlogged: vi.fn(),
+}));
+
+vi.mock("@/app/admin/marking/engine/store", () => ({
+  unloggedSpend: mocks.unlogged,
 }));
 
 vi.mock("server-only", () => ({}));
@@ -48,6 +53,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter");
   mocks.serverEnv.mockReturnValue({ OPENAI_API_KEY: "test-openai" });
+  mocks.unlogged.mockResolvedValue(0);
   mocks.rpc.mockResolvedValue({ data: 0, error: null });
   mocks.insert.mockResolvedValue({ error: null });
   mocks.openrouterCreate.mockResolvedValue(response);
@@ -202,4 +208,135 @@ it("fails clearly when the OpenRouter key is missing", async () => {
   ).rejects.toThrow("OPENROUTER_API_KEY is not set");
   expect(mocks.constructor).not.toHaveBeenCalled();
   expect(mocks.openrouterCreate).not.toHaveBeenCalled();
+});
+
+it("logs web evaluation calls with task eval and reports their exact cost", async () => {
+  const { callJson } = await import("./openai");
+  const onUsage = vi.fn();
+  await callJson({
+    task: "eval",
+    model: "gpt-6.1-sol",
+    schema,
+    messages,
+    onUsage,
+    fast: true,
+  });
+  expect(mocks.insert).toHaveBeenCalledWith(
+    expect.objectContaining({ task: "eval", usd: 0.006 }),
+  );
+  expect(onUsage).toHaveBeenCalledExactlyOnceWith(0.006);
+});
+it.each([80, null, NaN])(
+  "refuses web eval before the mocked provider at spend %s",
+  async (data) => {
+    mocks.rpc.mockResolvedValue({ data, error: null });
+    const { callJson } = await import("./openai");
+    await expect(
+      callJson({ task: "eval", model: "gpt-6.1-sol", schema, messages }),
+    ).rejects.toThrow();
+    expect(mocks.openaiCreate).not.toHaveBeenCalled();
+  },
+);
+it("fails the web eval if logging fails, retaining its reported cost", async () => {
+  mocks.insert.mockResolvedValue({
+    error: { message: "Mock storage failure" },
+  });
+  const { callJson } = await import("./openai");
+  const onUsage = vi.fn();
+  await expect(
+    callJson({ task: "eval", model: "gpt-6.1-sol", schema, messages, onUsage }),
+  ).rejects.toThrow("Eval usage logging failed");
+  expect(onUsage).toHaveBeenCalledExactlyOnceWith(0.006);
+});
+
+it("blocks eval on durable unlogged spend but preserves live logging failure behavior", async () => {
+  mocks.rpc.mockResolvedValue({ data: 79, error: null });
+  mocks.unlogged.mockResolvedValue(1);
+  const { callJson } = await import("./openai");
+  await expect(
+    callJson({ task: "eval", model: "gpt-6.1-sol", schema, messages }),
+  ).rejects.toThrow("AI budget reached");
+  expect(mocks.openaiCreate).not.toHaveBeenCalled();
+  mocks.insert.mockResolvedValue({ error: { message: "logging failed" } });
+  const log = vi.spyOn(console, "error").mockImplementation(() => {});
+  await expect(
+    callJson({ task: "mark", model: "gpt-6.1-sol", schema, messages }),
+  ).resolves.toEqual({ answer: "Answer" });
+  expect(mocks.unlogged).toHaveBeenCalledTimes(1);
+  log.mockRestore();
+});
+it.each([false, true])(
+  "reports unlogged cost on insert failure (thrown: %s)",
+  async (thrown) => {
+    if (thrown) mocks.insert.mockRejectedValue(new Error("logging failed"));
+    else
+      mocks.insert.mockResolvedValue({ error: { message: "logging failed" } });
+    const { callJson } = await import("./openai");
+    const onUsage = vi.fn();
+    const onUnloggedUsage = vi.fn();
+    await expect(
+      callJson({
+        task: "eval",
+        model: "gpt-6.1-sol",
+        schema,
+        messages,
+        onUsage,
+        onUnloggedUsage,
+      }),
+    ).rejects.toThrow();
+    expect(onUsage).toHaveBeenCalledWith(0.006);
+    expect(onUnloggedUsage).toHaveBeenCalledWith(0.006);
+  },
+);
+it("bounds eval provider calls with no SDK retries and a step abort signal", async () => {
+  const { callJson } = await import("./openai");
+  const controller = new AbortController();
+  await callJson({
+    task: "eval",
+    model: "gpt-6.1-sol",
+    schema,
+    messages,
+    signal: controller.signal,
+  });
+  expect(mocks.openaiCreate).toHaveBeenCalledWith(expect.anything(), {
+    timeout: 60_000,
+    maxRetries: 0,
+    signal: controller.signal,
+  });
+  controller.abort(new Error("deadline"));
+  await expect(
+    callJson({
+      task: "eval",
+      model: "gpt-6.1-sol",
+      schema,
+      messages,
+      signal: controller.signal,
+    }),
+  ).rejects.toThrow("deadline");
+  expect(mocks.openaiCreate).toHaveBeenCalledTimes(1);
+});
+
+it("times out a stalled eval usage insert and retains the unlogged cost", async () => {
+  const { callJson } = await import("./openai");
+  mocks.insert.mockReturnValue(new Promise(() => {}));
+  const onUsage = vi.fn();
+  const onUnloggedUsage = vi.fn();
+  vi.useFakeTimers();
+  try {
+    const call = callJson({
+      task: "eval",
+      model: "gpt-6.1-sol",
+      schema,
+      messages,
+      onUsage,
+      onUnloggedUsage,
+    });
+    const rejected = expect(call).rejects.toThrow("Eval I/O deadline exceeded");
+    await vi.advanceTimersByTimeAsync(20_000);
+    await rejected;
+    expect(onUsage).toHaveBeenCalledExactlyOnceWith(0.006);
+    expect(onUnloggedUsage).toHaveBeenCalledExactlyOnceWith(0.006);
+  } finally {
+    vi.useRealTimers();
+  }
 });

@@ -13,6 +13,57 @@ import { summariseRun, type OfflineEvalRun } from "./summary";
 
 afterEach(cleanup);
 
+it.each([
+  { items: 223, n: 223 },
+  { items: 250, n: 223 },
+  { items: 250, n: 0 },
+  { items: 0, n: 0 },
+])(
+  "renders scored counts consistently for $n of $items items",
+  ({ items, n }) => {
+    const row = {
+      ...summariseRun({
+        meta: {
+          stamp: "2026-10-09-0901",
+          label: "test",
+          marker: { model: "test-model" },
+        },
+        items: [],
+      }),
+      items,
+      n,
+    };
+    render(<RunsTable rows={[row]} />);
+    const table = screen.getByRole("table", { name: "Eval runs" });
+    const itemsCell = within(table).getAllByRole("cell")[4];
+    const cards = screen.getByRole("list", { name: "Eval runs" });
+    const itemsMetric = within(cards).getByText("Items").parentElement!;
+    for (const container of [itemsCell, itemsMetric]) {
+      expect(
+        within(container).getByText(String(items), { exact: true }),
+      ).toBeInTheDocument();
+      const scored = within(container).queryByText(`${n} scored`);
+      if (n === items) {
+        expect(scored).not.toBeInTheDocument();
+      } else {
+        expect(scored).toHaveClass("whitespace-nowrap", "block");
+        expect(scored).not.toHaveClass("whitespace-normal");
+        expect(scored).toHaveAttribute(
+          "title",
+          `${n} items with valid marks and expectations used for comparison metrics`,
+        );
+      }
+    }
+    for (const name of ["Date", "Model", "Thinking", "Passes"]) {
+      const header = within(table).getByRole("columnheader", { name });
+      expect(header).toHaveClass("text-left");
+      expect(within(header).getByRole("button", { name })).toHaveClass(
+        "[text-align:inherit]",
+      );
+    }
+  },
+);
+
 it("renders unrecorded thinking and sorts it last in both directions", () => {
   const evaluation: OfflineEvalRun = {
     meta: {
@@ -43,6 +94,14 @@ it("renders unrecorded thinking and sorts it last in both directions", () => {
   const sort = within(table).getByRole("button", { name: "Thinking" });
   fireEvent.click(sort);
   expect(thinkingCells()).toEqual(["high", "low", "Not recorded"]);
+  const cards = screen.getByRole("list", { name: "Eval runs" });
+  expect(
+    within(cards)
+      .getAllByRole("listitem")
+      .map(
+        (row) => row.textContent?.split("Thinking: ")[1]?.split("Passes:")[0],
+      ),
+  ).toEqual(["high", "low", "Not recorded"]);
   fireEvent.click(sort);
   expect(thinkingCells()).toEqual(["low", "high", "Not recorded"]);
 });
@@ -77,4 +136,32 @@ it("summarises every real result file without throwing and renders every run", (
       row.thinking?.split("/").join("/\u200b") ?? "Not recorded",
     );
   });
+});
+
+it("renders all eight mobile metrics and constrains the desktop table to its wrapper", () => {
+  const row = summariseRun({
+    meta: {
+      stamp: "2026-10-09-0901",
+      label: "test",
+      marker: { model: "test-model" },
+    },
+    items: [],
+  });
+  render(<RunsTable rows={[row]} />);
+  const list = screen.getByRole("list", { name: "Eval runs" });
+  for (const label of [
+    "Items",
+    "Exact %",
+    "Agree %",
+    "Mean |Δ|",
+    "Total |Δ|",
+    "Cost",
+    "Time",
+    "By",
+  ])
+    expect(within(list).getByText(label, { exact: true })).toBeInTheDocument();
+  expect(screen.getByRole("table", { name: "Eval runs" })).toHaveClass(
+    "table-fixed",
+  );
+  expect(screen.getByTestId("runs-region")).toHaveClass("min-w-0");
 });

@@ -5,22 +5,19 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { admin } from "@/utils/supabase/admin";
-import { MARKER, markWritten } from "@/lib/marking/engine";
+import { MARKER } from "@/lib/marking/engine";
 import { bandExamples } from "@/lib/marking/examples";
 import type { MarkableQuestion } from "@/lib/marking/grade";
 import { gradeMessages } from "@/lib/marking/prompts";
 import { callJson } from "../openai";
-import { evalBlocked, scoreItem } from "./metrics";
-import { JUDGE, JudgeSchema, judgeMessages, renderFeedback } from "./judge";
+import { evalBlocked } from "./metrics";
+import { JUDGE, JudgeSchema, judgeMessages } from "./judge";
+import { emptyRow, markEvalItem } from "./item";
 import a1 from "./a1-eval-set.json";
 import a1QuestionsJson from "./a1-questions.json";
 import claro from "./claro-set.json";
 import { writeResults, type Row } from "./report";
 
-const excluded: Record<string, string> = {
-  "fm-1": "studentResponse is byte-identical to fm-5 (fixture bug)",
-  "ei-4": "3.5 is an invented midpoint",
-};
 const args = process.argv.slice(2);
 const dry = args.includes("--dry-run");
 const limit = Number(
@@ -184,61 +181,19 @@ async function evaluate(item: (typeof items)[number], index: number) {
     blocked = true;
     return;
   }
-  const row: Row = {
-    id: item.id,
-    section: item.section,
-    label: item.label,
-    marks: item.q?.marks ?? null,
-    expected: item.expected,
-    mark: null,
-    band: null,
-    check: null,
-    delta: null,
-    flags: {
-      ...(item.section === "A1" && excluded[item.id]
-        ? { excluded: excluded[item.id] }
-        : {}),
-    },
-    usd: 0,
-    judgeUsd: 0,
-    seconds: 0,
-    verdict: null,
-    feedback: null,
-    error: null,
-  };
+  const row = emptyRow(item);
   rows[index] = row;
   try {
     const q = item.q;
     if (!q) throw new Error(`Missing question ${item.id}`);
-    const started = performance.now();
-    let result;
-    try {
-      result = await markWritten(q, item.answer, null, `${task}:mark`);
-    } finally {
-      row.seconds = (performance.now() - started) / 1000;
-      row.usd = await cost(`${task}:mark`);
-    }
-    row.mark = result.mark;
-    row.band = result.band;
-    row.check = result.check;
-    row.flags.validated = result.feedback.validated;
-    const feedback = renderFeedback(result.feedback);
-    // Held-out feedback quotes A1 students' answers, which stay out of git.
-    if (item.section !== "Held-out") row.feedback = feedback;
+    const feedback = await markEvalItem(
+      row,
+      q,
+      item.answer,
+      `${task}:mark`,
+      () => cost(`${task}:mark`),
+    );
     if (typeof item.expected === "number") {
-      row.score = scoreItem({
-        criteria: q.criteria,
-        marks: q.marks,
-        expected: item.expected,
-        mark: result.mark,
-      });
-      row.firstScore = scoreItem({
-        criteria: q.criteria,
-        marks: q.marks,
-        expected: item.expected,
-        mark: result.check.marks[0],
-      });
-      row.delta = row.score.delta;
       if (item.section !== "A1") return;
       if (evalBlocked(await spend())) {
         blocked = true;
@@ -260,7 +215,7 @@ async function evaluate(item: (typeof items)[number], index: number) {
       }
     } else {
       row.flags.inRange =
-        result.mark >= item.expected[0] && result.mark <= item.expected[1];
+        row.mark! >= item.expected[0] && row.mark! <= item.expected[1];
     }
   } catch (error) {
     row.error = error instanceof Error ? error.message : String(error);

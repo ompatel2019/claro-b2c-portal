@@ -1,5 +1,16 @@
 "use client";
-import { DataTable, type Column } from "@/components/data-table";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { sortRows, type Column } from "@/components/data-table";
+import type { Sorting } from "@/lib/admin";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Card,
   CardHeader,
@@ -19,13 +30,18 @@ const numberLabel = (value: number | null, percent = false) =>
 const columns: Column<RunSummary>[] = [
   {
     id: "date",
-    className: "px-1.5",
+    className: "px-1 whitespace-normal wrap-anywhere",
     header: "Date",
-    sort: (r) => r.stamp,
+    sort: (r) => r.sortStamp,
     cell: (r) => (
-      <div className="w-28 whitespace-normal">
-        <span>{runDateLabel(r.stamp)}</span>
-        <span className="text-muted-foreground mt-1 block max-w-64 text-xs wrap-anywhere whitespace-normal">
+      <div className="whitespace-normal">
+        <span>
+          {runDateLabel(r.stamp)}
+          {r.status && r.status !== "completed" && (
+            <Badge variant="outline">{r.status}</Badge>
+          )}
+        </span>
+        <span className="text-muted-foreground mt-1 block max-w-64 text-[10px] wrap-anywhere whitespace-normal">
           {r.label}
           {r.subset && <span className="ml-1 font-medium">· subset</span>}
         </span>
@@ -34,7 +50,7 @@ const columns: Column<RunSummary>[] = [
   },
   {
     id: "model",
-    className: "px-1.5",
+    className: "px-1 whitespace-normal wrap-anywhere",
     header: "Model",
     sort: (r) => r.model,
     cell: (r) => (
@@ -45,7 +61,7 @@ const columns: Column<RunSummary>[] = [
   },
   {
     id: "thinking",
-    className: "px-1.5",
+    className: "px-1 whitespace-normal wrap-anywhere",
     header: "Thinking",
     sort: (r) => r.thinking ?? null,
     cell: (r) => (
@@ -56,7 +72,7 @@ const columns: Column<RunSummary>[] = [
   },
   {
     id: "passes",
-    className: "px-1.5",
+    className: "px-1 whitespace-normal wrap-anywhere",
     header: "Passes",
     sort: (r) => r.passes,
     cell: (r) => (
@@ -65,71 +81,99 @@ const columns: Column<RunSummary>[] = [
   },
   {
     id: "items",
-    className: "text-right tabular-nums px-1.5",
+    className: "text-right tabular-nums px-1 whitespace-normal wrap-anywhere",
     header: "Items",
     sort: (r) => r.items,
     cell: (r) => (
       <span>
         {r.items}
-        <span className="text-muted-foreground block max-w-16 text-xs whitespace-normal">
-          {r.n} comparable
-        </span>
+        {r.n !== r.items && (
+          <span
+            className="text-muted-foreground block text-[10px] whitespace-nowrap"
+            title={`${r.n} items with valid marks and expectations used for comparison metrics`}
+          >
+            {r.n} scored
+          </span>
+        )}
       </span>
     ),
   },
   {
     id: "exact",
-    className: "text-right tabular-nums px-1.5",
+    className: "text-right tabular-nums px-1 whitespace-normal wrap-anywhere",
     header: "Exact %",
     sort: (r) => r.exact,
     cell: (r) => numberLabel(r.exact, true),
   },
   {
     id: "agreement",
-    className: "text-right tabular-nums px-1.5",
+    className: "text-right tabular-nums px-1 whitespace-normal wrap-anywhere",
     header: "Agree %",
     sort: (r) => r.agreement,
     cell: (r) => numberLabel(r.agreement, true),
   },
   {
     id: "mean",
-    className: "text-right tabular-nums px-1.5",
+    className: "text-right tabular-nums px-1 whitespace-normal wrap-anywhere",
     header: "Mean |Δ|",
     sort: (r) => r.meanDelta,
     cell: (r) => numberLabel(r.meanDelta),
   },
   {
     id: "total",
-    className: "text-right tabular-nums px-1.5",
+    className: "text-right tabular-nums px-1 whitespace-normal wrap-anywhere",
     header: "Total |Δ|",
     sort: (r) => r.totalDelta,
     cell: (r) => numberLabel(r.totalDelta),
   },
   {
     id: "cost",
-    className: "text-right tabular-nums px-1.5",
+    className: "text-right tabular-nums px-1 whitespace-normal wrap-anywhere",
     header: "Cost",
     sort: (r) => r.cost,
     cell: (r) => `$${r.cost.toFixed(4)}`,
   },
   {
     id: "duration",
-    className: "text-right tabular-nums px-1.5",
-    header: "Marking time",
+    className: "text-right tabular-nums px-1 whitespace-normal wrap-anywhere",
+    header: "Duration",
     sort: (r) => r.seconds,
     cell: (r) => (
-      <span title="summed per answer">{durationLabel(r.seconds)}</span>
+      <span
+        title={r.web ? "elapsed duration" : "Marking time: summed per answer"}
+      >
+        {durationLabel(r.seconds)}
+        {!r.web && (
+          <span className="text-muted-foreground block text-[10px]">
+            Marking time
+          </span>
+        )}
+      </span>
     ),
   },
   {
     id: "by",
-    className: "px-1.5",
+    className: "px-1 whitespace-normal wrap-anywhere",
     header: "By",
     sort: (r) => r.by,
     cell: (r) => r.by,
   },
 ];
 export function RunsTable({ rows }: { rows: RunSummary[] }) {
+  const [sorting, setSorting] = useState<Sorting | null>(null);
+  const sortBy = columns.find((c) => c.id === sorting?.id)?.sort;
+  const shown =
+    sorting && typeof sortBy === "function"
+      ? sortRows(rows, sortBy, sorting.dir)
+      : rows;
+  const toggle = (id: string) =>
+    setSorting((current) =>
+      current?.id !== id
+        ? { id, dir: "asc" }
+        : current.dir === "asc"
+          ? { id, dir: "desc" }
+          : null,
+    );
   return (
     <Card className="min-w-0">
       <CardHeader>
@@ -143,7 +187,82 @@ export function RunsTable({ rows }: { rows: RunSummary[] }) {
           Grade/check/reconcile thinking is shown when efforts differ.
         </CardDescription>
       </CardHeader>
-      <DataTable label="Eval runs" rows={rows} columns={columns} />
+      <div data-testid="runs-region" className="min-w-0">
+        <ul aria-label="Eval runs" className="divide-y px-4 md:hidden">
+          {shown.map((row) => (
+            <li
+              key={row.id}
+              className="min-w-0 space-y-2 py-4 text-sm wrap-anywhere"
+            >
+              {columns[0].cell(row)}
+              <div>{columns[1].cell(row)}</div>
+              <div className="text-muted-foreground flex flex-wrap gap-x-4 text-xs">
+                <span>Thinking: {row.thinking ?? "Not recorded"}</span>
+                <span>Passes: {row.passes}</span>
+              </div>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {columns.slice(4).map((column) => (
+                  <div key={column.id} className="min-w-0">
+                    <dt className="text-muted-foreground text-xs">
+                      {column.id === "duration" ? "Time" : column.header}
+                    </dt>
+                    <dd className="tabular-nums">{column.cell(row)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden md:block [&_td]:px-1 [&_th]:px-1">
+          <Table aria-label="Eval runs" className="table-fixed text-xs">
+            <colgroup>
+              {[16, 13, 9, 8, 6, 7, 7, 7, 7, 8, 7, 5].map((width, index) => (
+                <col key={index} style={{ width: `${width}%` }} />
+              ))}
+            </colgroup>
+            <TableHeader>
+              <TableRow>
+                {columns.map((column) => (
+                  <TableHead
+                    key={column.id}
+                    className={column.className}
+                    aria-sort={
+                      sorting?.id === column.id
+                        ? sorting.dir === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : undefined
+                    }
+                  >
+                    <button
+                      className="w-full [text-align:inherit] whitespace-normal text-inherit"
+                      onClick={() => toggle(column.id)}
+                    >
+                      {column.header}
+                      {sorting?.id === column.id && (
+                        <span aria-hidden="true">
+                          {sorting.dir === "asc" ? " ↑" : " ↓"}
+                        </span>
+                      )}
+                    </button>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {shown.map((row) => (
+                <TableRow key={row.id}>
+                  {columns.map((column) => (
+                    <TableCell key={column.id} className={column.className}>
+                      {column.cell(row)}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </Card>
   );
 }

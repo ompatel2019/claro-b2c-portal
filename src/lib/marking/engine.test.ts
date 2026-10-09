@@ -981,3 +981,95 @@ it("does not rescore an unfinished session", async () => {
   await rescoreSession("s");
   expect(admin().from).toHaveBeenCalledTimes(1);
 });
+
+it("web eval Single uses the selected model and high effort for one pass with task eval", async () => {
+  mockedCall.mockResolvedValue(grade);
+  const onUsage = vi.fn();
+  const result = await markWritten(q, "prices rise", null, "eval", {
+    model: "gpt-6-luna",
+    effort: "high",
+    blind: false,
+    onUsage,
+  });
+  expect(mockedCall).toHaveBeenCalledTimes(1);
+  expect(mockedCall).toHaveBeenCalledWith(
+    expect.objectContaining({
+      model: "gpt-6-luna",
+      effort: "high",
+      task: "eval",
+      onUsage,
+    }),
+  );
+  expect(result.check.marks).toEqual([4]);
+});
+it("web eval blind and reconcile passes use the selected model/effort and task eval", async () => {
+  mockedCall
+    .mockResolvedValueOnce(grade)
+    .mockResolvedValueOnce(checkGrade(1))
+    .mockResolvedValueOnce(checkGrade(4));
+  await markWritten(q, "prices rise", null, "eval", {
+    model: "gpt-6-luna",
+    effort: "high",
+    blind: true,
+  });
+  expect(mockedCall).toHaveBeenCalledTimes(3);
+  for (const [options] of mockedCall.mock.calls)
+    expect(options).toMatchObject({
+      model: "gpt-6-luna",
+      effort: "high",
+      task: "eval",
+    });
+});
+
+it.each([true, false])(
+  "settles the sibling before rejecting only for configured eval (configured: %s)",
+  async (configured) => {
+    let finish!: () => void;
+    const usage = vi.fn();
+    mockedCall
+      .mockRejectedValueOnce(new Error("first failed"))
+      .mockImplementationOnce(
+        (options) =>
+          new Promise((resolve) => {
+            finish = () => {
+              options.onUsage?.(0.02);
+              resolve(checkGrade());
+            };
+          }),
+      );
+    let settled = false;
+    const marking = markWritten(
+      q,
+      "prices rise",
+      null,
+      configured ? "eval" : undefined,
+      configured
+        ? { model: "gpt-6-luna", effort: "low", blind: true, onUsage: usage }
+        : undefined,
+    ).catch((error) => {
+      settled = true;
+      return error;
+    });
+    await vi.waitFor(() => expect(mockedCall).toHaveBeenCalledTimes(2));
+    expect(settled).toBe(!configured);
+    finish();
+    expect(await marking).toEqual(new Error("first failed"));
+    if (configured) expect(usage).toHaveBeenCalledWith(0.02);
+  },
+);
+it("stops configured eval corrections when the step signal aborts", async () => {
+  const controller = new AbortController();
+  mockedCall.mockImplementationOnce(async () => {
+    controller.abort(new Error("deadline"));
+    return { ...grade, mark: 1 };
+  });
+  await expect(
+    markWritten(q, "prices rise", null, "eval", {
+      model: "gpt-6-luna",
+      effort: "low",
+      blind: false,
+      signal: controller.signal,
+    }),
+  ).rejects.toThrow("deadline");
+  expect(mockedCall).toHaveBeenCalledTimes(1);
+});

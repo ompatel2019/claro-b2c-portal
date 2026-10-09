@@ -8,7 +8,9 @@ import type { z } from "zod";
 import { serverEnv } from "@/env/server";
 import { admin } from "@/utils/supabase/admin";
 
-import { BUDGET_USD, costUsd, type Model } from "./prices";
+import { BUDGET_USD, EVAL_BLOCK_USD, costUsd, type Model } from "./prices";
+
+import { bounded } from "./eval/deadline";
 
 let openai: OpenAI | undefined;
 let openrouter: OpenAI | undefined;
@@ -18,6 +20,9 @@ export type Message = ChatCompletionMessageParam;
 /** Structured-output chat call. Every call is costed and logged to ai_usage; refuses once the budget is spent. */
 export async function callJson<S extends z.ZodType>(opts: {
   task: string;
+  onUsage?: (usd: number) => void;
+  onUnloggedUsage?: (usd: number) => void;
+  signal?: AbortSignal;
   model: Model;
   schema: S;
   messages: Message[];
@@ -27,9 +32,29 @@ export async function callJson<S extends z.ZodType>(opts: {
   /** Priority processing: lower latency at 2x price. Used for student-facing marking. */
   fast?: boolean;
 }): Promise<z.infer<S>> {
-  const { data: spent, error } = await admin().rpc("ai_spend");
+  const spendRequest = admin().rpc("ai_spend");
+  const { data: spent, error } = await (opts.task === "eval"
+    ? bounded(spendRequest, opts.signal)
+    : spendRequest);
   if (error) throw new Error(`ai_spend failed: ${error.message}`);
-  if (Number(spent) >= BUDGET_USD) throw new Error("AI budget reached");
+  if (
+    opts.task === "eval" &&
+    (spent == null || !Number.isFinite(Number(spent)))
+  )
+    throw new Error("Cannot verify eval spend");
+  const unlogged =
+    opts.task === "eval"
+      ? await bounded(
+          (await import("@/app/admin/marking/engine/store")).unloggedSpend(),
+          opts.signal,
+        )
+      : 0;
+  opts.signal?.throwIfAborted();
+  if (
+    Number(spent) + unlogged >=
+    (opts.task === "eval" ? EVAL_BLOCK_USD : BUDGET_USD)
+  )
+    throw new Error("AI budget reached");
 
   const isAnthropic = opts.model.startsWith("anthropic/");
   let client: OpenAI;
@@ -66,21 +91,46 @@ export async function callJson<S extends z.ZodType>(opts: {
         opts.task.replace(/\W/g, "_"),
       ),
     },
-    opts.timeoutMs ? { timeout: opts.timeoutMs } : undefined,
+    opts.task === "eval"
+      ? {
+          timeout: opts.timeoutMs ?? 60_000,
+          maxRetries: 0,
+          signal: opts.signal,
+        }
+      : opts.timeoutMs
+        ? { timeout: opts.timeoutMs }
+        : undefined,
   );
   if (res.usage) {
-    const { error: logError } = await admin()
-      .from("ai_usage")
-      .insert({
-        user_id: opts.userId ?? null,
-        task: opts.task,
-        model: opts.model,
-        input_tokens: res.usage.prompt_tokens,
-        cached_tokens: res.usage.prompt_tokens_details?.cached_tokens ?? 0,
-        output_tokens: res.usage.completion_tokens,
-        usd: costUsd(opts.model, res.usage, res.service_tier === "priority"),
-      });
-    if (logError) console.error("ai_usage insert failed", logError.message);
+    const usage = res.usage;
+    const usd = costUsd(opts.model, res.usage, res.service_tier === "priority");
+    opts.onUsage?.(usd);
+    const logUsage = async () => {
+      const { error: logError } = await admin()
+        .from("ai_usage")
+        .insert({
+          user_id: opts.userId ?? null,
+          task: opts.task,
+          model: opts.model,
+          input_tokens: usage.prompt_tokens,
+          cached_tokens: usage.prompt_tokens_details?.cached_tokens ?? 0,
+          output_tokens: usage.completion_tokens,
+          usd,
+        });
+      if (logError) {
+        if (opts.task === "eval")
+          throw new Error(`Eval usage logging failed: ${logError.message}`);
+        console.error("ai_usage insert failed", logError.message);
+      }
+    };
+    if (opts.task === "eval") {
+      try {
+        await bounded(logUsage(), opts.signal);
+      } catch (error) {
+        opts.onUnloggedUsage?.(usd);
+        throw error;
+      }
+    } else await logUsage();
   }
   const choice = res.choices[0];
   const message = choice?.message;

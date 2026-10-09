@@ -3,7 +3,7 @@ import "server-only";
 import { ZodError, type z } from "zod";
 
 import { callJson, type Message } from "@/lib/ai/openai";
-import { MODELS } from "@/lib/ai/prices";
+import { MODELS, type Model } from "@/lib/ai/prices";
 import { admin } from "@/utils/supabase/admin";
 import { firstReviews, type FlashcardReview } from "@/lib/flashcards";
 import {
@@ -43,22 +43,39 @@ export async function markWritten(
   answer: string,
   userId: string | null,
   task?: string,
+  config?: {
+    model: Model;
+    effort: "low" | "medium" | "high";
+    blind: boolean;
+    onUsage?: (usd: number) => void;
+    onUnloggedUsage?: (usd: number) => void;
+    signal?: AbortSignal;
+    timeoutMs?: number;
+  },
 ) {
   async function pass<S extends z.ZodType<z.infer<typeof CheckSchema>>>(
     schema: S,
     messages: Message[],
-    effort: "low" | "medium",
+    effort: "low" | "medium" | "high",
     passTask: string,
   ) {
     const options = {
       task: task ?? passTask,
-      model: MARKER.model,
-      effort,
+      model: config?.model ?? MARKER.model,
+      effort: config?.effort ?? effort,
+      onUsage: config?.onUsage,
+      ...(config &&
+        task === "eval" && {
+          onUnloggedUsage: config.onUnloggedUsage,
+          signal: config.signal,
+          timeoutMs: config.timeoutMs ?? 60_000,
+        }),
       schema,
       fast: true,
       userId,
     };
     const call = async () => {
+      if (config && task === "eval") config.signal?.throwIfAborted();
       try {
         return await callJson<S>({ ...options, messages });
       } catch (error) {
@@ -67,6 +84,7 @@ export async function markWritten(
           task: options.task,
           paths: error.issues.map((issue) => issue.path),
         });
+        if (config && task === "eval") config.signal?.throwIfAborted();
         return callJson<S>({
           ...options,
           messages: [
@@ -104,20 +122,32 @@ export async function markWritten(
   }
 
   const examples = await bandExamples(q);
-  const [first, second] = await Promise.all([
+  const passes = [
     pass(
       GradeSchema,
       gradeMessages(q, answer, false, examples),
       MARKER.effort.grade,
       "mark_written",
     ),
-    pass(
-      CheckSchema,
-      gradeMessages(q, answer, true, examples),
-      MARKER.effort.check,
-      "check_written",
-    ),
-  ]);
+    config?.blind === false
+      ? Promise.resolve(null)
+      : pass(
+          CheckSchema,
+          gradeMessages(q, answer, true, examples),
+          MARKER.effort.check,
+          "check_written",
+        ),
+  ] as const;
+  const [first, second] =
+    config && task === "eval"
+      ? await (async () => {
+          const settled = await Promise.allSettled(passes);
+          const [first, second] = settled;
+          if (first.status === "rejected") throw first.reason;
+          if (second.status === "rejected") throw second.reason;
+          return [first.value, second.value] as const;
+        })()
+      : await Promise.all(passes);
   const agrees = (a: number, b: number) =>
     marksAgree(q.criteria, q.marks, a, b);
   const check: {
@@ -125,10 +155,10 @@ export async function markWritten(
     marks: number[];
   } = {
     status: "agreed",
-    marks: [first.mark, second.mark],
+    marks: second ? [first.mark, second.mark] : [first.mark],
   };
-  let final: typeof first | typeof second = first;
-  if (!agrees(first.mark, second.mark)) {
+  let final: typeof first | NonNullable<typeof second> = first;
+  if (second && !agrees(first.mark, second.mark)) {
     const third = await pass(
       CheckSchema,
       reconcileMessages(

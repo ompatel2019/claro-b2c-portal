@@ -12,11 +12,16 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { loadEvalRuns } from "../accuracy/eval";
-import { summariseRun } from "./summary";
+import { mergeRuns } from "./summary";
 import { loadDocs } from "./docs";
 import { Markdown } from "./markdown";
 import { EngineTabs } from "./tabs";
 import { RunsTable } from "./runs-table";
+import { loadBucketRuns } from "./store";
+import { NewRun } from "./new-run";
+import { evalRunDialogData } from "./actions";
+
+export const maxDuration = 300;
 
 function commitLabel(date: string) {
   return new Intl.DateTimeFormat("en-AU", {
@@ -32,14 +37,15 @@ export default async function EnginePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireAdmin();
-  const params = await searchParams;
+  const [params, dialogData] = await Promise.all([
+    searchParams,
+    evalRunDialogData(),
+  ]);
   const tab = params.tab === "runs" ? "runs" : "docs";
   let content;
   if (tab === "runs") {
-    const runs = await loadEvalRuns();
-    const rows = runs
-      .map((run, index) => summariseRun(run, `${run.meta.stamp}-${index}`))
-      .sort((a, b) => b.stamp.localeCompare(a.stamp));
+    const [runs, web] = await Promise.all([loadEvalRuns(), loadBucketRuns()]);
+    const rows = mergeRuns(runs, web);
     content = rows.length ? (
       <RunsTable rows={rows} />
     ) : (
@@ -109,7 +115,8 @@ export default async function EnginePage({
     <div className="min-w-0 space-y-4">
       <PageHeader
         title="Marking engine"
-        description="Read-only engine documentation and offline evaluation results."
+        description="Engine documentation and evaluation results."
+        actions={<NewRun data={dialogData} />}
       />
       <EngineTabs tab={tab} />
       {content}
