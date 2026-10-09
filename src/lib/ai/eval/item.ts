@@ -10,6 +10,7 @@ export const excluded: Record<string, string> = {
 };
 export function emptyRow(item: {
   id: string;
+  exampleId?: string;
   section: string;
   label: string;
   expected: number | number[];
@@ -17,6 +18,7 @@ export function emptyRow(item: {
 }): Row {
   return {
     id: item.id,
+    exampleId: item.exampleId ?? (item.section === "A1" ? item.id : undefined),
     section: item.section,
     label: item.label,
     marks: item.q?.marks ?? null,
@@ -62,6 +64,7 @@ export async function markEvalItem(
   row.band = result.band;
   row.check = config?.blind === false ? null : result.check;
   row.flags.validated = result.feedback.validated;
+  row.feedbackComments = result.feedback.comments;
   const feedback = renderFeedback(result.feedback);
   if (row.section !== "Held-out") row.feedback = feedback;
   if (typeof row.expected === "number") {

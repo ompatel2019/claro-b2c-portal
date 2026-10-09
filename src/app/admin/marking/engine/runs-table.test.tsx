@@ -7,10 +7,12 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { RunsTable } from "./runs-table";
 import { summariseRun, type OfflineEvalRun } from "./summary";
 
+const push = vi.hoisted(() => vi.fn());
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 afterEach(cleanup);
 
 it.each([
@@ -164,4 +166,39 @@ it("renders all eight mobile metrics and constrains the desktop table to its wra
     "table-fixed",
   );
   expect(screen.getByTestId("runs-region")).toHaveClass("min-w-0");
+});
+
+it("selects exactly two stable run ids and opens Compare", () => {
+  const base = summariseRun({
+    meta: { stamp: "2026-10-09-0901", label: "one", marker: { model: "test" } },
+    items: [],
+  });
+  render(
+    <RunsTable
+      rows={[
+        base,
+        { ...base, id: "two", label: "two" },
+        { ...base, id: "three", label: "three" },
+      ]}
+    />,
+  );
+  const table = screen.getByRole("table", { name: "Eval runs" });
+  const compare = screen.getByRole("button", { name: "Compare" });
+  expect(compare).toBeDisabled();
+  fireEvent.click(within(table).getByLabelText("Select one (2026-10-09-0901)"));
+  expect(compare).toBeDisabled();
+  fireEvent.click(within(table).getByLabelText("Select two (two)"));
+  expect(within(table).getByLabelText("Select three (three)")).toBeDisabled();
+  expect(
+    within(screen.getByRole("list", { name: "Eval runs" })).getByLabelText(
+      "Select two (two)",
+    ),
+  ).toBeChecked();
+  fireEvent.click(compare);
+  expect(push).toHaveBeenCalledWith(
+    "/admin/marking/engine?tab=runs&a=2026-10-09-0901&b=two",
+  );
+  fireEvent.click(within(table).getByLabelText("Select two (two)"));
+  expect(compare).toBeDisabled();
+  expect(within(table).getByLabelText("Select three (three)")).toBeEnabled();
 });

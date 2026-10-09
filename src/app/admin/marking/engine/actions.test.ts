@@ -177,6 +177,8 @@ it("marks exactly one item with task eval, then stores score, check, time and ac
   );
   const stored = JSON.parse(mocks.files.get(`runs/${run.id}.json`)!);
   expect(stored.items[0]).toMatchObject({
+    exampleId: a1[0].questionId,
+    feedbackComments: result.feedback.comments,
     usd: 0.02,
     mark: 2,
     score: { delta: expect.any(Number) },

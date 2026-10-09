@@ -19,6 +19,8 @@ import { EngineTabs } from "./tabs";
 import { RunsTable } from "./runs-table";
 import { loadBucketRuns } from "./store";
 import { NewRun } from "./new-run";
+import { loadComparison } from "./compare-data";
+import { CompareView } from "./compare-view";
 import { evalRunDialogData } from "./actions";
 
 export const maxDuration = 300;
@@ -37,13 +39,25 @@ export default async function EnginePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireAdmin();
-  const [params, dialogData] = await Promise.all([
-    searchParams,
-    evalRunDialogData(),
-  ]);
+  const params = await searchParams;
+  const comparing =
+    params.tab === "runs" && (params.a !== undefined || params.b !== undefined);
+  const dialogData = comparing ? null : await evalRunDialogData();
   const tab = params.tab === "runs" ? "runs" : "docs";
   let content;
-  if (tab === "runs") {
+  if (comparing) {
+    const data = await loadComparison(params.a, params.b);
+    content = data ? (
+      <CompareView data={data} />
+    ) : (
+      <div className="space-y-3">
+        <p role="alert">Choose two different known runs to compare.</p>
+        <Link href="/admin/marking/engine?tab=runs" className="underline">
+          Back to runs
+        </Link>
+      </div>
+    );
+  } else if (tab === "runs") {
     const [runs, web] = await Promise.all([loadEvalRuns(), loadBucketRuns()]);
     const rows = mergeRuns(runs, web);
     content = rows.length ? (
@@ -116,7 +130,7 @@ export default async function EnginePage({
       <PageHeader
         title="Marking engine"
         description="Engine documentation and evaluation results."
-        actions={<NewRun data={dialogData} />}
+        actions={dialogData ? <NewRun data={dialogData} /> : undefined}
       />
       <EngineTabs tab={tab} />
       {content}

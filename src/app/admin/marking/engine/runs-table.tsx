@@ -1,4 +1,6 @@
 "use client";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { sortRows, type Column } from "@/components/data-table";
@@ -160,6 +162,28 @@ const columns: Column<RunSummary>[] = [
   },
 ];
 export function RunsTable({ rows }: { rows: RunSummary[] }) {
+  const router = useRouter();
+  const [selected, setSelected] = useState<string[]>([]);
+  const selection = (row: RunSummary) => (
+    <label className="flex items-center gap-2 text-xs">
+      <input
+        type="checkbox"
+        aria-label={`Select ${row.label} (${row.id})`}
+        checked={selected.includes(row.id)}
+        disabled={selected.length === 2 && !selected.includes(row.id)}
+        onChange={() =>
+          setSelected((current) =>
+            current.includes(row.id)
+              ? current.filter((id) => id !== row.id)
+              : current.length < 2
+                ? [...current, row.id]
+                : current,
+          )
+        }
+      />
+      <span>Select</span>
+    </label>
+  );
   const [sorting, setSorting] = useState<Sorting | null>(null);
   const sortBy = columns.find((c) => c.id === sorting?.id)?.sort;
   const shown =
@@ -186,6 +210,19 @@ export function RunsTable({ rows }: { rows: RunSummary[] }) {
           time is summed per answer across 6 concurrent workers.
           Grade/check/reconcile thinking is shown when efforts differ.
         </CardDescription>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm">Select two runs ({selected.length}/2)</span>
+          <Button
+            disabled={selected.length !== 2}
+            onClick={() =>
+              router.push(
+                `/admin/marking/engine?tab=runs&a=${encodeURIComponent(selected[0])}&b=${encodeURIComponent(selected[1])}`,
+              )
+            }
+          >
+            Compare
+          </Button>
+        </div>
       </CardHeader>
       <div data-testid="runs-region" className="min-w-0">
         <ul aria-label="Eval runs" className="divide-y px-4 md:hidden">
@@ -194,6 +231,7 @@ export function RunsTable({ rows }: { rows: RunSummary[] }) {
               key={row.id}
               className="min-w-0 space-y-2 py-4 text-sm wrap-anywhere"
             >
+              {selection(row)}
               {columns[0].cell(row)}
               <div>{columns[1].cell(row)}</div>
               <div className="text-muted-foreground flex flex-wrap gap-x-4 text-xs">
@@ -254,6 +292,7 @@ export function RunsTable({ rows }: { rows: RunSummary[] }) {
                 <TableRow key={row.id}>
                   {columns.map((column) => (
                     <TableCell key={column.id} className={column.className}>
+                      {column.id === "date" && selection(row)}
                       {column.cell(row)}
                     </TableCell>
                   ))}

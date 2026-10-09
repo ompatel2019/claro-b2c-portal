@@ -103,7 +103,72 @@ test.describe("admin marking engine", () => {
     await expect(dialog).toContainText("Remaining budget:");
     await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect(dialog).not.toBeVisible();
-    await expect(page.locator("#main")).not.toContainText("Compare");
+    await expect(
+      page.getByRole("button", { name: "Compare", exact: true }),
+    ).toBeDisabled();
+  });
+  test("compares two saved CLI runs without starting a run", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await signInAdmin(page);
+    await page
+      .context()
+      .addCookies([{ name: "sidebar_state", value: "true", url: page.url() }]);
+    await page.goto("/admin/marking/engine?tab=runs");
+    const runs = page.getByRole("table", { name: "Eval runs" });
+    await runs
+      .getByRole("checkbox", { name: /^Select sonnet-5\.5-shipped-chain / })
+      .check();
+    await runs
+      .getByRole("checkbox", { name: /^Select anchor-floor-ceiling / })
+      .check();
+    await page.getByRole("button", { name: "Compare", exact: true }).click();
+    await expect(page).toHaveURL(
+      /tab=runs&a=2026-10-09-1415&b=2026-10-09-1358/,
+    );
+    await expect(
+      page.getByText(/Legacy repeated answers are compared by occurrence/),
+    ).toBeVisible();
+    const table = page.getByRole("table", { name: "Compared items" });
+    await expect(table).toBeVisible();
+    const allRows = await table.getByRole("row").count();
+    expect(allRows).toBeGreaterThan(1);
+    const filter = page.getByLabel("Only rows where runs differ");
+    await filter.check();
+    expect(await table.getByRole("row").count()).toBeLessThan(allRows);
+    await table
+      .getByRole("button", { name: /^Expand / })
+      .first()
+      .click();
+    await expect(
+      table.getByRole("heading", { name: "Run A feedback" }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole("heading", { name: "Run B feedback" }),
+    ).toBeVisible();
+    expect(await noOverflow(page)).toBe(true);
+    expect(
+      await page
+        .getByTestId("compare-region")
+        .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    ).toBe(true);
+    await page.setViewportSize({ width: 400, height: 844 });
+    const cards = page.getByRole("list", { name: "Compared items" });
+    await expect(cards).toBeVisible();
+    await expect(
+      cards.getByRole("heading", { name: "Run A feedback" }),
+    ).toBeVisible();
+    await expect(
+      cards.getByRole("heading", { name: "Run B feedback" }),
+    ).toBeVisible();
+    expect(await noOverflow(page)).toBe(true);
+    await filter.uncheck();
+    expect(await cards.getByRole("listitem").count()).toBe(allRows - 1);
+    await page.getByRole("link", { name: "Back to runs" }).click();
+    await expect(page).toHaveURL(/\?tab=runs$/);
+    await expect(page.getByRole("list", { name: "Eval runs" })).toBeVisible();
+    expect(await noOverflow(page)).toBe(true);
   });
   test("docs and runs fit a 400px phone", async ({ page }) => {
     await page.setViewportSize({ width: 400, height: 844 });

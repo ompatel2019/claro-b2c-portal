@@ -87,6 +87,7 @@ beforeEach(() => {
             : table === "marking_examples"
               ? [
                   {
+                    id: "stable-held-id",
                     question_id: "a1-m2-21a",
                     answer_text: "x",
                     tutor_mark: "2",
@@ -171,6 +172,8 @@ it("--items marks only the selected position and records it in the meta", async 
   expect(rows[0]).toMatchObject({
     id: "a1-m2-21a",
     section: "Held-out",
+    exampleId: "stable-held-id",
+    feedbackComments: feedback.comments,
     expected: 2,
     mark: 3,
     error: null,
@@ -225,6 +228,12 @@ it("costs each item by its own eval task, judges only A1 and clamps the judge sc
     }),
   );
   const [, rows] = mocks.report.mock.calls[0];
+  expect(rows.map((row: { exampleId: string }) => row.exampleId)).toEqual([
+    a1[0].questionId,
+    "stable-held-id",
+    `claro:0:${claro[0].label}`,
+  ]);
+  expect(rows[0].feedbackComments).toEqual(feedback.comments);
   expect(rows[0].feedback).toContain(
     '1. [Strength · Analysis] "trade" — Clear',
   );
@@ -245,6 +254,8 @@ it("costs each item by its own eval task, judges only A1 and clamps the judge sc
   expect(rows[0].firstScore.within1).toBe(Math.abs(1 - rows[0].expected) <= 1);
   expect(rows[1]).toMatchObject({
     section: "Held-out",
+    exampleId: "stable-held-id",
+    feedbackComments: feedback.comments,
     expected: 2,
     feedback: null,
     score: { delta: 1, exact: false, band: false },

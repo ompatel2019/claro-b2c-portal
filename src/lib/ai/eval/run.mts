@@ -74,7 +74,7 @@ const checks = claro.slice(0, limit);
 // Held-out: A1 mock-exam test rows (the A1 20 eval answers are also split 'test' and stay in their own section).
 const { data: heldOut } = await db
   .from("marking_examples")
-  .select("question_id, answer_text, tutor_mark")
+  .select("id, question_id, answer_text, tutor_mark")
   .eq("split", "test")
   .not(
     "question_id",
@@ -95,6 +95,7 @@ const { data: questions } = await db
 const allItems = [
   ...a1.slice(0, limit).map((c) => ({
     id: c.questionId,
+    exampleId: c.questionId,
     section: "A1",
     q: a1Questions.find((q) => q.id === c.questionId),
     answer: c.studentResponse,
@@ -104,6 +105,7 @@ const allItems = [
   })),
   ...held.map((h) => ({
     id: h.question_id,
+    exampleId: String(h.id),
     section: "Held-out",
     q: (questions as MarkableQuestion[]).find((q) => q.id === h.question_id),
     answer: h.answer_text,
@@ -111,8 +113,9 @@ const allItems = [
     critique: "",
     label: "",
   })),
-  ...checks.map((c) => ({
+  ...checks.map((c, index) => ({
     id: c.question_id,
+    exampleId: `claro:${index}:${c.label}`,
     section: "Claro",
     q: (questions as MarkableQuestion[]).find((q) => q.id === c.question_id),
     answer: c.answer,

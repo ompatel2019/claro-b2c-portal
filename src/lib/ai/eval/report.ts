@@ -6,6 +6,10 @@ import { type scoreItem, summarise } from "./metrics";
 
 export type Row = {
   id: string;
+  exampleId?: string;
+  feedbackComments?: Awaited<
+    ReturnType<typeof markWritten>
+  >["feedback"]["comments"];
   section: string;
   label: string;
   marks: number | null;

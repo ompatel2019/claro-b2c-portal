@@ -7,6 +7,7 @@ import {
 export type OfflineEvalRun = {
   meta: {
     stamp: string;
+    id?: string;
     startedAt?: string;
     updatedAt?: string;
     finishedAt?: string;
@@ -143,5 +144,5 @@ export function mergeRuns(
 ) {
   return [...cli, ...web]
     .sort((a, b) => runSortStamp(b).localeCompare(runSortStamp(a)))
-    .map((r, i) => summariseRun(r, `${r.meta.stamp}-${i}`, now));
+    .map((r) => summariseRun(r, r.meta.id ?? r.meta.stamp, now));
 }
