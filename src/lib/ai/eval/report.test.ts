@@ -77,6 +77,18 @@ it("excludes fixture bugs and failures from headline metrics, but reports their 
       },
       {
         ...row,
+        id: "a1-m2-21a",
+        section: "Held-out",
+        expected: 2,
+        mark: 1,
+        usd: 0,
+        judgeUsd: 0,
+        verdict: null,
+        check: { status: "agreed", marks: [1, 1] },
+        score: { delta: -1, exact: false, within1: true, band: false },
+      },
+      {
+        ...row,
         id: "claro",
         section: "Claro",
         label: "Short | answer",
@@ -104,9 +116,21 @@ it("excludes fixture bugs and failures from headline metrics, but reports their 
     judgeMean: 9,
     usdPerAnswer: 0.01,
   });
-  expect(result.items).toHaveLength(5);
+  expect(result.heldOut).toMatchObject({
+    n: 1,
+    exact: 0,
+    within1: 1,
+    band: 0,
+    meanSigned: -1,
+    judgeMean: null,
+    judgeUsd: 0,
+    blindAgreement: 1,
+  });
+  expect(result.items).toHaveLength(6);
   const markdown = String(calls[1][1]);
   expect(markdown).toContain("Blind-check agreement");
+  expect(markdown).toContain("## Held-out A1 mock answers");
+  expect(markdown).toContain("| 1 | 0.0% | 100.0% | 0.0% | -1.00 |");
   expect(markdown).toContain("First pass only | 0.0% | 0.0% | 0.0%");
   expect(markdown).toContain("2nd pass 1·3·3");
   expect(markdown).toContain("review 3·1·0");

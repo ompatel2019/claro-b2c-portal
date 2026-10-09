@@ -70,16 +70,27 @@ beforeEach(() => {
       }),
       in: vi.fn(() => query),
       eq: vi.fn(() => query),
-      gt: vi.fn(() => query),
+      not: vi.fn(() => query),
       order: vi.fn(() => query),
       limit: vi.fn(() => query),
       throwOnError: vi.fn(async () => ({
         data:
           table === "questions"
-            ? [{ ...questions[0], id: claro[0].question_id }]
-            : selected === "id"
-              ? [{ id: 10 }]
-              : [{ usd: 0.02 }],
+            ? [
+                { ...questions[0], id: claro[0].question_id },
+                { ...questions[0], id: "a1-m2-21a" },
+              ]
+            : table === "marking_examples"
+              ? [
+                  {
+                    question_id: "a1-m2-21a",
+                    answer_text: "x",
+                    tutor_mark: "2",
+                  },
+                ]
+              : selected === "usd"
+                ? [{ usd: 0.02 }]
+                : [],
       })),
     };
     return query;
@@ -110,10 +121,14 @@ it("dry-run renders exact grader and judge messages without marking, judging or 
   expect(mocks.mark).not.toHaveBeenCalled();
   expect(mocks.judge).not.toHaveBeenCalled();
   expect(mocks.report).not.toHaveBeenCalled();
-  expect(mocks.from.mock.calls.map(([table]) => table)).toEqual(["questions"]);
+  expect(mocks.from.mock.calls.map(([table]) => table)).toEqual([
+    "marking_examples",
+    "questions",
+  ]);
   const [path, text] = mocks.write.mock.calls[0];
   expect(path).toMatch(/eval-runs\/\d{4}-\d{2}-\d{2}-\d{4}-dry-run.md$/);
   expect(text).toContain("### Grader messages");
+  expect(text).toContain("## Held-out: a1-m2-21a");
   expect(text).toContain("### Judge messages");
   expect(text).toContain("[Placeholder: rendered student-facing feedback]");
   expect(text).toContain("KARAN'S CRITIQUE OF THE EARLIER AI OUTPUT");
@@ -127,23 +142,24 @@ it("refuses at $80 before loading questions or making any calls", async () => {
   expect(mocks.judge).not.toHaveBeenCalled();
 });
 
-it("runs sequentially with eval labels, separate costs and a clamped judge score", async () => {
+it("costs each item by its own eval task, judges only A1 and clamps the judge score", async () => {
   await run();
-  expect(mocks.mark).toHaveBeenCalledTimes(2);
-  for (const call of mocks.mark.mock.calls)
-    expect(call.slice(2)).toEqual([null, "eval"]);
+  expect(mocks.mark).toHaveBeenCalledTimes(3);
+  expect(mocks.mark.mock.calls.map((call) => call.slice(2))).toEqual(
+    [0, 1, 2].map((i) => [
+      null,
+      expect.stringMatching(
+        new RegExp(`^eval:\\d{4}-\\d{2}-\\d{2}-\\d{4}:${i}:mark$`),
+      ),
+    ]),
+  );
+  expect(mocks.judge).toHaveBeenCalledTimes(1);
   expect(mocks.judge).toHaveBeenCalledWith(
     expect.objectContaining({
-      task: "eval",
+      task: expect.stringMatching(/:0:judge$/),
       model: "gpt-6-astra",
       effort: "low",
     }),
-  );
-  expect(mocks.mark.mock.invocationCallOrder[0]).toBeLessThan(
-    mocks.judge.mock.invocationCallOrder[0],
-  );
-  expect(mocks.judge.mock.invocationCallOrder[0]).toBeLessThan(
-    mocks.mark.mock.invocationCallOrder[1],
   );
   const [, rows] = mocks.report.mock.calls[0];
   expect(rows[0].feedback).toContain(
@@ -165,6 +181,14 @@ it("runs sequentially with eval labels, separate costs and a clamped judge score
   expect(rows[0].firstScore.exact).toBe(rows[0].expected === 1);
   expect(rows[0].firstScore.within1).toBe(Math.abs(1 - rows[0].expected) <= 1);
   expect(rows[1]).toMatchObject({
+    section: "Held-out",
+    expected: 2,
+    score: { delta: 1, exact: false, band: false },
+    judgeUsd: 0,
+    verdict: null,
+  });
+  expect(rows[2]).toMatchObject({
+    section: "Claro",
     check,
     usd: 0.02,
     judgeUsd: 0,

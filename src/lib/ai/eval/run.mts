@@ -62,12 +62,26 @@ if (!dry && evalBlocked(spentBefore)) {
 }
 const a1Questions = a1QuestionsJson as MarkableQuestion[];
 const checks = claro.slice(0, limit);
+// Held-out: A1 mock-exam test rows (the A1 20 eval answers are also split 'test' and stay in their own section).
+const { data: heldOut } = await db
+  .from("marking_examples")
+  .select("question_id, answer_text, tutor_mark")
+  .eq("split", "test")
+  .not(
+    "question_id",
+    "in",
+    `(${a1Questions.map((q) => `a1-${q.id}`).join(",")})`,
+  )
+  .order("question_id")
+  .order("source_hash")
+  .throwOnError();
+const held = (heldOut ?? []).slice(0, limit);
 const { data: questions } = await db
   .from("questions")
   .select(
     "id,type,marks,stem,stimulus,criteria,guideline_notes,sample_answer,source",
   )
-  .in("id", [...new Set(checks.map((c) => c.question_id))])
+  .in("id", [...new Set([...checks, ...held].map((c) => c.question_id))])
   .throwOnError();
 const items = [
   ...a1.slice(0, limit).map((c) => ({
@@ -77,6 +91,15 @@ const items = [
     answer: c.studentResponse,
     expected: c.karanExpectedMark as number | number[],
     critique: c.karanFeedback,
+    label: "",
+  })),
+  ...held.map((h) => ({
+    id: h.question_id,
+    section: "Held-out",
+    q: (questions as MarkableQuestion[]).find((q) => q.id === h.question_id),
+    answer: h.answer_text,
+    expected: Number(h.tutor_mark) as number | number[],
+    critique: "",
     label: "",
   })),
   ...checks.map((c) => ({
@@ -108,33 +131,32 @@ if (dry) {
   );
   process.exit(0);
 }
-async function usageId() {
-  const { data } = await db
-    .from("ai_usage")
-    .select("id")
-    .order("id", { ascending: false })
-    .limit(1)
-    .throwOnError();
-  return data?.[0]?.id ?? 0;
-}
-async function costSince(id: number) {
+// Items run in parallel, so each call is logged under its own task and costed by it.
+async function cost(task: string) {
   const { data } = await db
     .from("ai_usage")
     .select("usd")
-    .eq("task", "eval")
-    .gt("id", id)
+    .eq("task", task)
     .throwOnError();
   return (data ?? []).reduce((total, r) => total + Number(r.usd), 0);
 }
 const rows: Row[] = [];
 let blocked = false;
-for (const item of items) {
+let next = 0;
+async function worker() {
+  while (!blocked && next < items.length) {
+    const index = next++;
+    await evaluate(items[index], index);
+  }
+}
+async function evaluate(item: (typeof items)[number], index: number) {
+  const task = `eval:${stamp}:${index}`;
   if (evalBlocked(await spend())) {
     console.error(
       "Eval refused: total AI spend has reached the $80 eval limit. Saving completed items.",
     );
     blocked = true;
-    break;
+    return;
   }
   const row: Row = {
     id: item.id,
@@ -158,18 +180,17 @@ for (const item of items) {
     feedback: null,
     error: null,
   };
-  rows.push(row);
+  rows[index] = row;
   try {
     const q = item.q;
     if (!q) throw new Error(`Missing question ${item.id}`);
-    const before = await usageId();
     const started = performance.now();
     let result;
     try {
-      result = await markWritten(q, item.answer, null, "eval");
+      result = await markWritten(q, item.answer, null, `${task}:mark`);
     } finally {
       row.seconds = (performance.now() - started) / 1000;
-      row.usd = await costSince(before);
+      row.usd = await cost(`${task}:mark`);
     }
     row.mark = result.mark;
     row.band = result.band;
@@ -190,24 +211,24 @@ for (const item of items) {
         mark: result.check.marks[0],
       });
       row.delta = row.score.delta;
+      if (item.section !== "A1") return;
       if (evalBlocked(await spend())) {
         blocked = true;
         throw new Error(
           "Eval refused before judge: total AI spend has reached the $80 eval limit.",
         );
       }
-      const judgeBefore = await usageId();
       try {
         row.verdict = await callJson({
           ...JUDGE,
-          task: "eval",
+          task: `${task}:judge`,
           schema: JudgeSchema,
           messages: judgeMessages(q, item.answer, row.feedback, item.critique),
         });
         row.verdict.score = Math.max(1, Math.min(10, row.verdict.score));
         row.flags.lowConfidence = row.verdict.lowConfidence;
       } finally {
-        row.judgeUsd = await costSince(judgeBefore);
+        row.judgeUsd = await cost(`${task}:judge`);
       }
     } else {
       row.flags.inRange =
@@ -217,8 +238,8 @@ for (const item of items) {
     row.error = error instanceof Error ? error.message : String(error);
     console.error(`${item.id}: ${row.error}`);
   }
-  if (blocked) break;
 }
+await Promise.all(Array.from({ length: 6 }, worker));
 const spentAfter = await spend();
 const meta = {
   stamp,
@@ -240,5 +261,8 @@ const meta = {
   spentAfter,
   blocked,
 };
-writeResults(meta, rows);
+writeResults(
+  meta,
+  rows.filter((r) => r),
+);
 if (blocked) process.exitCode = 1;

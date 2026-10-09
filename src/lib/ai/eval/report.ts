@@ -45,32 +45,40 @@ export function writeResults(
   rows: Row[],
 ) {
   const out = "/workspace/claro/eval-runs";
-  const a1Rows = rows.filter((r) => r.section === "A1" && !r.flags.excluded);
-  const scored = a1Rows.flatMap((r) =>
-    !r.error && r.score ? [{ ...r, score: r.score }] : [],
-  );
-  const marked = a1Rows.filter((r) => r.mark !== null);
-  const headline = {
-    ...summarise(scored),
-    blindAgreement: marked.length
-      ? marked.filter((r) => r.check?.status === "agreed").length /
-        marked.length
-      : null,
-    secondPass: marked.filter((r) => r.check?.status === "second_pass").length,
-    inReview: marked.filter((r) => r.check?.status === "in_review").length,
-    firstPass: summarise(
-      scored.flatMap((r) =>
-        r.firstScore ? [{ ...r, score: r.firstScore }] : [],
+  const summary = (section: string) => {
+    const sectionRows = rows.filter(
+      (r) => r.section === section && !r.flags.excluded,
+    );
+    const scored = sectionRows.flatMap((r) =>
+      !r.error && r.score ? [{ ...r, score: r.score }] : [],
+    );
+    const marked = sectionRows.filter((r) => r.mark !== null);
+    return {
+      ...summarise(scored),
+      judgeUsd: sectionRows.reduce((sum, r) => sum + r.judgeUsd, 0),
+      blindAgreement: marked.length
+        ? marked.filter((r) => r.check?.status === "agreed").length /
+          marked.length
+        : null,
+      secondPass: marked.filter((r) => r.check?.status === "second_pass")
+        .length,
+      inReview: marked.filter((r) => r.check?.status === "in_review").length,
+      firstPass: summarise(
+        scored.flatMap((r) =>
+          r.firstScore ? [{ ...r, score: r.firstScore }] : [],
+        ),
       ),
-    ),
+    };
   };
+  const headline = summary("A1");
+  const heldOut = summary("Held-out");
   const claroRows = rows.filter((r) => r.section === "Claro");
   const successfulChecks = claroRows.filter((r) => !r.error && r.mark !== null);
   const results = new URL("./results/", import.meta.url);
   mkdirSync(results, { recursive: true });
   writeFileSync(
     new URL(`${meta.stamp}.json`, results),
-    JSON.stringify({ meta, headline, items: rows }, null, 2) + "\n",
+    JSON.stringify({ meta, headline, heldOut, items: rows }, null, 2) + "\n",
   );
   const fmt = (n: number | null, digits = 2) =>
     n === null ? "—" : n.toFixed(digits);
@@ -90,44 +98,57 @@ export function writeResults(
       )
       .join("\n");
   const judgeUsd = rows.reduce((sum, r) => sum + r.judgeUsd, 0);
-  const head = table(
-    [
-      "n",
-      "Exact",
-      "Within-1",
-      "Band",
-      "Mean signed (+ = lenient)",
-      "Mean |Δ|",
-      "Pros kept",
-      "Cons fixed",
-      "Judge mean",
-      "Marking $/answer",
-      "Judge $ total",
-      "s/answer",
-      "Blind-check agreement",
-      "second_pass",
-      "in_review",
-    ],
+  const headTable = (h: typeof headline) =>
+    table(
+      [
+        "n",
+        "Exact",
+        "Within-1",
+        "Band",
+        "Mean signed (+ = lenient)",
+        "Mean |Δ|",
+        "Pros kept",
+        "Cons fixed",
+        "Judge mean",
+        "Marking $/answer",
+        "Judge $ total",
+        "s/answer",
+        "Blind-check agreement",
+        "second_pass",
+        "in_review",
+      ],
+      [
+        [
+          h.n,
+          pct(h.exact),
+          pct(h.within1),
+          pct(h.band),
+          fmt(h.meanSigned),
+          fmt(h.meanAbs),
+          pct(h.prosKept),
+          pct(h.consFixed),
+          fmt(h.judgeMean),
+          fmt(h.usdPerAnswer, 4),
+          fmt(h.judgeUsd, 4),
+          fmt(h.secondsPerAnswer),
+          pct(h.blindAgreement),
+          h.secondPass,
+          h.inReview,
+        ],
+      ],
+    );
+  const head = headTable(headline);
+  const heldHead = `${headTable(heldOut)}\n\n${table(
+    ["Marking", "Exact", "Within-1", "Band"],
     [
       [
-        headline.n,
-        pct(headline.exact),
-        pct(headline.within1),
-        pct(headline.band),
-        fmt(headline.meanSigned),
-        fmt(headline.meanAbs),
-        pct(headline.prosKept),
-        pct(headline.consFixed),
-        fmt(headline.judgeMean),
-        fmt(headline.usdPerAnswer, 4),
-        fmt(judgeUsd, 4),
-        fmt(headline.secondsPerAnswer),
-        pct(headline.blindAgreement),
-        headline.secondPass,
-        headline.inReview,
+        "First pass only",
+        pct(heldOut.firstPass.exact),
+        pct(heldOut.firstPass.within1),
+        pct(heldOut.firstPass.band),
       ],
     ],
-  );
+  )}`;
   const checksSummary = `${successfulChecks.filter((r) => r.flags.inRange).length}/${successfulChecks.length} in range; ${claroRows.filter((r) => r.error).length} errors. $/answer: ${fmt(successfulChecks.length ? successfulChecks.reduce((s, r) => s + r.usd, 0) / successfulChecks.length : null, 4)}; s/answer: ${fmt(successfulChecks.length ? successfulChecks.reduce((s, r) => s + r.seconds, 0) / successfulChecks.length : null)}.`;
   const ratio = (values: boolean[] | undefined) =>
     values ? `${values.filter(Boolean).length}/${values.length}` : "—";
@@ -153,6 +174,8 @@ export function writeResults(
       "## A1 headline",
       head,
       firstPass,
+      "## Held-out A1 mock answers (marking_examples split test; no judge, no tutor critique)",
+      heldOut.n ? heldHead : "Not run.",
       "## Excluded",
       table(
         ["Question", "Reason", "Karan", "Mark", "Δ", "Band", "Judge", "Error"],
@@ -236,6 +259,6 @@ export function writeResults(
     ].join("\n\n") + "\n";
   writeFileSync(`${out}/${meta.stamp}.md`, markdown);
   console.log(
-    `A1 headline\n${head}\n\n${firstPass}\n\nClaro: ${checksSummary}\n${out}/${meta.stamp}.md`,
+    `A1 headline\n${head}\n\n${firstPass}\n\nHeld-out\n${heldOut.n ? heldHead : "Not run."}\n\nClaro: ${checksSummary}\n${out}/${meta.stamp}.md`,
   );
 }
