@@ -367,6 +367,39 @@ it("prevents marking multiple choice before finishing", async () => {
   expect(markAttempt).not.toHaveBeenCalled();
   expect(rescoreSession).not.toHaveBeenCalled();
 });
+it("check mode marks multiple choice early and returns key and explanation", async () => {
+  client([
+    {
+      session_id: sessionId,
+      question_id: "q1",
+      session: { finished_at: null, config: { feedback: "each" } },
+      question: { type: "mcq" },
+    },
+  ]);
+  vi.mocked(markAttempt).mockResolvedValue({
+    mark: 0,
+    max_marks: 1,
+    band: null,
+    feedback: { correct_index: 2, chosen_index: 1 },
+    status: "marked",
+  } as never);
+  const chain = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: { explanation: "Because C." } }),
+  };
+  vi.mocked(admin().from).mockReturnValue(chain as never);
+  const response = await mark(request(), ctx);
+  expect(await response.json()).toMatchObject({
+    mark: 0,
+    correct_index: 2,
+    explanation: "Because C.",
+  });
+  expect(chain.eq).toHaveBeenCalledWith("id", "q1");
+  // Deterministic: no AI rate limit, and no rescore before finish.
+  expect(assertStudentAiRateLimit).not.toHaveBeenCalled();
+  expect(rescoreSession).not.toHaveBeenCalled();
+});
 it("rescores a finished session after a retry", async () => {
   client([
     {

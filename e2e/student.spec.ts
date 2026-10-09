@@ -65,9 +65,9 @@ test.describe("Student practice", () => {
       .getByRole("button", { name: "Save and exit", exact: true })
       .click();
     await expect(page).toHaveURL(/\/$/);
-    await page.locator(`a[href="/practice/${id}"]`).click();
-    await expect(page).toHaveURL(new RegExp(`/practice/${id}$`));
-    await expect(page.getByText(/Question 2 of/)).toBeVisible();
+    await page.locator(`a[href="/student/sprint/${id}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/student/sprint/${id}$`));
+    await expect(page.getByText(/^Q 2 of \d+$/)).toBeVisible();
     await page.getByRole("button", { name: "Previous question" }).click();
     await expect(page.getByRole("radio", { name: /^Option A:/ })).toBeChecked();
   });
@@ -77,7 +77,9 @@ test.describe("Student practice", () => {
     await page.goto("/activity");
     await page.getByRole("combobox", { name: /^Mode/ }).selectOption("mcq");
     await expect(page).toHaveURL(/mode=mcq/);
-    await page.locator(`a[href="/practice/${finishedId}/results"]`).click();
+    await page
+      .locator(`a[href="/student/sprint/${finishedId}/results"]`)
+      .click();
     await expect(
       page.getByRole("heading", { name: "Your results." }),
     ).toBeVisible();

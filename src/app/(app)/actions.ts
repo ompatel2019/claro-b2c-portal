@@ -58,7 +58,7 @@ export async function startSprint(
           ? "Check your sprint settings."
           : "Try again.",
     };
-  redirect(`/practice/${data}`);
+  redirect(`/student/sprint/${data}`);
 }
 export async function saveProfile(
   _: FormState,

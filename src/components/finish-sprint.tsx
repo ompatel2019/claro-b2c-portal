@@ -10,7 +10,7 @@ export function FinishSprint({ id }: { id: string }) {
     setBusy(true);
     setError("");
     const res = await fetch(`/api/sessions/${id}/finish`, { method: "POST" });
-    if (res.ok) return window.location.assign(`/practice/${id}/results`);
+    if (res.ok) return window.location.assign(`/student/sprint/${id}/results`);
     setBusy(false);
     setError("Couldn’t finish. Try again.");
   }

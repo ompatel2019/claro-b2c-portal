@@ -7,6 +7,7 @@ import {
   assertStudentAiRateLimit,
   rateLimitedResponse,
 } from "@/lib/ai/rate-limit";
+import { admin } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 export const maxDuration = 240;
@@ -24,7 +25,7 @@ export async function POST(
   const { data: attempt } = await supabase
     .from("attempts")
     .select(
-      "session_id, session:sessions(finished_at), question:questions(type)",
+      "session_id, question_id, session:sessions(finished_at, config), question:questions(type)",
     )
     .eq("id", id)
     .eq("user_id", user.id)
@@ -33,26 +34,45 @@ export async function POST(
     return Response.json({ error: "Attempt not found" }, { status: 404 });
   // Embedded to-one relations; typed loosely without generated DB types.
   const { session, question } = attempt as unknown as {
-    session: { finished_at: string | null };
+    session: {
+      finished_at: string | null;
+      config: { feedback?: string } | null;
+    };
     question: { type: string };
   };
   const finished = Boolean(session.finished_at);
-  if (question.type === "mcq" && !finished)
+  // Check-as-you-go sprints (§3.3) mark and reveal one answer before finish.
+  const checkMode = !finished && session.config?.feedback === "each";
+  if (question.type === "mcq" && !finished && !checkMode)
     return Response.json(
       { error: "Multiple-choice answers are marked when you finish" },
       { status: 409 },
     );
-  const limited = await assertStudentAiRateLimit({ userId: user.id });
-  if (!limited.ok) return rateLimitedResponse(limited);
+  if (question.type !== "mcq") {
+    const limited = await assertStudentAiRateLimit({ userId: user.id });
+    if (!limited.ok) return rateLimitedResponse(limited);
+  }
   try {
     const { mark, max_marks, band, feedback, status } = await markAttempt(id);
     if (finished) await rescoreSession(attempt.session_id);
+    // The answer is locked now, so the explanation can be shown with the key.
+    const explanation =
+      checkMode && question.type === "mcq"
+        ? (
+            await admin()
+              .from("questions")
+              .select("explanation")
+              .eq("id", attempt.question_id)
+              .single()
+          ).data?.explanation
+        : null;
     return Response.json({
       mark,
       max_marks,
       band,
       feedback,
       status,
+      ...(explanation ? { explanation } : {}),
       ...(feedback?.correct_index != null
         ? { correct_index: feedback.correct_index }
         : {}),

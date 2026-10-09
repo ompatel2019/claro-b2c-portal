@@ -52,7 +52,7 @@ export default async function StudentDetail({
             const href =
               s.kind === "flashcards"
                 ? `/flashcards/${s.id}${s.finished_at ? "/results" : ""}`
-                : `/practice/${s.id}${s.finished_at ? "/results" : ""}`;
+                : `/student/sprint/${s.id}${s.finished_at ? "/results" : ""}`;
             const cfg =
               s.config &&
               typeof s.config === "object" &&

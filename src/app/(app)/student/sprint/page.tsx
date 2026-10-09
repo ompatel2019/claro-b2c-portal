@@ -62,7 +62,7 @@ export default async function SprintPage({
             <div className="flex gap-2">
               <Link
                 className={buttonVariants({ size: "sm" })}
-                href={`/practice/${unfinished.id}`}
+                href={`/student/sprint/${unfinished.id}`}
               >
                 Continue
               </Link>

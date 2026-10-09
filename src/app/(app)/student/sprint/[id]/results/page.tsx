@@ -28,7 +28,7 @@ export default async function Results({
 }) {
   const { id } = await params;
   const { session: s } = await loadSprint(id);
-  if (!s.finished_at) redirect(`/practice/${id}`);
+  if (!s.finished_at) redirect(`/student/sprint/${id}`);
   const db = await createClient();
   const [topics, review] = await Promise.all([
     db.from("topics").select("id,parent_id,name,sort"),

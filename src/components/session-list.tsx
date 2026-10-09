@@ -33,7 +33,7 @@ export function SessionList({
             <Link
               prefetch={false}
               className="hover:bg-surface flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 py-3"
-              href={`/${s.kind === "flashcards" ? "flashcards" : "practice"}/${s.id}${s.finished_at ? "/results" : ""}`}
+              href={`/${s.kind === "flashcards" ? "flashcards" : "student/sprint"}/${s.id}${s.finished_at ? "/results" : ""}`}
             >
               <div className="min-w-0">
                 <p className="font-semibold">

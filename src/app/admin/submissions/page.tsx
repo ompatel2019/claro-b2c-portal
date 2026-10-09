@@ -62,7 +62,7 @@ export default async function SubmissionsPage() {
                 <p className="line-clamp-3">{q?.stem}</p>
                 <Link
                   className="button-link"
-                  href={`/practice/${a.session_id}/results`}
+                  href={`/student/sprint/${a.session_id}/results`}
                 >
                   Open full feedback
                 </Link>

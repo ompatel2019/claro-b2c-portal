@@ -26,7 +26,9 @@ test.describe("Session expiry mid-sprint", () => {
       await pick(page, option);
       await saved;
       await page.getByRole("button", { name: "Next question" }).click();
-      await expect(page.getByText(`Question ${i + 2} of`)).toBeVisible();
+      await expect(
+        page.getByText(new RegExp(`^Q ${i + 2} of \\d+$`)),
+      ).toBeVisible();
     }
     const db = adminClient();
     expect(db).toBeTruthy();
@@ -64,8 +66,8 @@ test.describe("Session expiry mid-sprint", () => {
     await page.getByLabel("Email").fill(process.env.STUDENT_EMAIL!);
     await page.getByLabel("Password").fill(process.env.STUDENT_PASSWORD!);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`/practice/${id}$`));
-    await expect(page.getByText(/Question 3 of/)).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/student/sprint/${id}$`));
+    await expect(page.getByText(/^Q 3 of \d+$/)).toBeVisible();
     const nav = page.getByRole("navigation", { name: "Question booklet" });
     await expect(
       nav.getByRole("button", { name: "Question 1: Answered" }),

@@ -1,18 +1,20 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Flag } from "@/components/icons";
+import { Flag, Spinner } from "@/components/icons";
 import { toast } from "sonner";
 import { createClient } from "@/utils/supabase/client";
 import { ensureSession, withAuthRetry } from "@/lib/auth-client";
 import {
   answered,
+  plural,
   timeLimit,
   timer,
   type Attempt,
   type Session,
 } from "@/lib/practice";
 import { cn } from "@/lib/utils";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -33,17 +35,28 @@ const TYPE_LABEL = {
   extended: "Extended response",
 };
 const draftKey = (id: string) => `claro-draft-${id}`;
+/** Booklet chip colour once a question is checked: full, part or no marks. */
+const markTone = (row: Attempt) =>
+  Number(row.mark) >= Number(row.max_marks)
+    ? "bg-success border-success text-white"
+    : Number(row.mark) > 0
+      ? "bg-warning border-warning text-white"
+      : "bg-destructive border-destructive text-white";
 
 export function SprintRunner({
   session,
   initial,
   userId,
   title,
+  topicNames = {},
+  seen = [],
 }: {
   session: Session;
   initial: Attempt[];
   userId: string;
   title: string;
+  topicNames?: Record<string, string>;
+  seen?: string[];
 }) {
   const router = useRouter();
   const [db] = useState(createClient);
@@ -63,6 +76,10 @@ export function SprintRunner({
   const queue = useRef<Promise<void>>(Promise.resolve());
   const dirty = useRef(new Map<string, Partial<Attempt>>());
   const limit = timeLimit(session.config);
+  // §3.2 feedback "each": check as you go.
+  const checkMode = session.config.feedback === "each";
+  const [checking, setChecking] = useState<string | null>(null);
+  const [explanations, setExplanations] = useState<Record<string, string>>({});
 
   function local(id: string, patch: Partial<Attempt>) {
     rows.current = rows.current.map((a) =>
@@ -247,10 +264,78 @@ export function SprintRunner({
         result.error ?? "Could not finish your session. Please try again.",
       );
     // Hard navigation so no cached "unfinished" redirect can bounce us back.
-    window.location.assign(`/practice/${session.id}/results`);
+    window.location.assign(`/student/sprint/${session.id}/results`);
   }
   const a = attempts[index];
   const editable = !!a && ["pending", "transcribed"].includes(a.status);
+  const answerKey =
+    checkMode && a?.status === "marked" ? a.feedback?.correct_index : null;
+  async function check() {
+    const id = a.id;
+    setChecking(id);
+    setError("");
+    try {
+      await flush();
+      const post = () =>
+        fetch(`/api/attempts/${id}/mark`, {
+          method: "POST",
+          credentials: "same-origin",
+        });
+      let res = await post();
+      if (res.status === 401) {
+        await ensureSession(db);
+        res = await post();
+      }
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok)
+        throw new Error(
+          body.error ?? "Could not check this answer. Try again.",
+        );
+      local(id, {
+        status: body.status ?? "marked",
+        mark: body.mark,
+        max_marks: body.max_marks,
+        band: body.band,
+        feedback: body.feedback,
+      });
+      if (body.explanation)
+        setExplanations((e) => ({ ...e, [id]: body.explanation }));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setChecking(null);
+    }
+  }
+  const checkRef = useRef(check);
+  useEffect(() => {
+    checkRef.current = check;
+  });
+  useEffect(() => {
+    if (!checkMode) return;
+    // ⌘Enter checks the current answer, even from the answer box.
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        void checkRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [checkMode]);
+  // §3.2 "Finish and mark automatically" when time runs out.
+  const timedOut = useRef(false);
+  useEffect(() => {
+    if (
+      !limit ||
+      session.config.on_timeout !== "finish" ||
+      elapsed < limit ||
+      timedOut.current
+    )
+      return;
+    timedOut.current = true;
+    toast("Time’s up. Marking your answers.");
+    void act(finish);
+  });
   function choose(i: number | null) {
     const previous = a.choice_index;
     local(a.id, { choice_index: i });
@@ -351,7 +436,7 @@ export function SprintRunner({
                     data-q
                     disabled={busy}
                     aria-current={index === i ? "step" : undefined}
-                    aria-label={`Question ${i + 1}: ${answered(row) ? "Answered" : "Not answered"}${row.flagged ? ", Flagged" : ""}`}
+                    aria-label={`Question ${i + 1}: ${answered(row) ? "Answered" : "Not answered"}${row.flagged ? ", Flagged" : ""}${row.status === "marked" ? `, ${row.mark}/${row.max_marks} marks` : ""}`}
                     onClick={() => go(i)}
                     className={cn(
                       "relative size-9 rounded-full border text-sm font-medium tabular-nums",
@@ -359,6 +444,7 @@ export function SprintRunner({
                         ? "bg-ink border-ink text-white"
                         : "bg-white",
                       index === i && "ring-primary ring-2 ring-offset-2",
+                      row.status === "marked" && markTone(row),
                     )}
                   >
                     {i + 1}
@@ -430,7 +516,7 @@ export function SprintRunner({
           {error.includes("sign-in expired") && (
             <a
               className="button-link"
-              href={`/sign-in?next=/practice/${session.id}`}
+              href={`/sign-in?next=/student/sprint/${session.id}`}
             >
               Sign in again
             </a>
@@ -440,8 +526,20 @@ export function SprintRunner({
       <article className="bg-card space-y-4 rounded-xl border p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-muted-foreground text-[13px] font-medium">
-            Question {index + 1} of {attempts.length} · {a.question.source} ·{" "}
-            {a.question.marks} {a.question.marks === 1 ? "mark" : "marks"}
+            {[
+              `Question ${index + 1}`,
+              TYPE_LABEL[a.question.type],
+              plural(a.question.marks, "mark"),
+              a.question.source,
+              topicNames[a.question.topic_id],
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+            {seen.includes(a.question_id) && (
+              <Badge variant="outline" className="ml-2 align-middle">
+                Seen before
+              </Badge>
+            )}
           </p>
           <Button
             variant="outline"
@@ -475,6 +573,11 @@ export function SprintRunner({
                   a.choice_index === i
                     ? "border-primary bg-accent"
                     : "hover:bg-muted",
+                  answerKey === i && "border-success bg-success-soft",
+                  answerKey != null &&
+                    answerKey !== i &&
+                    a.choice_index === i &&
+                    "border-destructive bg-destructive-soft",
                 )}
               >
                 <input
@@ -512,6 +615,15 @@ export function SprintRunner({
             save={(patch) => save(a.id, patch)}
             flush={flush}
             local={(patch) => local(a.id, patch)}
+          />
+        )}
+        {checkMode && (
+          <CheckResult
+            attempt={a}
+            explanation={explanations[a.id]}
+            checking={checking === a.id}
+            canCheck={editable && answered(a) && !busy}
+            onCheck={() => void check()}
           />
         )}
       </article>
@@ -606,5 +718,71 @@ export function SprintRunner({
         </DialogContent>
       </Dialog>
     </SessionShell>
+  );
+}
+
+function CheckResult({
+  attempt: a,
+  explanation,
+  checking,
+  canCheck,
+  onCheck,
+}: {
+  attempt: Attempt;
+  explanation?: string;
+  checking: boolean;
+  canCheck: boolean;
+  onCheck: () => void;
+}) {
+  if (a.status === "marked") {
+    if (a.question.type === "mcq") {
+      const right = Number(a.mark) >= 1;
+      const k = a.feedback?.correct_index;
+      return (
+        <div
+          role="status"
+          className={cn(
+            "space-y-2 rounded-xl p-4 text-sm",
+            right ? "bg-success-soft" : "bg-destructive-soft",
+          )}
+        >
+          <p className="font-semibold">
+            {right
+              ? "Correct"
+              : `Incorrect · Answer: ${k == null ? "unknown" : LETTERS[k]}`}
+          </p>
+          {explanation && <RichText text={explanation} />}
+        </div>
+      );
+    }
+    const next = a.feedback?.comments?.find(
+      (c) => c.kind === "fix" && c.next_mark,
+    )?.next_mark;
+    return (
+      <div role="status" className="bg-muted space-y-1 rounded-xl p-4 text-sm">
+        <p className="font-semibold tabular-nums">
+          {a.mark} / {a.max_marks}
+        </p>
+        {a.band && <p className="text-muted-foreground">Band: {a.band}</p>}
+        {next && <p>Next mark: {next}</p>}
+        <p className="text-muted-foreground text-xs">
+          Full feedback in your results.
+        </p>
+      </div>
+    );
+  }
+  if (checking || a.status === "marking")
+    return (
+      <p role="status" className="flex items-center gap-2 text-sm">
+        <Spinner className="size-4 animate-spin" /> Marking…
+      </p>
+    );
+  return (
+    <div className="flex items-center gap-3">
+      <Button variant="outline" disabled={!canCheck} onClick={onCheck}>
+        Check answer
+      </Button>
+      <span className="text-muted-foreground text-xs">⌘Enter</span>
+    </div>
   );
 }

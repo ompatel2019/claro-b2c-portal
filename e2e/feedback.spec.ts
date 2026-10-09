@@ -94,7 +94,7 @@ test.describe("annotated written feedback", () => {
       null,
       null,
     ]);
-    results = `/practice/${id}/results`;
+    results = `/student/sprint/${id}/results`;
   });
 
   test("highlights and margin cards link both ways on wide screens", async ({

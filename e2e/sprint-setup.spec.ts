@@ -72,7 +72,7 @@ test.describe("Topic Sprint setup", () => {
     );
     await expect(page.getByText(/^\d+ questions match/)).toBeVisible();
     await page.keyboard.press("Control+Enter");
-    await expect(page).toHaveURL(/\/practice\/[^/]+$/);
+    await expect(page).toHaveURL(/\/student\/sprint\/[^/]+$/);
     ids.push(page.url().split("/").at(-1)!);
     await expect(page.getByText("Q 1 of 5")).toBeVisible();
     await expect(
@@ -84,7 +84,7 @@ test.describe("Topic Sprint setup", () => {
       page.getByText(/unfinished Multiple choice sprint · 0\/5 answered/),
     ).toBeVisible();
     await page.getByRole("link", { name: "Continue" }).click();
-    await expect(page).toHaveURL(new RegExp(`/practice/${ids.at(-1)}$`));
+    await expect(page).toHaveURL(new RegExp(`/student/sprint/${ids.at(-1)}$`));
   });
 
   test("no matches offers one-click fixes with counts", async ({ page }) => {

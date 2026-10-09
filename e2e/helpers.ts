@@ -34,7 +34,7 @@ export async function start(page: Page, mode: string, ids: string[]) {
   await page.goto(`/student/sprint?type=${TYPES[mode]}&sub=t3-inflation`);
   await expect(page.getByText(/^\d+ questions match/)).toBeVisible();
   await page.getByRole("button", { name: /^Start (sprint|with)/ }).click();
-  await expect(page).toHaveURL(/\/practice\/[^/]+$/);
+  await expect(page).toHaveURL(/\/student\/sprint\/[^/]+$/);
   const id = page.url().split("/").at(-1)!;
   ids.push(id);
   return id;

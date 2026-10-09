@@ -92,10 +92,7 @@ export function activeItem(kind: keyof typeof nav, path: string) {
   return items.find((i) =>
     i.href === root
       ? path === root
-      : path === i.href ||
-        path.startsWith(`${i.href}/`) ||
-        // Sprint sessions still live under /practice until §3.3 moves them.
-        (i.href === "/student/sprint" && path.startsWith("/practice/")),
+      : path === i.href || path.startsWith(`${i.href}/`),
   );
 }
 

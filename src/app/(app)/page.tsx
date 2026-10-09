@@ -174,7 +174,7 @@ export default async function Dashboard() {
                 </p>
                 <Link
                   className="button-link"
-                  href={`/practice/${continuing.id}`}
+                  href={`/student/sprint/${continuing.id}`}
                 >
                   Continue
                 </Link>
